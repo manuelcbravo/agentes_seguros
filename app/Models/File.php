@@ -5,19 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Concerns\HasUuid;
 
 class File extends Model
 {
-    use SoftDeletes;
+    use HasUuid, SoftDeletes;
 
     protected $fillable = [
+        'uuid',
         'disk',
         'path',
         'original_name',
         'mime_type',
         'size',
-        'table_id',
-        'related_id',
+        'related_table',
+        'related_uuid',
     ];
 
     protected $appends = [

@@ -23,7 +23,7 @@ class UsersTableSeeder extends Seeder
             array (
                 'id' => 1,
                 'name' => 'manuel laravel',
-                'email' => 'admin@laravelconmanuel.dev',
+                'email' => 'admin@fielgroup.com.mx',
                 'email_verified_at' => NULL,
                 'password' => '$2y$12$DZ04lDKD51sqthz950L13OdBdijO8b8Ce3/d9FZ9ZcVVXES1lv/Jy',
                 'remember_token' => NULL,

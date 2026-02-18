@@ -15,13 +15,13 @@ class FileController extends Controller
     public function index(Request $request)
     {
         $validated = $request->validate([
-            'table_id' => ['required', 'string', 'max:80'],
+            'related_table' => ['required', 'string', 'max:80'],
             'related_uuid' => ['required', 'uuid'],
         ]);
 
         return response()->json([
             'files' => File::query()
-                ->where('table_id', $validated['table_id'])
+                ->where('related_table', $validated['related_table'])
                 ->where('related_uuid', $validated['related_uuid'])
                 ->latest()
                 ->get(),
@@ -40,7 +40,7 @@ class FileController extends Controller
             'original_name' => $uploadedFile->getClientOriginalName(),
             'mime_type' => $uploadedFile->getClientMimeType(),
             'size' => $uploadedFile->getSize(),
-            'table_id' => $request->string('table_id')->toString(),
+            'related_table' => $request->string('related_table')->toString(),
             'related_id' => null,
             'related_uuid' => $request->string('related_uuid')->toString(),
         ]);
@@ -53,7 +53,7 @@ class FileController extends Controller
         $validated = $request->validated();
 
         abort_unless(
-            $file->table_id === $validated['table_id'] && $file->related_uuid === $validated['related_uuid'],
+            $file->related_table === $validated['related_table'] && $file->related_uuid === $validated['related_uuid'],
             403,
             'No autorizado para renombrar este archivo.',
         );
@@ -68,12 +68,12 @@ class FileController extends Controller
     public function destroy(Request $request, File $file): RedirectResponse
     {
         $validated = $request->validate([
-            'table_id' => ['required', 'string', 'max:80'],
+            'related_table' => ['required', 'string', 'max:80'],
             'related_uuid' => ['required', 'uuid'],
         ]);
 
         abort_unless(
-            $file->table_id === $validated['table_id'] && $file->related_uuid === $validated['related_uuid'],
+            $file->related_table === $validated['related_table'] && $file->related_uuid === $validated['related_uuid'],
             403,
             'No autorizado para eliminar este archivo.',
         );

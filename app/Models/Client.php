@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 use Mattiverse\Userstamps\Traits\Userstamps;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use App\Models\Concerns\HasUuid;
 
 class Client extends Model
 {
-    use Userstamps, SoftDeletes;
+    use Userstamps, SoftDeletes, HasUuid;
 
     // ===== MASS ASSIGNMENT =====
     protected $fillable = [

@@ -105,7 +105,7 @@ export function FilePickerDialog({
         for (const [index, file] of files.entries()) {
             const uploadForm = new FormData();
             uploadForm.append('file', file);
-            uploadForm.append('table_id', tableId);
+            uploadForm.append('related_table', tableId);
             uploadForm.append('related_uuid', relatedUuid);
 
             await new Promise<void>((resolve, reject) => {
@@ -153,7 +153,7 @@ export function FilePickerDialog({
         }
 
         router.patch(route('files.rename', file.uuid), {
-            table_id: tableId,
+            related_table: tableId,
             related_uuid: relatedUuid,
             original_name: newName,
         }, {

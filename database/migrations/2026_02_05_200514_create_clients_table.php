@@ -11,8 +11,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('clients', function (Blueprint $table) {
-            $table->id();
-            $table->uuid('uuid')->unique();
+            $table->uuid('id')->primary();
 
             // Multi tenant (por si luego lo necesitas)
             $table->foreignId('company_id')->nullable()->index();
@@ -73,8 +72,8 @@ return new class extends Migration {
             $table->json('extra_attributes')->nullable();
 
             // ===== AUDITORÍA =====
-            $table->userstamps();
-            $table->userstampSoftDeletes();
+           $table->userstampsUuid();
+            $table->userstampsUuidSoftDeletes();
 
             // ===== CONTROL =====
             $table->timestamps();

@@ -14,6 +14,9 @@ return new class extends Migration {
             $table->string('original_name');
             $table->string('mime_type', 120)->nullable();
             $table->unsignedBigInteger('size')->default(0);
+            $table->uuid('related_uuid')->nullable();
+            $table->string('related_table')->nullable();
+
             $table->timestamps();
             $table->softDeletes();
 
