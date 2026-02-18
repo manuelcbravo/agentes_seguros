@@ -12,6 +12,7 @@ use App\Http\Controllers\AgentController;
 use App\Http\Controllers\AgentLicenseController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\LeadController;
 use App\Http\Controllers\Config\RoleController;
 use App\Http\Controllers\Config\UserController;
 use App\Http\Controllers\GoogleCalendarController;
@@ -50,9 +51,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     Route::resource('clients', ClientController::class)->only(['index', 'store', 'destroy']);
     Route::resource('agents', AgentController::class)->only(['index', 'store', 'destroy']);
+
     Route::resource('agent-licenses', AgentLicenseController::class)
         ->only(['index', 'store', 'destroy'])
         ->parameters(['agent-licenses' => 'agentLicense']);
+
+
+    Route::get('leads/kanban', [LeadController::class, 'kanban'])->name('leads.kanban');
+    Route::get('leads/ganados', [LeadController::class, 'ganados'])->name('leads.ganados');
+    Route::get('leads/no-interesados', [LeadController::class, 'noInteresados'])->name('leads.no-interesados');
+    Route::patch('leads/{lead}/status', [LeadController::class, 'updateStatus'])->name('leads.update-status');
+    Route::resource('leads', LeadController::class)->only(['index', 'store', 'destroy']);
+
     Route::resource('files', FileController::class)->only(['index', 'store', 'destroy']);
     Route::prefix('catalogs')->name('catalogs.')->group(function () {
         Route::resource('currencies', CurrencyController::class)->only(['index', 'store', 'destroy']);

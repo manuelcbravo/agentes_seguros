@@ -7,6 +7,7 @@ import {
     LayoutGrid,
     Settings,
     Users,
+    Contact
 } from 'lucide-react';
 import { route } from 'ziggy-js';
 import { NavConfig } from '@/components/nav-config';
@@ -46,6 +47,29 @@ const mainNavItems: NavItem[] = [
         href: route('google-calendar.settings'),
         icon: CalendarDays,
     },
+    {
+        title: 'Leads',
+        href: route('leads.index'),
+        icon: Contact,
+        children: [
+            {
+                title: 'Listado',
+                href: route('leads.index'),
+            },
+            {
+                title: 'Kanban',
+                href: route('leads.kanban'),
+            },
+            {
+                title: 'Ganados',
+                href: route('leads.ganados'),
+            },
+            {
+                title: 'No interesados',
+                href: route('leads.no-interesados'),
+            },
+        ],
+    },
 ];
 
 const configNavItems: NavItem[] = [
@@ -57,7 +81,7 @@ const configNavItems: NavItem[] = [
             {
                 title: 'Licencias',
                 href: route('agent-licenses.index'),
-            },
+            }
         ],
     },
     {

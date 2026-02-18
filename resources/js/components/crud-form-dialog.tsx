@@ -18,6 +18,7 @@ type CrudFormDialogProps = {
     processing?: boolean;
     onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
     children: ReactNode;
+    hideFooter?: boolean;
 };
 
 export function CrudFormDialog({
@@ -29,6 +30,7 @@ export function CrudFormDialog({
     processing = false,
     onSubmit,
     children,
+    hideFooter = false,
 }: CrudFormDialogProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -39,11 +41,13 @@ export function CrudFormDialog({
                 </DialogHeader>
                 <form className="space-y-4" onSubmit={onSubmit}>
                     {children}
-                    <DialogFooter>
-                        <DialogActionButton type="submit" processing={processing}>
-                            {submitLabel}
-                        </DialogActionButton>
-                    </DialogFooter>
+                    {!hideFooter && (
+                        <DialogFooter>
+                            <DialogActionButton type="submit" processing={processing}>
+                                {submitLabel}
+                            </DialogActionButton>
+                        </DialogFooter>
+                    )}
                 </form>
             </DialogContent>
         </Dialog>
