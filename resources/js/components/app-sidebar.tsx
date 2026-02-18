@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BookCopy, LayoutGrid, Settings, Users } from 'lucide-react';
+import { BookCopy, BriefcaseBusiness, LayoutGrid, Settings, Users } from 'lucide-react';
 import { route } from 'ziggy-js';
 import { NavConfig } from '@/components/nav-config';
 import { NavMain } from '@/components/nav-main';
@@ -14,8 +14,8 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import type { NavItem } from '@/types';
-import { dashboard } from '@/routes';
 import AppLogo from './app-logo';
+import { dashboard } from '@/routes';
 
 const mainNavItems: NavItem[] = [
     {
@@ -27,6 +27,11 @@ const mainNavItems: NavItem[] = [
         title: 'Clientes',
         href: route('clients.index'),
         icon: Users,
+    },
+    {
+        title: 'Agentes',
+        href: route('agents.index'),
+        icon: BriefcaseBusiness,
     },
 ];
 

@@ -3,15 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\AssignsAgentOwnership;
 use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Beneficiary extends Model
 {
-    use HasUuid, SoftDeletes;
+    use AssignsAgentOwnership, HasUuid, SoftDeletes;
 
     protected $fillable = [
+        'agent_id',
         'policy_id',
         'name',
         'birthday',
@@ -41,6 +43,11 @@ class Beneficiary extends Model
         'drinks' => 'boolean',
     ];
 
+
+    public function agent(): BelongsTo
+    {
+        return $this->belongsTo(Agent::class);
+    }
     public function policy(): BelongsTo
     {
         return $this->belongsTo(Policy::class);

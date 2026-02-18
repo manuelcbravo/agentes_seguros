@@ -3,15 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\AssignsAgentOwnership;
 use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Insured extends Model
 {
-     use HasUuid, SoftDeletes;
+     use AssignsAgentOwnership, HasUuid, SoftDeletes;
 
     protected $fillable = [
+        'agent_id',
         'client_id',
         'birthday',
         'rfc',
@@ -49,6 +51,11 @@ class Insured extends Model
         'children_birthdates' => 'array',
     ];
 
+
+    public function agent(): BelongsTo
+    {
+        return $this->belongsTo(Agent::class);
+    }
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);

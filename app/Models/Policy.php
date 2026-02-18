@@ -3,15 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\AssignsAgentOwnership;
 use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Policy extends Model
 {
-    use HasUuid, SoftDeletes;
+    use AssignsAgentOwnership, HasUuid, SoftDeletes;
 
     protected $fillable = [
+        'agent_id',
         'client_id',
         'insured_id',
         'status',
@@ -33,6 +35,11 @@ class Policy extends Model
         'month' => 'integer',
     ];
 
+
+    public function agent(): BelongsTo
+    {
+        return $this->belongsTo(Agent::class);
+    }
     public function client()
     {
         return $this->belongsTo(Client::class);
