@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { LayoutGrid, Settings, Users } from 'lucide-react';
+import { BookCopy, LayoutGrid, Settings, Users } from 'lucide-react';
 import { route } from 'ziggy-js';
 import { NavConfig } from '@/components/nav-config';
 import { NavMain } from '@/components/nav-main';
@@ -14,8 +14,8 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import type { NavItem } from '@/types';
-import AppLogo from './app-logo';
 import { dashboard } from '@/routes';
+import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
     {
@@ -26,14 +26,48 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Clientes',
         href: route('clients.index'),
-        icon: Users
+        icon: Users,
     },
 ];
 
 const configNavItems: NavItem[] = [
-
     {
-        title: 'Configuración',
+        title: 'Catalogos',
+        href: route('catalogs.currencies.index'),
+        icon: BookCopy,
+        children: [
+            {
+                title: 'Monedas',
+                href: route('catalogs.currencies.index'),
+            },
+            {
+                title: 'Estados civiles',
+                href: route('catalogs.marital-statuses.index'),
+            },
+            {
+                title: 'Sexos',
+                href: route('catalogs.sexes.index'),
+            },
+            {
+                title: 'Parentescos',
+                href: route('catalogs.relationships.index'),
+            },
+            {
+                title: 'Aseguradoras',
+                href: route('catalogs.insurance-companies.index'),
+            },
+            {
+                title: 'Tipos de producto',
+                href: route('catalogs.product-types.index'),
+            },
+            {
+                title: 'Productos',
+                href: route('catalogs.products.index'),
+            },
+        ],
+    },
+    {
+        title: 'Configuracion',
         href: route('config.users.index'),
         icon: Settings,
         children: [
@@ -46,7 +80,7 @@ const configNavItems: NavItem[] = [
                 href: route('config.roles.index'),
             },
             {
-                title: 'Auditoría',
+                title: 'Auditoria',
                 href: route('config.audits.index'),
             },
         ],

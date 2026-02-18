@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
+import { DialogActionButton } from '@/components/dialog-action-button';
 import {
     Dialog,
     DialogContent,
@@ -40,9 +40,9 @@ export function CrudFormDialog({
                 <form className="space-y-4" onSubmit={onSubmit}>
                     {children}
                     <DialogFooter>
-                        <Button type="submit" disabled={processing}>
+                        <DialogActionButton type="submit" processing={processing}>
                             {submitLabel}
-                        </Button>
+                        </DialogActionButton>
                     </DialogFooter>
                 </form>
             </DialogContent>

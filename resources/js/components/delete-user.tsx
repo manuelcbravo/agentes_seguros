@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
+import { DialogActionButton } from '@/components/dialog-action-button';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -97,18 +98,14 @@ export default function DeleteUser() {
                                             </Button>
                                         </DialogClose>
 
-                                        <Button
+                                        <DialogActionButton
+                                            type="submit"
+                                            data-test="confirm-delete-user-button"
                                             variant="destructive"
-                                            disabled={processing}
-                                            asChild
+                                            processing={processing}
                                         >
-                                            <button
-                                                type="submit"
-                                                data-test="confirm-delete-user-button"
-                                            >
-                                                Delete account
-                                            </button>
-                                        </Button>
+                                            Delete account
+                                        </DialogActionButton>
                                     </DialogFooter>
                                 </>
                             )}

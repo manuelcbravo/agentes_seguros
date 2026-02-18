@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Concerns\HasUuid;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Beneficiary extends Model
@@ -28,6 +29,7 @@ class Beneficiary extends Model
         'drinks',
         'personality',
         'relationship',
+        'relationship_id',
         'benefit_percentage',
     ];
 
@@ -39,8 +41,13 @@ class Beneficiary extends Model
         'drinks' => 'boolean',
     ];
 
-    public function policy()
+    public function policy(): BelongsTo
     {
         return $this->belongsTo(Policy::class);
+    }
+
+    public function relationshipCatalog(): BelongsTo
+    {
+        return $this->belongsTo(CatRelationship::class, 'relationship_id');
     }
 }

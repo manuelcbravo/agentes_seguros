@@ -1,3 +1,4 @@
+import { DialogActionButton } from '@/components/dialog-action-button';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -47,13 +48,13 @@ export function ConfirmDeleteDialog({
                     >
                         Cancelar
                     </Button>
-                    <Button
+                    <DialogActionButton
                         variant="destructive"
-                        disabled={processing}
+                        processing={processing}
                         onClick={onConfirm}
                     >
                         Eliminar
-                    </Button>
+                    </DialogActionButton>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

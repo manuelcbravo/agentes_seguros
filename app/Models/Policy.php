@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Concerns\HasUuid;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Policy extends Model
@@ -22,6 +23,7 @@ class Policy extends Model
         'periodicity',
         'month',
         'currency',
+        'currency_id',
     ];
 
     protected $casts = [
@@ -39,6 +41,11 @@ class Policy extends Model
     public function insured()
     {
         return $this->belongsTo(Insured::class);
+    }
+
+    public function currencyCatalog(): BelongsTo
+    {
+        return $this->belongsTo(CatCurrency::class, 'currency_id');
     }
 
     public function beneficiaries()

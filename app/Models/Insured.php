@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Concerns\HasUuid;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Insured extends Model
@@ -18,7 +19,9 @@ class Insured extends Model
         'phone',
         'email',
         'marital_status',
+        'marital_status_id',
         'sex',
+        'sex_id',
         'address',
         'occupation',
         'company_name',
@@ -46,9 +49,19 @@ class Insured extends Model
         'children_birthdates' => 'array',
     ];
 
-    public function client()
+    public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function maritalStatusCatalog(): BelongsTo
+    {
+        return $this->belongsTo(CatMaritalStatus::class, 'marital_status_id');
+    }
+
+    public function sexCatalog(): BelongsTo
+    {
+        return $this->belongsTo(CatSex::class, 'sex_id');
     }
 
     public function policies()
