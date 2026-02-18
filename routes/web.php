@@ -9,6 +9,7 @@ use App\Http\Controllers\Catalog\ProductTypeController;
 use App\Http\Controllers\Catalog\RelationshipController;
 use App\Http\Controllers\Catalog\SexController;
 use App\Http\Controllers\AgentController;
+use App\Http\Controllers\AgentLicenseController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\Config\RoleController;
@@ -37,6 +38,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     Route::resource('clients', ClientController::class)->only(['index', 'store', 'destroy']);
     Route::resource('agents', AgentController::class)->only(['index', 'store', 'destroy']);
+    Route::resource('agent-licenses', AgentLicenseController::class)
+        ->only(['index', 'store', 'destroy'])
+        ->parameters(['agent-licenses' => 'agentLicense']);
     Route::resource('files', FileController::class)->only(['index', 'store', 'destroy']);
     Route::prefix('catalogs')->name('catalogs.')->group(function () {
         Route::resource('currencies', CurrencyController::class)->only(['index', 'store', 'destroy']);

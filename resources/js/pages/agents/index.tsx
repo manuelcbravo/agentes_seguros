@@ -205,51 +205,8 @@ export default function AgentsIndex({
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <Input
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                        placeholder="Buscar por nombre, correo, telefono o licencia..."
-                        className="max-w-md"
-                    />
-                    <Button
-                        variant="outline"
-                        onClick={() => router.get(route('agents.index'), { search }, { preserveState: true })}
-                    >
-                        Buscar
-                    </Button>
-                </div>
-
                 <DataTable columns={columns} data={agents.data} searchColumn="name" searchPlaceholder="Filtrar resultados de la pagina..." />
 
-                <div className="flex items-center justify-between rounded-lg border p-3 text-sm">
-                    <p className="text-muted-foreground">Total de agentes: {agents.total}</p>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={agents.current_page <= 1}
-                            onClick={() =>
-                                router.get(route('agents.index'), { search: filters.search, page: agents.current_page - 1 }, { preserveState: true })
-                            }
-                        >
-                            Anterior
-                        </Button>
-                        <span>
-                            Pagina {agents.current_page} de {agents.last_page}
-                        </span>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={agents.current_page >= agents.last_page}
-                            onClick={() =>
-                                router.get(route('agents.index'), { search: filters.search, page: agents.current_page + 1 }, { preserveState: true })
-                            }
-                        >
-                            Siguiente
-                        </Button>
-                    </div>
-                </div>
             </div>
 
             <CrudFormDialog

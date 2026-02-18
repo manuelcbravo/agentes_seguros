@@ -22,4 +22,10 @@ class CatInsuranceCompany extends Model
     {
         return $this->hasMany(Product::class, 'insurance_company_id');
     }
+
+    public function licenses(): HasMany
+    {
+        return $this->hasMany(AgentLicense::class, 'aseguradora_id');
+    }
 }
+

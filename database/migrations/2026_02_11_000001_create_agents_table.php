@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('photo_path')->nullable();
             $table->string('city')->nullable();
             $table->string('state')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

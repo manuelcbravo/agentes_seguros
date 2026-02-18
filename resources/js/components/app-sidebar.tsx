@@ -1,5 +1,12 @@
 import { Link } from '@inertiajs/react';
-import { BookCopy, BriefcaseBusiness, LayoutGrid, Settings, Users } from 'lucide-react';
+import {
+    BookCopy,
+    BriefcaseBusiness,
+    IdCard,
+    LayoutGrid,
+    Settings,
+    Users,
+} from 'lucide-react';
 import { route } from 'ziggy-js';
 import { NavConfig } from '@/components/nav-config';
 import { NavMain } from '@/components/nav-main';
@@ -36,6 +43,17 @@ const mainNavItems: NavItem[] = [
 ];
 
 const configNavItems: NavItem[] = [
+    {
+        title: 'Agente',
+        href: route('agent-licenses.index'),
+        icon: IdCard,
+        children: [
+            {
+                title: 'Licencias',
+                href: route('agent-licenses.index'),
+            },
+        ],
+    },
     {
         title: 'Catalogos',
         href: route('catalogs.currencies.index'),

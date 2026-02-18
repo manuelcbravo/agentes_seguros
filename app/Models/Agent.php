@@ -52,4 +52,9 @@ class Agent extends Model
     {
         return $this->hasMany(Beneficiary::class);
     }
+
+    public function licenses(): HasMany
+    {
+        return $this->hasMany(AgentLicense::class);
+    }
 }
