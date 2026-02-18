@@ -1,14 +1,16 @@
 import { router } from '@inertiajs/react';
 import {
     Download,
-    File,
+    File as FileIcon,
     FileArchive,
     FileAudio,
     FileCode2,
     FileImage,
+    FilePenLine,
     FileSpreadsheet,
     FileText,
     FileVideo,
+    Loader2,
     Trash2,
     UploadCloud,
 } from 'lucide-react';
@@ -28,9 +30,12 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Progress } from '@/Components/ui/progress';
 
 type StoredFile = {
     id: number;
+    uuid: string;
     original_name: string;
     path: string;
     url: string;
@@ -45,7 +50,7 @@ type FilePickerDialogProps = {
     description?: string;
     storedFiles?: StoredFile[];
     tableId?: string;
-    relatedId?: number | null;
+    relatedUuid?: string | null;
     onUpload?: (files: File[]) => void;
     onDeleteStoredFile?: (fileId: number) => void;
     onDownloadStoredFile?: (file: StoredFile) => void;
@@ -57,7 +62,7 @@ type FilePickerDialogProps = {
 const isImageMime = (mimeType: string | null) => mimeType?.startsWith('image/') ?? false;
 
 const resolveFileIcon = (mimeType: string | null) => {
-    if (!mimeType) return File;
+    if (!mimeType) return FileIcon;
     if (mimeType.startsWith('image/')) return FileImage;
     if (mimeType.startsWith('video/')) return FileVideo;
     if (mimeType.startsWith('audio/')) return FileAudio;
@@ -66,7 +71,7 @@ const resolveFileIcon = (mimeType: string | null) => {
     if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('tar')) return FileArchive;
     if (mimeType.includes('json') || mimeType.includes('javascript') || mimeType.includes('xml')) return FileCode2;
 
-    return File;
+    return FileIcon;
 };
 
 export function FilePickerDialog({
@@ -76,7 +81,7 @@ export function FilePickerDialog({
     description = 'Arrastra y suelta archivos para subirlos de inmediato.',
     storedFiles = [],
     tableId,
-    relatedId = null,
+    relatedUuid = null,
     onUpload,
     onDeleteStoredFile,
     onDownloadStoredFile,
@@ -87,17 +92,21 @@ export function FilePickerDialog({
     const inputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [isUploadingLocal, setIsUploadingLocal] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [renamingFileId, setRenamingFileId] = useState<number | null>(null);
+    const [renameValue, setRenameValue] = useState('');
 
     const uploadWithContext = async (files: File[]) => {
-        if (!tableId || !relatedId) return;
+        if (!tableId || !relatedUuid) return;
 
         setIsUploadingLocal(true);
+        setProgress(0);
 
-        for (const file of files) {
+        for (const [index, file] of files.entries()) {
             const uploadForm = new FormData();
             uploadForm.append('file', file);
             uploadForm.append('table_id', tableId);
-            uploadForm.append('related_id', String(relatedId));
+            uploadForm.append('related_uuid', relatedUuid);
 
             await new Promise<void>((resolve, reject) => {
                 router.post(route('files.store'), uploadForm, {
@@ -109,10 +118,12 @@ export function FilePickerDialog({
             }).catch(() => {
                 toast.error(`No se pudo subir: ${file.name}`);
             });
+
+            setProgress(Math.round(((index + 1) / files.length) * 100));
         }
 
         setIsUploadingLocal(false);
-        toast.success('Archivos subidos al repositorio.');
+        setProgress(0);
     };
 
     const handleFiles = (files: FileList | null) => {
@@ -127,6 +138,34 @@ export function FilePickerDialog({
         void uploadWithContext(selectedFiles);
     };
 
+    const startRenaming = (file: StoredFile) => {
+        setRenamingFileId(file.id);
+        setRenameValue(file.original_name);
+    };
+
+    const submitRename = (file: StoredFile) => {
+        if (!tableId || !relatedUuid) return;
+
+        const newName = renameValue.trim();
+        if (!newName) {
+            toast.error('El nombre no puede estar vacío.');
+            return;
+        }
+
+        router.patch(route('files.rename', file.uuid), {
+            table_id: tableId,
+            related_uuid: relatedUuid,
+            original_name: newName,
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setRenamingFileId(null);
+                setRenameValue('');
+            },
+            onError: () => toast.error('No se pudo renombrar el archivo.'),
+        });
+    };
+
     const isUploading = uploading || isUploadingLocal;
 
     return (
@@ -137,7 +176,20 @@ export function FilePickerDialog({
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-4">
+                <div className="relative space-y-4">
+                    {isUploading && (
+                        <div className="absolute inset-0 z-20 flex items-center justify-center rounded-xl bg-background/85 backdrop-blur-sm">
+                            <div className="w-full max-w-sm space-y-4 rounded-2xl border bg-card p-6 shadow-2xl">
+                                <div className="flex items-center gap-3 text-sm font-medium">
+                                    <Loader2 className="size-5 animate-spin text-primary" />
+                                    Cargando archivos...
+                                </div>
+                                <Progress value={progress || 20} className="h-2" />
+                                <p className="text-xs text-muted-foreground">Por favor espera mientras completamos la carga.</p>
+                            </div>
+                        </div>
+                    )}
+
                     <input
                         ref={inputRef}
                         type="file"
@@ -182,7 +234,7 @@ export function FilePickerDialog({
                     <div className="space-y-2">
                         <p className="text-sm font-medium">Archivos cargados</p>
                         <p className="text-xs text-muted-foreground">
-                            Se muestran únicamente los archivos del contexto actual. Clic derecho para descargar o eliminar.
+                            Se muestran únicamente los archivos del contexto actual. Clic derecho para descargar, renombrar o eliminar.
                         </p>
                         <div className="max-h-[430px] overflow-y-auto rounded-lg border p-2">
                             {storedFiles.length === 0 ? (
@@ -203,15 +255,60 @@ export function FilePickerDialog({
                                                                 <Icon className="size-8 text-muted-foreground" />
                                                             </div>
                                                         )}
-                                                        <div className="p-2 text-[11px]">
-                                                            <p className="truncate font-medium">{file.original_name}</p>
-                                                            <p className="text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>
+                                                        <div className="space-y-1 p-2 text-[11px]">
+                                                            {renamingFileId === file.id ? (
+                                                                <div className="space-y-1">
+                                                                    <Input
+                                                                        value={renameValue}
+                                                                        onChange={(event) => setRenameValue(event.target.value)}
+                                                                        onKeyDown={(event) => {
+                                                                            if (event.key === 'Enter') {
+                                                                                event.preventDefault();
+                                                                                submitRename(file);
+                                                                            }
+                                                                            if (event.key === 'Escape') {
+                                                                                setRenamingFileId(null);
+                                                                                setRenameValue('');
+                                                                            }
+                                                                        }}
+                                                                        className="h-7 text-[11px]"
+                                                                        autoFocus
+                                                                    />
+                                                                    <div className="flex gap-1">
+                                                                        <button
+                                                                            type="button"
+                                                                            className="rounded bg-primary px-2 py-1 text-[10px] text-primary-foreground"
+                                                                            onClick={() => submitRename(file)}
+                                                                        >
+                                                                            Guardar
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            className="rounded border px-2 py-1 text-[10px]"
+                                                                            onClick={() => {
+                                                                                setRenamingFileId(null);
+                                                                                setRenameValue('');
+                                                                            }}
+                                                                        >
+                                                                            Cancelar
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <p className="truncate font-medium">{file.original_name}</p>
+                                                                    <p className="text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </ContextMenuTrigger>
                                                 <ContextMenuContent className="w-44">
                                                     <ContextMenuItem onClick={() => onDownloadStoredFile?.(file)}>
                                                         <Download className="size-4" /> Descargar
+                                                    </ContextMenuItem>
+                                                    <ContextMenuItem onClick={() => startRenaming(file)}>
+                                                        <FilePenLine className="size-4" /> Renombrar
                                                     </ContextMenuItem>
                                                     {onDeleteStoredFile && (
                                                         <ContextMenuItem
