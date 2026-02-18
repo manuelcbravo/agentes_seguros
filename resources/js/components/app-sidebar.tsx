@@ -44,7 +44,7 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Calendario',
-        href: route('google-calendar.settings'),
+        href: route('google-calendar.index'),
         icon: CalendarDays,
     },
     {

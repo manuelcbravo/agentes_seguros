@@ -13,7 +13,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import SettingsLayout from '@/layouts/settings/layout';
 import type { BreadcrumbItem, SharedData } from '@/types';
 
 type GoogleCalendarPageProps = SharedData & {
@@ -36,7 +35,7 @@ type EventFormState = {
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Google Calendar',
-        href: '/settings/google-calendar',
+        href: '/calendario/google-calendar',
     },
 ];
 
@@ -49,7 +48,7 @@ const emptyForm: EventFormState = {
     location: '',
 };
 
-export default function GoogleCalendarSettings() {
+export default function GoogleCalendarPage() {
     const { connected, google_calendar_id, google_connected_at, google_email, flash } = usePage<GoogleCalendarPageProps>().props;
     const [events, setEvents] = useState<EventInput[]>([]);
     const [eventModalOpen, setEventModalOpen] = useState(false);
@@ -213,67 +212,65 @@ export default function GoogleCalendarSettings() {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Google Calendar" />
 
-            <SettingsLayout>
-                <div className="space-y-6">
-                    <Heading
-                        variant="small"
-                        title="Google Calendar"
-                        description="Conecta tu calendario para gestionar citas y seguimientos desde un solo lugar."
-                    />
+            <div className="space-y-6">
+                <Heading
+                    variant="small"
+                    title="Google Calendar"
+                    description="Conecta tu calendario para gestionar citas y seguimientos desde un solo lugar."
+                />
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Estado de la conexión</CardTitle>
-                            <CardDescription>
-                                Sincroniza tu agenda de Google con tus eventos internos.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-3 text-sm">
-                            {connected ? (
-                                <>
-                                    <p><strong>Correo de Google:</strong> {google_email || 'No disponible'}</p>
-                                    <p><strong>Calendario:</strong> {google_calendar_id || 'primary'}</p>
-                                    <p><strong>Conectado desde:</strong> {connectedSince}</p>
-                                    <Button
-                                        variant="destructive"
-                                        onClick={() => router.post('/google-calendar/disconnect')}
-                                    >
-                                        Desconectar
-                                    </Button>
-                                </>
-                            ) : (
-                                <div className="space-y-2">
-                                    <p className="text-muted-foreground">
-                                        Aún no tienes Google Calendar conectado. Conecta tu cuenta para empezar a crear eventos.
-                                    </p>
-                                    <Button onClick={() => router.visit('/google-calendar/connect')}>
-                                        Conectar con Google
-                                    </Button>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex-row items-center justify-between gap-4">
-                            <div>
-                                <CardTitle>Calendario</CardTitle>
-                                <CardDescription>
-                                    Visualiza y administra tus eventos en una vista mensual.
-                                </CardDescription>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Estado de la conexión</CardTitle>
+                        <CardDescription>
+                            Sincroniza tu agenda de Google con tus eventos internos.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3 text-sm">
+                        {connected ? (
+                            <>
+                                <p><strong>Correo de Google:</strong> {google_email || 'No disponible'}</p>
+                                <p><strong>Calendario:</strong> {google_calendar_id || 'primary'}</p>
+                                <p><strong>Conectado desde:</strong> {connectedSince}</p>
+                                <Button
+                                    variant="destructive"
+                                    onClick={() => router.post('/google-calendar/disconnect')}
+                                >
+                                    Desconectar
+                                </Button>
+                            </>
+                        ) : (
+                            <div className="space-y-2">
+                                <p className="text-muted-foreground">
+                                    Aún no tienes Google Calendar conectado. Conecta tu cuenta para empezar a crear eventos.
+                                </p>
+                                <Button onClick={() => router.visit('/google-calendar/connect')}>
+                                    Conectar con Google
+                                </Button>
                             </div>
-                            <Button disabled={!connected} onClick={openCreateModal}>Nuevo evento</Button>
-                        </CardHeader>
-                        <CardContent>
-                            {connected ? (
-                                <div ref={calendarRef} className="min-h-[520px]" />
-                            ) : (
-                                <p className="text-sm text-muted-foreground">Conecta Google Calendar para ver y gestionar eventos.</p>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
-            </SettingsLayout>
+                        )}
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader className="flex-row items-center justify-between gap-4">
+                        <div>
+                            <CardTitle>Calendario</CardTitle>
+                            <CardDescription>
+                                Visualiza y administra tus eventos en una vista mensual.
+                            </CardDescription>
+                        </div>
+                        <Button disabled={!connected} onClick={openCreateModal}>Nuevo evento</Button>
+                    </CardHeader>
+                    <CardContent>
+                        {connected ? (
+                            <div ref={calendarRef} className="min-h-[520px]" />
+                        ) : (
+                            <p className="text-sm text-muted-foreground">Conecta Google Calendar para ver y gestionar eventos.</p>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
 
             <Dialog open={eventModalOpen} onOpenChange={setEventModalOpen}>
                 <DialogContent>

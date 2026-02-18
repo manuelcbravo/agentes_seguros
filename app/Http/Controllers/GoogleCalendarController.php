@@ -21,13 +21,13 @@ class GoogleCalendarController extends Controller
     {
     }
 
-    public function settings(): Response
+    public function index(): Response
     {
         $agent = auth()->user()?->agent;
 
         abort_unless($agent, 403);
 
-        return Inertia::render('settings/google-calendar', [
+        return Inertia::render('calendario/google-calendar', [
             'connected' => ! empty($agent->google_access_token) || ! empty($agent->google_refresh_token),
             'google_email' => $agent->google_email,
             'google_calendar_id' => $agent->google_calendar_id,
@@ -92,7 +92,7 @@ class GoogleCalendarController extends Controller
 
             $agent->save();
 
-            return redirect()->route('google-calendar.settings')
+            return redirect()->route('google-calendar.index')
                 ->with('success', 'Google Calendar conectado correctamente.');
         } catch (\Throwable $exception) {
             Log::error('Error conectando Google Calendar.', [
@@ -100,7 +100,7 @@ class GoogleCalendarController extends Controller
                 'error' => $exception->getMessage(),
             ]);
 
-            return redirect()->route('google-calendar.settings')
+            return redirect()->route('google-calendar.index')
                 ->with('error', 'No se pudo conectar Google Calendar. Intenta nuevamente.');
         }
     }
@@ -119,7 +119,7 @@ class GoogleCalendarController extends Controller
             'google_disconnected_at' => now(),
         ])->save();
 
-        return redirect()->route('google-calendar.settings')
+        return redirect()->route('google-calendar.index')
             ->with('success', 'Google Calendar desconectado correctamente.');
     }
 

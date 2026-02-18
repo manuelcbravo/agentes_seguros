@@ -33,7 +33,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('dashboard');
 
 
-    Route::get('/settings/google-calendar', [GoogleCalendarController::class, 'settings'])->name('google-calendar.settings');
+    Route::get('/calendario/google-calendar', [GoogleCalendarController::class, 'index'])->name('google-calendar.index');
     Route::get('/google-calendar/connect', [GoogleCalendarController::class, 'connect'])->name('google-calendar.connect');
     Route::get('/google-calendar/callback', [GoogleCalendarController::class, 'callback'])->name('google-calendar.callback');
     Route::post('/google-calendar/disconnect', [GoogleCalendarController::class, 'disconnect'])->name('google-calendar.disconnect');
