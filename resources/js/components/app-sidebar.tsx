@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import {
     BookCopy,
     BriefcaseBusiness,
+    CalendarDays,
     IdCard,
     LayoutGrid,
     Settings,
@@ -39,6 +40,11 @@ const mainNavItems: NavItem[] = [
         title: 'Agentes',
         href: route('agents.index'),
         icon: BriefcaseBusiness,
+    },
+    {
+        title: 'Calendario',
+        href: route('google-calendar.settings'),
+        icon: CalendarDays,
     },
 ];
 

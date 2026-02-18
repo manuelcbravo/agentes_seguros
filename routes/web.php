@@ -14,6 +14,8 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\Config\RoleController;
 use App\Http\Controllers\Config\UserController;
+use App\Http\Controllers\GoogleCalendarController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -28,6 +30,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('dashboard', fn () => Inertia::render('dashboard'))
         ->name('dashboard');
+
+
+    Route::get('/settings/google-calendar', [GoogleCalendarController::class, 'settings'])->name('google-calendar.settings');
+    Route::get('/google-calendar/connect', [GoogleCalendarController::class, 'connect'])->name('google-calendar.connect');
+    Route::get('/google-calendar/callback', [GoogleCalendarController::class, 'callback'])->name('google-calendar.callback');
+    Route::post('/google-calendar/disconnect', [GoogleCalendarController::class, 'disconnect'])->name('google-calendar.disconnect');
+    Route::get('/google-calendar/events', [GoogleCalendarController::class, 'eventsIndex']);
+    Route::post('/google-calendar/events', [GoogleCalendarController::class, 'eventsStore']);
+    Route::put('/google-calendar/events/{eventId}', [GoogleCalendarController::class, 'eventsUpdate']);
+    Route::delete('/google-calendar/events/{eventId}', [GoogleCalendarController::class, 'eventsDestroy']);
 
     Route::prefix('config')->name('config.')->group(function () {
         Route::resource('users', UserController::class)->only(['index', 'store', 'destroy']);

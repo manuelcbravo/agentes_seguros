@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasUuid;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Crypt;
 
 class Agent extends Model
 {
@@ -26,7 +28,28 @@ class Agent extends Model
 
     protected $casts = [
         'commission_percent' => 'decimal:2',
+        'google_scopes' => 'array',
+        'google_token_expires_at' => 'datetime',
+        'google_connected_at' => 'datetime',
+        'google_disconnected_at' => 'datetime',
+        'google_last_sync_at' => 'datetime',
     ];
+
+    protected function googleAccessToken(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value) => $value ? Crypt::decryptString($value) : null,
+            set: fn (?string $value) => $value ? Crypt::encryptString($value) : null,
+        );
+    }
+
+    protected function googleRefreshToken(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value) => $value ? Crypt::decryptString($value) : null,
+            set: fn (?string $value) => $value ? Crypt::encryptString($value) : null,
+        );
+    }
 
     public function user(): BelongsTo
     {
