@@ -77,7 +77,7 @@ class LeadController extends Controller
                 'created_at',
             ]),
             'files' => File::query()
-                ->select(['id', 'uuid', 'path', 'original_name', 'mime_type', 'size', 'related_table', 'related_uuid', 'created_at'])
+                ->select(['id', 'path', 'original_name', 'mime_type', 'size', 'related_table', 'related_uuid', 'created_at'])
                 ->where('related_table', 'leads')
                 ->latest()
                 ->get(),
@@ -233,7 +233,7 @@ class LeadController extends Controller
             ],
             'leads' => $leads,
             'files' => File::query()
-                ->select(['id', 'uuid', 'path', 'original_name', 'mime_type', 'size', 'related_table', 'related_uuid', 'created_at'])
+                ->select(['id', 'path', 'original_name', 'mime_type', 'size', 'related_table', 'related_uuid', 'created_at'])
                 ->where('related_table', 'leads')
                 ->latest()
                 ->get(),

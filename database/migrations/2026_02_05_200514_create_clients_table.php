@@ -72,8 +72,8 @@ return new class extends Migration {
             $table->json('extra_attributes')->nullable();
 
             // ===== AUDITORÍA =====
-           $table->userstampsUuid();
-            $table->userstampsUuidSoftDeletes();
+            $table->userstamps();
+            $table->userstampSoftDeletes();
 
             // ===== CONTROL =====
             $table->timestamps();

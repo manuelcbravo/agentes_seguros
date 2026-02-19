@@ -29,7 +29,8 @@ class ClientController extends Controller
                 ->latest()
                 ->get(),
             'files' => File::query()
-                ->select(['id', 'disk', 'path', 'original_name', 'mime_type', 'size', 'table_id', 'related_id', 'created_at'])
+                ->select(['id', 'disk', 'path', 'original_name', 'mime_type', 'size', 'related_table', 'related_uuid', 'created_at'])
+                ->where('related_table', 'clients')
                 ->latest()
                 ->get(),
         ]);

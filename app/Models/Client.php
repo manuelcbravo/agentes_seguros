@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Mattiverse\Userstamps\Traits\Userstamps;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Str;
 use App\Models\Concerns\HasUuid;
 
 class Client extends Model
@@ -14,7 +13,6 @@ class Client extends Model
 
     // ===== MASS ASSIGNMENT =====
     protected $fillable = [
-        'uuid',
         'company_id',
 
         // datos personales
@@ -66,15 +64,6 @@ class Client extends Model
         'documents',
         'extra_attributes',
     ];
-    
-    protected static function booted()
-    {
-        static::creating(function ($model) {
-            if (!$model->uuid) {
-                $model->uuid = (string) Str::uuid();
-            }
-        });
-    }
 
     // ===== CASTS =====
     protected $casts = [
@@ -115,7 +104,7 @@ class Client extends Model
     public function getAvatarUrlAttribute()
     {
         if (!$this->avatar_path) {
-            return asset('assets/images/default_client.png');
+            return asset('images/default_client.png');
         }
 
         // Si usas S3

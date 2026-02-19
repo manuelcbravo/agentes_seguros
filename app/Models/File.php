@@ -12,7 +12,6 @@ class File extends Model
     use HasUuid, SoftDeletes;
 
     protected $fillable = [
-        'uuid',
         'disk',
         'path',
         'original_name',

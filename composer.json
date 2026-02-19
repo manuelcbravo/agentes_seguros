@@ -14,7 +14,7 @@
         "codedge/laravel-fpdf": "*",
         "google/apiclient": "*",
         "inertiajs/inertia-laravel": "^2.0",
-        "joelbutcher/laravel-archivable": "*",
+        "joelbutcher/laravel-archivable": "^1.12",
         "laravel/cashier": "*",
         "laravel/fortify": "^1.30",
         "laravel/framework": "^12.0",

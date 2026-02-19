@@ -8,7 +8,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('files', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('disk', 30)->default('public');
             $table->string('path');
             $table->string('original_name');
