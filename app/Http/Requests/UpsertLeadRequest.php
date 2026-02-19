@@ -47,7 +47,7 @@ class UpsertLeadRequest extends FormRequest
             ],
             'email' => ['nullable', 'email', 'max:255'],
             'source' => ['required', 'in:facebook,google,whatsapp,referral,landing,other'],
-            'status' => ['required', 'in:nuevo,contacto_intento,contactado,perfilado,cotizacion_enviada,seguimiento,en_tramite,ganado,no_interesado'],
+            'status' => ['sometimes', 'in:nuevo,contactado,perfilado,en_pausa,seguimiento,en_tramite,ganado,no_interesado'],
         ];
     }
 }

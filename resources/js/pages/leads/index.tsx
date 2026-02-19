@@ -5,14 +5,24 @@ import { toast } from 'sonner';
 import { route } from 'ziggy-js';
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { CrudFormDialog } from '@/components/crud-form-dialog';
+import { FilePickerDialog } from '@/components/file-picker-dialog';
 import { LeadsTable, type LeadRow } from '@/components/leads/leads-table';
 import { LeadStatusBadge } from '@/components/leads/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Field, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useLeadActions } from '@/hooks/use-lead-actions';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, SharedData } from '@/types';
 
@@ -23,6 +33,18 @@ type PaginatedLeads = {
     total: number;
 };
 
+type MediaFile = {
+    id: number;
+    uuid: string;
+    original_name: string;
+    path: string;
+    url: string;
+    mime_type: string | null;
+    size: number;
+    related_table: string;
+    related_uuid: string | null;
+};
+
 type LeadForm = {
     id: number | null;
     agent_id: string;
@@ -31,7 +53,7 @@ type LeadForm = {
     phone: string;
     email: string;
     source: string;
-    status: string;
+    status?: string;
 };
 
 const iconByTitle: Record<string, typeof Users> = {
@@ -39,6 +61,8 @@ const iconByTitle: Record<string, typeof Users> = {
     'Leads ganados': Trophy,
     'Leads no interesados': UserRoundX,
 };
+
+const FILES_TABLE_ID = 'leads';
 
 export default function LeadsIndex({
     leads,
@@ -48,6 +72,7 @@ export default function LeadsIndex({
     sourceOptions,
     title,
     fixedStatus,
+    files,
 }: {
     leads: PaginatedLeads;
     agents: Array<{ id: string; name: string }>;
@@ -56,6 +81,7 @@ export default function LeadsIndex({
     sourceOptions: Array<{ value: string; label: string }>;
     title: string;
     fixedStatus: string | null;
+    files: MediaFile[];
 }) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
@@ -63,6 +89,7 @@ export default function LeadsIndex({
     const [activeLead, setActiveLead] = useState<LeadRow | null>(null);
     const [formMode, setFormMode] = useState<'create' | 'edit' | 'view' | null>(null);
     const { flash } = usePage<SharedData>().props;
+    const { filesLead, setFilesLead, convertLead, setConvertLead, moveLead, convertToClient } = useLeadActions(() => toast.success('Estatus actualizado correctamente.'));
 
     const form = useForm<LeadForm>({
         id: null,
@@ -72,7 +99,6 @@ export default function LeadsIndex({
         phone: '',
         email: '',
         source: 'facebook',
-        status: fixedStatus ?? 'nuevo',
     });
 
     useEffect(() => {
@@ -83,6 +109,12 @@ export default function LeadsIndex({
     const breadcrumbs: BreadcrumbItem[] = useMemo(() => [{ title, href: route('leads.index') }], [title]);
 
     const CurrentIcon = iconByTitle[title] ?? Users;
+
+    const contextualFiles = useMemo(() => {
+        if (!filesLead) return [];
+
+        return files.filter((file) => file.related_table === FILES_TABLE_ID && file.related_uuid === filesLead.uuid);
+    }, [files, filesLead]);
 
     const applyFilters = (page = 1) => {
         router.get(
@@ -101,7 +133,6 @@ export default function LeadsIndex({
         setActiveLead(null);
         form.reset();
         form.clearErrors();
-        form.setData('status', fixedStatus ?? 'nuevo');
         form.setData('agent_id', agentId);
         setFormMode('create');
     };
@@ -190,7 +221,9 @@ export default function LeadsIndex({
                     onEdit={(lead) => openEditDialog(lead, 'edit')}
                     onView={(lead) => openEditDialog(lead, 'view')}
                     onDelete={(lead) => setActiveLead(lead)}
-                    onStatusUpdated={() => toast.success('Estatus actualizado correctamente.')}
+                    onOpenFiles={(lead) => setFilesLead(lead)}
+                    onConvertToClient={(lead) => setConvertLead(lead)}
+                    onMoveLead={moveLead}
                 />
 
                 <div className="flex items-center justify-between rounded-lg border p-3 text-sm">
@@ -267,17 +300,21 @@ export default function LeadsIndex({
                         </select>
                         {form.errors.source && <FieldError>{form.errors.source}</FieldError>}
                     </Field>
-                    <Field>
-                        <Label htmlFor="lead-status">Estatus</Label>
-                        <select id="lead-status" value={form.data.status} disabled={formMode === 'view'} onChange={(event) => form.setData('status', event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
-                            {statusOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                    {option.label}
-                                </option>
-                            ))}
-                        </select>
-                        {form.errors.status && <FieldError>{form.errors.status}</FieldError>}
-                    </Field>
+
+                    {formMode !== 'create' && (
+                        <Field>
+                            <Label htmlFor="lead-status">Estatus</Label>
+                            <select id="lead-status" value={form.data.status} disabled={formMode === 'view'} onChange={(event) => form.setData('status', event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                                {statusOptions.map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </select>
+                            {form.errors.status && <FieldError>{form.errors.status}</FieldError>}
+                        </Field>
+                    )}
+
                     <Field className="md:col-span-2">
                         <Label htmlFor="lead-agent">Agente</Label>
                         <select id="lead-agent" value={form.data.agent_id} disabled={formMode === 'view'} onChange={(event) => form.setData('agent_id', event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
@@ -292,6 +329,51 @@ export default function LeadsIndex({
                     </Field>
                 </div>
             </CrudFormDialog>
+
+            <FilePickerDialog
+                key={filesLead?.id ?? 'lead-files-manager'}
+                open={filesLead !== null}
+                onOpenChange={(open) => {
+                    if (!open) setFilesLead(null);
+                }}
+                title={filesLead ? `Archivos · ${filesLead.first_name} ${filesLead.last_name ?? ''}` : 'Archivos'}
+                description="Gestiona solo los archivos del lead activo para evitar cruces entre registros."
+                storedFiles={contextualFiles}
+                tableId={FILES_TABLE_ID}
+                relatedUuid={filesLead?.uuid ?? null}
+                onDeleteStoredFile={(fileId) => {
+                    if (!filesLead) return;
+
+                    router.delete(route('files.destroy', fileId), {
+                        preserveScroll: true,
+                        data: {
+                            related_table: FILES_TABLE_ID,
+                            related_uuid: filesLead.uuid,
+                        },
+                        onError: () => toast.error('No se pudo eliminar el archivo.'),
+                    });
+                }}
+                onDownloadStoredFile={(file) => {
+                    window.open(file.url, '_blank', 'noopener,noreferrer');
+                }}
+                accept="*/*"
+                maxSizeHint="Cualquier formato · máximo 10MB"
+            />
+
+            <Dialog open={convertLead !== null} onOpenChange={(open) => !open && setConvertLead(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Convertir a cliente</DialogTitle>
+                        <DialogDescription>
+                            Esto creará un cliente y marcará el lead como Ganado.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setConvertLead(null)}>Cancelar</Button>
+                        <Button onClick={convertToClient}>Confirmar</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <ConfirmDeleteDialog
                 open={formMode === null && activeLead !== null}

@@ -1,6 +1,4 @@
-import { router } from '@inertiajs/react';
-import { ArrowRightLeft, Eye, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
-import { route } from 'ziggy-js';
+import { ArrowRightLeft, Eye, FolderKanban, MoreHorizontal, Pencil, RefreshCw, Trash2 } from 'lucide-react';
 import { DataTable, type DataTableColumn } from '@/components/data-table';
 import { LeadStatusBadge } from '@/components/leads/status-badge';
 import { Button } from '@/components/ui/button';
@@ -17,7 +15,9 @@ import {
 
 export type LeadRow = {
     id: number;
+    uuid: string;
     agent_id: string;
+    client_id?: string | null;
     first_name: string;
     last_name: string | null;
     phone: string;
@@ -34,7 +34,9 @@ type Props = {
     onEdit: (lead: LeadRow) => void;
     onDelete: (lead: LeadRow) => void;
     onView: (lead: LeadRow) => void;
-    onStatusUpdated?: () => void;
+    onOpenFiles: (lead: LeadRow) => void;
+    onConvertToClient: (lead: LeadRow) => void;
+    onMoveLead: (leadId: number, status: string) => void;
 };
 
 const sourceLabel: Record<string, string> = {
@@ -46,18 +48,7 @@ const sourceLabel: Record<string, string> = {
     other: 'Otro',
 };
 
-export function LeadsTable({ data, statusOptions, onEdit, onDelete, onView, onStatusUpdated }: Props) {
-    const moveLead = (leadId: number, status: string) => {
-        router.patch(
-            route('leads.update-status', leadId),
-            { status },
-            {
-                preserveScroll: true,
-                onSuccess: () => onStatusUpdated?.(),
-            },
-        );
-    };
-
+export function LeadsTable({ data, statusOptions, onEdit, onDelete, onView, onOpenFiles, onConvertToClient, onMoveLead }: Props) {
     const columns: DataTableColumn<LeadRow>[] = [
         {
             key: 'full_name',
@@ -117,16 +108,22 @@ export function LeadsTable({ data, statusOptions, onEdit, onDelete, onView, onSt
                         <DropdownMenuItem onClick={() => onEdit(row)}>
                             <Pencil className="mr-2 size-4" /> Editar
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onOpenFiles(row)}>
+                            <FolderKanban className="mr-2 size-4" /> Archivos
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onConvertToClient(row)} disabled={row.status === 'ganado'}>
+                            <RefreshCw className="mr-2 size-4" /> Convertir a cliente
+                        </DropdownMenuItem>
                         <DropdownMenuSub>
                             <DropdownMenuSubTrigger>
-                                <ArrowRightLeft className="mr-2 size-4" /> Mover a...
+                                <ArrowRightLeft className="mr-2 size-4" /> Cambiar estatus
                             </DropdownMenuSubTrigger>
                             <DropdownMenuSubContent>
                                 {statusOptions.map((status) => (
                                     <DropdownMenuItem
                                         key={status.value}
                                         disabled={status.value === row.status}
-                                        onClick={() => moveLead(row.id, status.value)}
+                                        onClick={() => onMoveLead(row.id, status.value)}
                                     >
                                         {status.label}
                                     </DropdownMenuItem>

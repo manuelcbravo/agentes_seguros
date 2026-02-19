@@ -31,7 +31,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Progress } from '@/Components/ui/progress';
+import { Progress } from '@/components/ui/progress';
 
 type StoredFile = {
     id: number;
