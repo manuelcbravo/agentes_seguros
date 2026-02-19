@@ -5,8 +5,19 @@ import { toast } from 'sonner';
 import { route } from 'ziggy-js';
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { CrudFormDialog } from '@/components/crud-form-dialog';
+import { FilePickerDialog } from '@/components/file-picker-dialog';
 import { LeadsTable, type LeadRow } from '@/components/leads/leads-table';
 import { LeadStatusBadge } from '@/components/leads/status-badge';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -21,8 +32,20 @@ type PaginatedLeads = {
     total: number;
 };
 
+type LeadFile = {
+    id: number;
+    uuid: string;
+    original_name: string;
+    path: string;
+    url: string;
+    mime_type: string | null;
+    size: number;
+    related_table: string;
+    related_uuid: string;
+};
+
 type LeadForm = {
-    id: number | null;
+    id: string | null;
     agent_id?: string;
     first_name: string;
     last_name: string;
@@ -38,6 +61,8 @@ const iconByTitle: Record<string, typeof Users> = {
     'Leads no interesados': UserRoundX,
 };
 
+const FILES_TABLE_ID = 'leads';
+
 export default function LeadsIndex({
     leads,
     agents,
@@ -46,6 +71,7 @@ export default function LeadsIndex({
     sourceOptions,
     title,
     fixedStatus,
+    files,
 }: {
     leads: PaginatedLeads;
     agents: Array<{ id: string; name: string }>;
@@ -54,14 +80,15 @@ export default function LeadsIndex({
     sourceOptions: Array<{ value: string; label: string }>;
     title: string;
     fixedStatus: string | null;
+    files: LeadFile[];
 }) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
     const [agentId, setAgentId] = useState(filters.agent_id ?? '');
     const [activeLead, setActiveLead] = useState<LeadRow | null>(null);
-    const [formMode, setFormMode] = useState<'create' | 'edit' | 'view' | null>(
-        null,
-    );
+    const [leadForFiles, setLeadForFiles] = useState<LeadRow | null>(null);
+    const [leadToConvert, setLeadToConvert] = useState<LeadRow | null>(null);
+    const [formMode, setFormMode] = useState<'create' | 'edit' | 'view' | null>(null);
     const { flash } = usePage<SharedData>().props;
 
     const form = useForm<LeadForm>({
@@ -79,12 +106,14 @@ export default function LeadsIndex({
         if (flash?.error) toast.error(flash.error);
     }, [flash?.error, flash?.success]);
 
-    const breadcrumbs: BreadcrumbItem[] = useMemo(
-        () => [{ title, href: route('leads.index') }],
-        [title],
-    );
-
+    const breadcrumbs: BreadcrumbItem[] = useMemo(() => [{ title, href: route('leads.index') }], [title]);
     const CurrentIcon = iconByTitle[title] ?? Users;
+
+    const contextualFiles = useMemo(() => {
+        if (!leadForFiles) return [];
+
+        return files.filter((file) => file.related_table === FILES_TABLE_ID && file.related_uuid === leadForFiles.id);
+    }, [files, leadForFiles]);
 
     const applyFilters = (page = 1) => {
         router.get(
@@ -135,21 +164,13 @@ export default function LeadsIndex({
                             <div className="space-y-1">
                                 <div className="flex flex-wrap items-center gap-2">
                                     <h1 className="text-xl font-semibold">{title}</h1>
-                                    {fixedStatus && (
-                                        <LeadStatusBadge status={fixedStatus} />
-                                    )}
+                                    {fixedStatus && <LeadStatusBadge status={fixedStatus} />}
                                 </div>
-                                <p className="text-sm text-muted-foreground">
-                                    Gestiona tu pipeline con filtros y acciones
-                                    rapidas.
-                                </p>
+                                <p className="text-sm text-muted-foreground">Gestiona tu pipeline con filtros y acciones rapidas.</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                onClick={() => router.visit(route('leads.kanban'))}
-                            >
+                            <Button variant="outline" onClick={() => router.visit(route('leads.kanban'))}>
                                 <Columns className="mr-2 size-4" /> Kanban
                             </Button>
                             <Button onClick={openCreateDialog}>
@@ -162,11 +183,7 @@ export default function LeadsIndex({
                 <div className="rounded-xl border p-4">
                     <div className="space-y-3">
                         <div className="grid gap-3 md:grid-cols-4">
-                            <Input
-                                value={search}
-                                onChange={(event) => setSearch(event.target.value)}
-                                placeholder="Buscar por nombre, correo o telefono..."
-                            />
+                            <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nombre, correo o telefono..." />
                             <select
                                 value={fixedStatus ?? status}
                                 onChange={(event) => setStatus(event.target.value)}
@@ -180,11 +197,7 @@ export default function LeadsIndex({
                                     </option>
                                 ))}
                             </select>
-                            <select
-                                value={agentId}
-                                onChange={(event) => setAgentId(event.target.value)}
-                                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-                            >
+                            <select value={agentId} onChange={(event) => setAgentId(event.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
                                 <option value="">Todos los agentes</option>
                                 {agents.map((agent) => (
                                     <option key={agent.id} value={agent.id}>
@@ -204,10 +217,10 @@ export default function LeadsIndex({
                     statusOptions={statusOptions}
                     onEdit={(lead) => openEditDialog(lead, 'edit')}
                     onView={(lead) => openEditDialog(lead, 'view')}
+                    onFiles={setLeadForFiles}
+                    onConvert={setLeadToConvert}
                     onDelete={(lead) => setActiveLead(lead)}
-                    onStatusUpdated={() =>
-                        toast.success('Estatus actualizado correctamente.')
-                    }
+                    onStatusUpdated={() => toast.success('Estatus actualizado correctamente.')}
                 />
             </div>
 
@@ -220,13 +233,7 @@ export default function LeadsIndex({
                         setActiveLead(null);
                     }
                 }}
-                title={
-                    formMode === 'edit'
-                        ? 'Editar lead'
-                        : formMode === 'view'
-                          ? 'Detalle de lead'
-                          : 'Nuevo lead'
-                }
+                title={formMode === 'edit' ? 'Editar lead' : formMode === 'view' ? 'Detalle de lead' : 'Nuevo lead'}
                 description="Manten actualizado el pipeline con informacion precisa y accionable."
                 submitLabel={formMode === 'edit' ? 'Guardar cambios' : 'Guardar lead'}
                 hideFooter={formMode === 'view'}
@@ -235,7 +242,7 @@ export default function LeadsIndex({
                     event.preventDefault();
                     form.transform((data) => {
                         if (formMode === 'create') {
-                            const { agent_id, ...payload } = data;
+                            const { agent_id, status, ...payload } = data;
 
                             return payload;
                         }
@@ -255,59 +262,23 @@ export default function LeadsIndex({
                 <div className="grid gap-4 md:grid-cols-2">
                     <Field>
                         <Label htmlFor="lead-first-name">Nombre</Label>
-                        <Input
-                            id="lead-first-name"
-                            value={form.data.first_name}
-                            disabled={formMode === 'view'}
-                            onChange={(event) =>
-                                form.setData('first_name', event.target.value)
-                            }
-                        />
-                        {form.errors.first_name && (
-                            <FieldError>{form.errors.first_name}</FieldError>
-                        )}
+                        <Input id="lead-first-name" value={form.data.first_name} disabled={formMode === 'view'} onChange={(event) => form.setData('first_name', event.target.value)} />
+                        {form.errors.first_name && <FieldError>{form.errors.first_name}</FieldError>}
                     </Field>
                     <Field>
                         <Label htmlFor="lead-last-name">Apellido</Label>
-                        <Input
-                            id="lead-last-name"
-                            value={form.data.last_name}
-                            disabled={formMode === 'view'}
-                            onChange={(event) =>
-                                form.setData('last_name', event.target.value)
-                            }
-                        />
-                        {form.errors.last_name && (
-                            <FieldError>{form.errors.last_name}</FieldError>
-                        )}
+                        <Input id="lead-last-name" value={form.data.last_name} disabled={formMode === 'view'} onChange={(event) => form.setData('last_name', event.target.value)} />
+                        {form.errors.last_name && <FieldError>{form.errors.last_name}</FieldError>}
                     </Field>
                     <Field>
                         <Label htmlFor="lead-phone">Telefono</Label>
-                        <Input
-                            id="lead-phone"
-                            value={form.data.phone}
-                            disabled={formMode === 'view'}
-                            onChange={(event) =>
-                                form.setData('phone', event.target.value)
-                            }
-                        />
-                        {form.errors.phone && (
-                            <FieldError>{form.errors.phone}</FieldError>
-                        )}
+                        <Input id="lead-phone" value={form.data.phone} disabled={formMode === 'view'} onChange={(event) => form.setData('phone', event.target.value)} />
+                        {form.errors.phone && <FieldError>{form.errors.phone}</FieldError>}
                     </Field>
                     <Field>
                         <Label htmlFor="lead-email">Correo</Label>
-                        <Input
-                            id="lead-email"
-                            value={form.data.email}
-                            disabled={formMode === 'view'}
-                            onChange={(event) =>
-                                form.setData('email', event.target.value)
-                            }
-                        />
-                        {form.errors.email && (
-                            <FieldError>{form.errors.email}</FieldError>
-                        )}
+                        <Input id="lead-email" value={form.data.email} disabled={formMode === 'view'} onChange={(event) => form.setData('email', event.target.value)} />
+                        {form.errors.email && <FieldError>{form.errors.email}</FieldError>}
                     </Field>
                     <Field>
                         <Label htmlFor="lead-source">Fuente</Label>
@@ -315,9 +286,7 @@ export default function LeadsIndex({
                             id="lead-source"
                             value={form.data.source}
                             disabled={formMode === 'view'}
-                            onChange={(event) =>
-                                form.setData('source', event.target.value)
-                            }
+                            onChange={(event) => form.setData('source', event.target.value)}
                             className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                         >
                             {sourceOptions.map((option) => (
@@ -326,68 +295,114 @@ export default function LeadsIndex({
                                 </option>
                             ))}
                         </select>
-                        {form.errors.source && (
-                            <FieldError>{form.errors.source}</FieldError>
-                        )}
-                    </Field>
-                    <Field>
-                        <Label htmlFor="lead-status">Estatus</Label>
-                        <select
-                            id="lead-status"
-                            value={form.data.status}
-                            disabled={formMode === 'view'}
-                            onChange={(event) =>
-                                form.setData('status', event.target.value)
-                            }
-                            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                        >
-                            {statusOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                    {option.label}
-                                </option>
-                            ))}
-                        </select>
-                        {form.errors.status && (
-                            <FieldError>{form.errors.status}</FieldError>
-                        )}
+                        {form.errors.source && <FieldError>{form.errors.source}</FieldError>}
                     </Field>
                     {formMode !== 'create' && (
-                        <Field className="md:col-span-2">
-                            <Label htmlFor="lead-agent">Agente</Label>
-                            <select
-                                id="lead-agent"
-                                value={form.data.agent_id ?? ''}
-                                disabled={formMode === 'view'}
-                                onChange={(event) =>
-                                    form.setData('agent_id', event.target.value)
-                                }
-                                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                            >
-                                <option value="">Selecciona agente</option>
-                                {agents.map((agent) => (
-                                    <option key={agent.id} value={agent.id}>
-                                        {agent.name}
-                                    </option>
-                                ))}
-                            </select>
-                            {form.errors.agent_id && (
-                                <FieldError>{form.errors.agent_id}</FieldError>
-                            )}
-                        </Field>
+                        <>
+                            <Field>
+                                <Label htmlFor="lead-status">Estatus</Label>
+                                <select
+                                    id="lead-status"
+                                    value={form.data.status}
+                                    disabled={formMode === 'view'}
+                                    onChange={(event) => form.setData('status', event.target.value)}
+                                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                >
+                                    {statusOptions.map((option) => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                {form.errors.status && <FieldError>{form.errors.status}</FieldError>}
+                            </Field>
+                            <Field>
+                                <Label htmlFor="lead-agent">Agente</Label>
+                                <select
+                                    id="lead-agent"
+                                    value={form.data.agent_id ?? ''}
+                                    disabled={formMode === 'view'}
+                                    onChange={(event) => form.setData('agent_id', event.target.value)}
+                                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                >
+                                    <option value="">Selecciona agente</option>
+                                    {agents.map((agent) => (
+                                        <option key={agent.id} value={agent.id}>
+                                            {agent.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {form.errors.agent_id && <FieldError>{form.errors.agent_id}</FieldError>}
+                            </Field>
+                        </>
                     )}
                 </div>
             </CrudFormDialog>
+
+            <FilePickerDialog
+                key={leadForFiles?.id ?? 'lead-files'}
+                open={leadForFiles !== null}
+                onOpenChange={(open) => !open && setLeadForFiles(null)}
+                title={leadForFiles ? `Archivos · ${leadForFiles.first_name} ${leadForFiles.last_name ?? ''}` : 'Archivos'}
+                description="Gestiona los archivos del lead activo (subir, descargar, renombrar o eliminar)."
+                storedFiles={contextualFiles}
+                tableId={FILES_TABLE_ID}
+                relatedUuid={leadForFiles?.id ?? null}
+                onDeleteStoredFile={(fileId) => {
+                    if (!leadForFiles) return;
+
+                    router.delete(route('files.destroy', fileId), {
+                        preserveScroll: true,
+                        data: {
+                            related_table: FILES_TABLE_ID,
+                            related_uuid: leadForFiles.id,
+                        },
+                        onError: () => toast.error('No se pudo eliminar el archivo.'),
+                    });
+                }}
+                onDownloadStoredFile={(file) => {
+                    window.open(file.url, '_blank', 'noopener,noreferrer');
+                }}
+                accept="*/*"
+                maxSizeHint="Cualquier formato · máximo 10MB"
+            />
+
+            <AlertDialog open={leadToConvert !== null} onOpenChange={(open) => !open && setLeadToConvert(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Convertir lead a cliente</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esto creará un cliente y marcará el lead como Ganado.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                if (!leadToConvert) return;
+
+                                router.post(route('leads.convertToClient', leadToConvert.id), undefined, {
+                                    preserveScroll: true,
+                                    onSuccess: () => {
+                                        toast.success('Lead convertido a cliente.');
+                                        setLeadToConvert(null);
+                                    },
+                                    onError: () => toast.error('No se pudo convertir el lead.'),
+                                });
+                            }}
+                        >
+                            Confirmar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <ConfirmDeleteDialog
                 open={formMode === null && activeLead !== null}
                 onOpenChange={(open) => !open && setActiveLead(null)}
                 title="Eliminar lead"
                 entityLabel="el lead"
-                itemName={
-                    activeLead
-                        ? `${activeLead.first_name} ${activeLead.last_name ?? ''}`.trim()
-                        : undefined
-                }
+                itemName={activeLead ? `${activeLead.first_name} ${activeLead.last_name ?? ''}`.trim() : undefined}
                 onConfirm={() => {
                     if (!activeLead) return;
 
