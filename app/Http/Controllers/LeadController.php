@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UpdateLeadStatusRequest;
 use App\Http\Requests\UpsertLeadRequest;
 use App\Models\Agent;
+use App\Models\Client;
+use App\Models\File;
 use App\Models\Lead;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,10 +21,9 @@ class LeadController extends Controller
 {
     private const MAIN_KANBAN_STATUSES = [
         'nuevo',
-        'contacto_intento',
         'contactado',
         'perfilado',
-        'cotizacion_enviada',
+        'en_pausa',
         'seguimiento',
         'en_tramite',
     ];
@@ -70,6 +71,11 @@ class LeadController extends Controller
                 'status',
                 'created_at',
             ]),
+            'files' => File::query()
+                ->select(['id', 'uuid', 'path', 'original_name', 'mime_type', 'size', 'related_table', 'related_uuid', 'created_at'])
+                ->where('related_table', 'leads')
+                ->latest()
+                ->get(),
             'agents' => Agent::query()->orderBy('name')->get(['id', 'name']),
             'filters' => [
                 'search' => trim((string) $request->string('search', '')),
@@ -93,12 +99,48 @@ class LeadController extends Controller
             'phone' => $data['phone'],
             'email' => $data['email'] ?? null,
             'source' => $data['source'],
-            'status' => $data['status'],
+            'status' => $isUpdating ? ($data['status'] ?? $lead->status) : 'nuevo',
         ]);
 
         $lead->save();
 
         return back()->with('success', isset($data['id']) ? 'Lead actualizado correctamente.' : 'Lead creado correctamente.');
+    }
+
+    public function convertToClient(Request $request, Lead $lead): RedirectResponse
+    {
+        $this->authorizeLead($request, $lead);
+
+        $existingClient = $lead->client_id
+            ? Client::query()->find($lead->client_id)
+            : Client::query()
+                ->where(function (Builder $query) use ($lead): void {
+                    if ($lead->email) {
+                        $query->orWhere('email', $lead->email);
+                    }
+
+                    $query->orWhere('phone', $lead->phone);
+                })
+                ->first();
+
+        if (! $existingClient) {
+            $existingClient = Client::query()->create([
+                'first_name' => $lead->first_name,
+                'last_name' => $lead->last_name ?? 'Sin apellido',
+                'email' => $lead->email,
+                'phone' => $lead->phone,
+                'source' => $lead->source,
+                'is_active' => true,
+            ]);
+        }
+
+        $lead->update([
+            'status' => 'ganado',
+            'client_id' => $existingClient->id,
+            'converted_at' => now(),
+        ]);
+
+        return back()->with('success', 'Lead convertido a cliente correctamente.');
     }
 
     public function destroy(Request $request, Lead $lead): RedirectResponse
@@ -154,6 +196,11 @@ class LeadController extends Controller
                 'agent_id' => $agentId,
             ],
             'leads' => $leads,
+            'files' => File::query()
+                ->select(['id', 'uuid', 'path', 'original_name', 'mime_type', 'size', 'related_table', 'related_uuid', 'created_at'])
+                ->where('related_table', 'leads')
+                ->latest()
+                ->get(),
             'agents' => Agent::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
@@ -237,10 +284,9 @@ class LeadController extends Controller
     {
         return [
             ['value' => 'nuevo', 'label' => 'Nuevo'],
-            ['value' => 'contacto_intento', 'label' => 'Intento de contacto'],
             ['value' => 'contactado', 'label' => 'Contactado'],
             ['value' => 'perfilado', 'label' => 'Perfilado'],
-            ['value' => 'cotizacion_enviada', 'label' => 'Cotización enviada'],
+            ['value' => 'en_pausa', 'label' => 'En pausa'],
             ['value' => 'seguimiento', 'label' => 'Seguimiento'],
             ['value' => 'en_tramite', 'label' => 'En trámite'],
             ['value' => 'ganado', 'label' => 'Ganado'],

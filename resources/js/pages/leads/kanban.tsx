@@ -1,17 +1,39 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { Columns3, GripVertical, Plus } from 'lucide-react';
+import { ArrowRightLeft, Columns3, Eye, FolderKanban, GripVertical, Pencil, Plus, Trash2, UserPlus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { route } from 'ziggy-js';
+import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
+import { FilePickerDialog } from '@/components/file-picker-dialog';
 import { LeadStatusBadge, statusLabel } from '@/components/leads/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuSub,
+    ContextMenuSubContent,
+    ContextMenuSubTrigger,
+    ContextMenuTrigger,
+} from '@/components/ui/context-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useLeadActions } from '@/hooks/use-lead-actions';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, SharedData } from '@/types';
 
 type LeadItem = {
-    id: number;
+    id: string;
     agent_id: string;
     first_name: string;
     last_name: string | null;
@@ -22,15 +44,36 @@ type LeadItem = {
     created_at: string;
 };
 
+type LeadFile = {
+    id: number;
+    uuid: string;
+    original_name: string;
+    path: string;
+    url: string;
+    mime_type: string | null;
+    size: number;
+    related_table: string;
+    related_uuid: string;
+};
+
+const FILES_TABLE_ID = 'leads';
+
 export default function LeadsKanban({
     leads,
     boardStatuses,
+    statusOptions,
+    files,
 }: {
     leads: LeadItem[];
     boardStatuses: string[];
+    statusOptions: Array<{ value: string; label: string }>;
+    files: LeadFile[];
 }) {
     const [boardLeads, setBoardLeads] = useState<LeadItem[]>(leads);
-    const [draggedId, setDraggedId] = useState<number | null>(null);
+    const [draggedId, setDraggedId] = useState<string | null>(null);
+    const [activeLead, setActiveLead] = useState<LeadItem | null>(null);
+    const [leadForFiles, setLeadForFiles] = useState<LeadItem | null>(null);
+    const [leadToConvert, setLeadToConvert] = useState<LeadItem | null>(null);
     const { flash } = usePage<SharedData>().props;
 
     useEffect(() => {
@@ -47,10 +90,26 @@ export default function LeadsKanban({
         [boardLeads, boardStatuses],
     );
 
+    const contextualFiles = useMemo(() => {
+        if (!leadForFiles) return [];
+
+        return files.filter((file) => file.related_table === FILES_TABLE_ID && file.related_uuid === leadForFiles.id);
+    }, [files, leadForFiles]);
+
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Leads', href: route('leads.index') },
         { title: 'Kanban', href: route('leads.kanban') },
     ];
+
+    const getLeadActions = useLeadActions<LeadItem>({
+        statusOptions,
+        onView: (lead) => router.visit(route('leads.index', { search: lead.first_name })),
+        onEdit: (lead) => router.visit(route('leads.index', { search: lead.first_name })),
+        onDelete: (lead) => setActiveLead(lead),
+        onFiles: (lead) => setLeadForFiles(lead),
+        onConvert: (lead) => setLeadToConvert(lead),
+        onStatusUpdated: () => toast.success('Estatus actualizado correctamente.'),
+    });
 
     const onDropLead = (status: string) => {
         if (!draggedId) return;
@@ -114,25 +173,67 @@ export default function LeadsKanban({
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-3 p-3">
-                                    {column.leads.map((lead) => (
-                                        <article
-                                            key={lead.id}
-                                            draggable
-                                            onDragStart={() => setDraggedId(lead.id)}
-                                            className="cursor-grab rounded-lg border bg-card p-3 shadow-sm transition hover:shadow"
-                                        >
-                                            <div className="mb-2 flex items-center justify-between">
-                                                <p className="text-sm font-semibold">{`${lead.first_name} ${lead.last_name ?? ''}`.trim()}</p>
-                                                <GripVertical className="size-4 text-muted-foreground" />
-                                            </div>
-                                            <p className="text-xs text-muted-foreground">{lead.phone}</p>
-                                            <p className="text-xs text-muted-foreground">{lead.email ?? 'Sin correo'}</p>
-                                            <div className="mt-3 flex items-center justify-between">
-                                                <LeadStatusBadge status={lead.status} />
-                                                <span className="text-[11px] text-muted-foreground">{new Date(lead.created_at).toLocaleDateString('es-MX')}</span>
-                                            </div>
-                                        </article>
-                                    ))}
+                                    {column.leads.map((lead) => {
+                                        const actions = getLeadActions(lead);
+
+                                        return (
+                                            <ContextMenu key={lead.id}>
+                                                <ContextMenuTrigger asChild>
+                                                    <article
+                                                        draggable
+                                                        onDragStart={() => setDraggedId(lead.id)}
+                                                        className="cursor-grab rounded-lg border bg-card p-3 shadow-sm transition hover:shadow"
+                                                    >
+                                                        <div className="mb-2 flex items-center justify-between">
+                                                            <p className="text-sm font-semibold">{`${lead.first_name} ${lead.last_name ?? ''}`.trim()}</p>
+                                                            <GripVertical className="size-4 text-muted-foreground" />
+                                                        </div>
+                                                        <p className="text-xs text-muted-foreground">{lead.phone}</p>
+                                                        <p className="text-xs text-muted-foreground">{lead.email ?? 'Sin correo'}</p>
+                                                        <div className="mt-3 flex items-center justify-between">
+                                                            <LeadStatusBadge status={lead.status} />
+                                                            <span className="text-[11px] text-muted-foreground">{new Date(lead.created_at).toLocaleDateString('es-MX')}</span>
+                                                        </div>
+                                                    </article>
+                                                </ContextMenuTrigger>
+                                                <ContextMenuContent>
+                                                    <ContextMenuItem onClick={actions.onView}>
+                                                        <Eye className="mr-2 size-4" /> Ver
+                                                    </ContextMenuItem>
+                                                    <ContextMenuItem onClick={actions.onEdit}>
+                                                        <Pencil className="mr-2 size-4" /> Editar
+                                                    </ContextMenuItem>
+                                                    <ContextMenuItem onClick={actions.onFiles}>
+                                                        <FolderKanban className="mr-2 size-4" /> Archivos
+                                                    </ContextMenuItem>
+                                                    {actions.canConvert && (
+                                                        <ContextMenuItem onClick={actions.onConvert}>
+                                                            <UserPlus className="mr-2 size-4" /> Convertir a cliente
+                                                        </ContextMenuItem>
+                                                    )}
+                                                    <ContextMenuSub>
+                                                        <ContextMenuSubTrigger>
+                                                            <ArrowRightLeft className="mr-2 size-4" /> Cambiar estatus
+                                                        </ContextMenuSubTrigger>
+                                                        <ContextMenuSubContent>
+                                                            {actions.statusOptions.map((status) => (
+                                                                <ContextMenuItem
+                                                                    key={status.value}
+                                                                    disabled={status.value === lead.status}
+                                                                    onClick={() => actions.moveToStatus(status.value)}
+                                                                >
+                                                                    {status.label}
+                                                                </ContextMenuItem>
+                                                            ))}
+                                                        </ContextMenuSubContent>
+                                                    </ContextMenuSub>
+                                                    <ContextMenuItem onClick={actions.onDelete}>
+                                                        <Trash2 className="mr-2 size-4" /> Eliminar
+                                                    </ContextMenuItem>
+                                                </ContextMenuContent>
+                                            </ContextMenu>
+                                        );
+                                    })}
                                     {column.leads.length === 0 && (
                                         <div className="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">
                                             Arrastra leads aquí para continuar el flujo.
@@ -147,6 +248,80 @@ export default function LeadsKanban({
                     </div>
                 </div>
             </div>
+
+            <FilePickerDialog
+                key={leadForFiles?.id ?? 'lead-files-kanban'}
+                open={leadForFiles !== null}
+                onOpenChange={(open) => !open && setLeadForFiles(null)}
+                title={leadForFiles ? `Archivos · ${leadForFiles.first_name} ${leadForFiles.last_name ?? ''}` : 'Archivos'}
+                description="Gestiona los archivos del lead activo (subir, descargar, renombrar o eliminar)."
+                storedFiles={contextualFiles}
+                tableId={FILES_TABLE_ID}
+                relatedUuid={leadForFiles?.id ?? null}
+                onDeleteStoredFile={(fileId) => {
+                    if (!leadForFiles) return;
+
+                    router.delete(route('files.destroy', fileId), {
+                        preserveScroll: true,
+                        data: {
+                            related_table: FILES_TABLE_ID,
+                            related_uuid: leadForFiles.id,
+                        },
+                        onError: () => toast.error('No se pudo eliminar el archivo.'),
+                    });
+                }}
+                onDownloadStoredFile={(file) => {
+                    window.open(file.url, '_blank', 'noopener,noreferrer');
+                }}
+                accept="*/*"
+                maxSizeHint="Cualquier formato · máximo 10MB"
+            />
+
+            <AlertDialog open={leadToConvert !== null} onOpenChange={(open) => !open && setLeadToConvert(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Convertir lead a cliente</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esto creará un cliente y marcará el lead como Ganado.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                if (!leadToConvert) return;
+
+                                router.post(route('leads.convertToClient', leadToConvert.id), undefined, {
+                                    preserveScroll: true,
+                                    onSuccess: () => {
+                                        toast.success('Lead convertido a cliente.');
+                                        setLeadToConvert(null);
+                                    },
+                                    onError: () => toast.error('No se pudo convertir el lead.'),
+                                });
+                            }}
+                        >
+                            Confirmar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <ConfirmDeleteDialog
+                open={activeLead !== null}
+                onOpenChange={(open) => !open && setActiveLead(null)}
+                title="Eliminar lead"
+                entityLabel="el lead"
+                itemName={activeLead ? `${activeLead.first_name} ${activeLead.last_name ?? ''}`.trim() : undefined}
+                onConfirm={() => {
+                    if (!activeLead) return;
+
+                    router.delete(route('leads.destroy', activeLead.id), {
+                        onSuccess: () => setActiveLead(null),
+                        onError: () => toast.error('No se pudo eliminar el lead.'),
+                    });
+                }}
+            />
         </AppLayout>
     );
 }
