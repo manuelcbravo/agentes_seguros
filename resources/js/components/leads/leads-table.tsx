@@ -143,5 +143,5 @@ export function LeadsTable({ data, statusOptions, onEdit, onDelete, onView, onSt
         },
     ];
 
-    return <DataTable columns={columns} data={data} searchColumn="full_name" searchPlaceholder="Filtrar resultados de la página..." />;
+    return <DataTable columns={columns} data={data} />;
 }

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -80,12 +81,13 @@ class LeadController extends Controller
     public function store(UpsertLeadRequest $request): RedirectResponse
     {
         $data = $request->validated();
-        $lead = isset($data['id']) ? Lead::query()->findOrFail($data['id']) : new Lead();
+        $isUpdating = isset($data['id']);
+        $lead = $isUpdating ? Lead::query()->findOrFail($data['id']) : new Lead();
 
         $this->authorizeLead($request, $lead);
 
         $lead->fill([
-            'agent_id' => $this->resolveAgentId($request, $data),
+            'agent_id' => $this->resolveAgentId($request, $data, $isUpdating),
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'] ?? null,
             'phone' => $data['phone'],
@@ -176,18 +178,28 @@ class LeadController extends Controller
         return $query->where('agent_id', $user->agent?->id);
     }
 
-    private function resolveAgentId(Request $request, array $data): string
+    private function resolveAgentId(Request $request, array $data, bool $isUpdating): string
     {
         /** @var User|null $user */
         $user = $request->user();
         $user?->loadMissing('agent');
 
-        if (! $user || ! $user->agent?->id) {
+        if (! $isUpdating) {
+            if (! $user?->agent?->id) {
+                throw ValidationException::withMessages([
+                    'agent_id' => 'No se pudo asignar el agente del usuario autenticado.',
+                ]);
+            }
+
+            return (string) $user->agent->id;
+        }
+
+        if ($user && $this->isSuperAdmin($user) && ! empty($data['agent_id'])) {
             return (string) $data['agent_id'];
         }
 
-        if ($this->isSuperAdmin($user)) {
-            return (string) $data['agent_id'];
+        if (! $user || ! $user->agent?->id) {
+            return (string) ($data['agent_id'] ?? '');
         }
 
         return (string) $user->agent->id;

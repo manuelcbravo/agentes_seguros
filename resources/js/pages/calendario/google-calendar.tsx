@@ -1,19 +1,33 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
 import { Calendar, type EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
-import '@fullcalendar/core';
-import '@fullcalendar/daygrid';
+import { CalendarDays, Link2, Link2Off, Plus } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, SharedData } from '@/types';
+import '@fullcalendar/core';
+import '@fullcalendar/daygrid';
 
 type GoogleCalendarPageProps = SharedData & {
     connected: boolean;
@@ -49,11 +63,15 @@ const emptyForm: EventFormState = {
 };
 
 export default function GoogleCalendarPage() {
-    const { connected, google_calendar_id, google_connected_at, google_email, flash } = usePage<GoogleCalendarPageProps>().props;
+    const { connected, google_calendar_id, google_connected_at, google_email, flash } =
+        usePage<GoogleCalendarPageProps>().props;
     const [events, setEvents] = useState<EventInput[]>([]);
     const [eventModalOpen, setEventModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [calendarRange, setCalendarRange] = useState<{ start: string; end: string } | null>(null);
+    const [calendarRange, setCalendarRange] = useState<{
+        start: string;
+        end: string;
+    } | null>(null);
     const [form, setForm] = useState<EventFormState>(emptyForm);
     const calendarRef = useRef<HTMLDivElement | null>(null);
     const calendarInstanceRef = useRef<Calendar | null>(null);
@@ -116,12 +134,15 @@ export default function GoogleCalendarPage() {
 
     const loadEvents = async (start: string, end: string) => {
         try {
-            const response = await fetch(`/google-calendar/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`, {
-                credentials: 'same-origin',
-                headers: {
-                    Accept: 'application/json',
+            const response = await fetch(
+                `/google-calendar/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`,
+                {
+                    credentials: 'same-origin',
+                    headers: {
+                        Accept: 'application/json',
+                    },
                 },
-            });
+            );
 
             if (!response.ok) {
                 throw await response.json();
@@ -138,7 +159,9 @@ export default function GoogleCalendarPage() {
         setSubmitting(true);
         try {
             const method = form.id ? 'PUT' : 'POST';
-            const url = form.id ? `/google-calendar/events/${form.id}` : '/google-calendar/events';
+            const url = form.id
+                ? `/google-calendar/events/${form.id}`
+                : '/google-calendar/events';
             const response = await fetch(url, {
                 method,
                 credentials: 'same-origin',
@@ -161,7 +184,11 @@ export default function GoogleCalendarPage() {
                 throw await response.json();
             }
 
-            toast.success(form.id ? 'Evento actualizado correctamente.' : 'Evento creado correctamente.');
+            toast.success(
+                form.id
+                    ? 'Evento actualizado correctamente.'
+                    : 'Evento creado correctamente.',
+            );
             setEventModalOpen(false);
             setForm(emptyForm);
             if (calendarRange) await loadEvents(calendarRange.start, calendarRange.end);
@@ -204,7 +231,11 @@ export default function GoogleCalendarPage() {
         const start = new Date();
         const end = new Date(start.getTime() + 60 * 60 * 1000);
 
-        setForm({ ...emptyForm, start: toInputDateTime(start), end: toInputDateTime(end) });
+        setForm({
+            ...emptyForm,
+            start: toInputDateTime(start),
+            end: toInputDateTime(end),
+        });
         setEventModalOpen(true);
     };
 
@@ -212,61 +243,104 @@ export default function GoogleCalendarPage() {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Google Calendar" />
 
-            <div className="space-y-6">
-                <Heading
-                    variant="small"
-                    title="Google Calendar"
-                    description="Conecta tu calendario para gestionar citas y seguimientos desde un solo lugar."
-                />
+            <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 md:space-y-8 md:px-6 md:py-8">
+                <section className="rounded-xl border border-sidebar-border/70 bg-sidebar-accent/20 p-4 md:p-5">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                        <div className="space-y-1.5">
+                            <Heading
+                                variant="small"
+                                title="Google Calendar"
+                                description="Conecta tu calendario para gestionar citas y seguimientos desde un solo lugar."
+                            />
+                            <div className="inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs font-medium">
+                                {connected ? (
+                                    <Link2 className="size-3.5 text-emerald-600" />
+                                ) : (
+                                    <Link2Off className="size-3.5 text-amber-600" />
+                                )}
+                                {connected
+                                    ? 'Cuenta conectada'
+                                    : 'Cuenta no conectada'}
+                            </div>
+                        </div>
+                        <Button
+                            className="w-full md:w-auto"
+                            variant={connected ? 'destructive' : 'default'}
+                            onClick={() =>
+                                connected
+                                    ? router.post('/google-calendar/disconnect')
+                                    : router.visit('/google-calendar/connect')
+                            }
+                        >
+                            {connected ? 'Desconectar' : 'Conectar con Google'}
+                        </Button>
+                    </div>
+                </section>
 
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Estado de la conexión</CardTitle>
-                        <CardDescription>
-                            Sincroniza tu agenda de Google con tus eventos internos.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3 text-sm">
-                        {connected ? (
-                            <>
-                                <p><strong>Correo de Google:</strong> {google_email || 'No disponible'}</p>
-                                <p><strong>Calendario:</strong> {google_calendar_id || 'primary'}</p>
-                                <p><strong>Conectado desde:</strong> {connectedSince}</p>
-                                <Button
-                                    variant="destructive"
-                                    onClick={() => router.post('/google-calendar/disconnect')}
-                                >
-                                    Desconectar
-                                </Button>
-                            </>
-                        ) : (
-                            <div className="space-y-2">
-                                <p className="text-muted-foreground">
-                                    Aún no tienes Google Calendar conectado. Conecta tu cuenta para empezar a crear eventos.
-                                </p>
-                                <Button onClick={() => router.visit('/google-calendar/connect')}>
-                                    Conectar con Google
-                                </Button>
+                    <CardHeader className="space-y-4 md:space-y-5">
+                        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                            <div className="space-y-1">
+                                <CardTitle className="flex items-center gap-2">
+                                    <CalendarDays className="size-4" />
+                                    Estado de la conexión
+                                </CardTitle>
+                                <CardDescription>
+                                    Sincroniza tu agenda de Google con tus eventos
+                                    internos.
+                                </CardDescription>
                             </div>
-                        )}
-                    </CardContent>
+                            <Button disabled={!connected} onClick={openCreateModal}>
+                                <Plus className="mr-2 size-4" />
+                                Nuevo evento
+                            </Button>
+                        </div>
+                        <div className="grid gap-3 md:grid-cols-3">
+                            <div className="rounded-lg border bg-muted/20 p-3 text-sm">
+                                <p className="text-xs text-muted-foreground">
+                                    Correo de Google
+                                </p>
+                                <p className="font-medium">
+                                    {google_email || 'No disponible'}
+                                </p>
+                            </div>
+                            <div className="rounded-lg border bg-muted/20 p-3 text-sm">
+                                <p className="text-xs text-muted-foreground">
+                                    Calendario
+                                </p>
+                                <p className="font-medium">
+                                    {google_calendar_id || 'primary'}
+                                </p>
+                            </div>
+                            <div className="rounded-lg border bg-muted/20 p-3 text-sm">
+                                <p className="text-xs text-muted-foreground">
+                                    Conectado desde
+                                </p>
+                                <p className="font-medium">{connectedSince}</p>
+                            </div>
+                        </div>
+                    </CardHeader>
                 </Card>
 
                 <Card>
-                    <CardHeader className="flex-row items-center justify-between gap-4">
-                        <div>
-                            <CardTitle>Calendario</CardTitle>
-                            <CardDescription>
-                                Visualiza y administra tus eventos en una vista mensual.
-                            </CardDescription>
-                        </div>
-                        <Button disabled={!connected} onClick={openCreateModal}>Nuevo evento</Button>
+                    <CardHeader>
+                        <CardTitle>Calendario</CardTitle>
+                        <CardDescription>
+                            Visualiza y administra tus eventos en una vista mensual.
+                        </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="pb-6">
                         {connected ? (
-                            <div ref={calendarRef} className="min-h-[520px]" />
+                            <div className="rounded-xl border p-2 md:p-3">
+                                <div ref={calendarRef} className="min-h-[520px]" />
+                            </div>
                         ) : (
-                            <p className="text-sm text-muted-foreground">Conecta Google Calendar para ver y gestionar eventos.</p>
+                            <div className="rounded-lg border border-dashed px-4 py-10 text-center">
+                                <p className="text-sm text-muted-foreground">
+                                    Conecta Google Calendar para ver y gestionar
+                                    eventos.
+                                </p>
+                            </div>
                         )}
                     </CardContent>
                 </Card>
@@ -275,44 +349,108 @@ export default function GoogleCalendarPage() {
             <Dialog open={eventModalOpen} onOpenChange={setEventModalOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{form.id ? 'Editar evento' : 'Crear evento'}</DialogTitle>
+                        <DialogTitle>
+                            {form.id ? 'Editar evento' : 'Crear evento'}
+                        </DialogTitle>
                         <DialogDescription>
-                            Completa la información del evento para sincronizarla con Google Calendar.
+                            Completa la información del evento para sincronizarla con
+                            Google Calendar.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="grid gap-4">
                         <div className="grid gap-2">
                             <Label htmlFor="title">Título</Label>
-                            <Input id="title" value={form.title} onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))} />
+                            <Input
+                                id="title"
+                                value={form.title}
+                                onChange={(e) =>
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        title: e.target.value,
+                                    }))
+                                }
+                            />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-4 md:grid-cols-2">
                             <div className="grid gap-2">
                                 <Label htmlFor="start">Inicio</Label>
-                                <Input id="start" type="datetime-local" value={form.start} onChange={(e) => setForm((prev) => ({ ...prev, start: e.target.value }))} />
+                                <Input
+                                    id="start"
+                                    type="datetime-local"
+                                    value={form.start}
+                                    onChange={(e) =>
+                                        setForm((prev) => ({
+                                            ...prev,
+                                            start: e.target.value,
+                                        }))
+                                    }
+                                />
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="end">Fin</Label>
-                                <Input id="end" type="datetime-local" value={form.end} onChange={(e) => setForm((prev) => ({ ...prev, end: e.target.value }))} />
+                                <Input
+                                    id="end"
+                                    type="datetime-local"
+                                    value={form.end}
+                                    onChange={(e) =>
+                                        setForm((prev) => ({
+                                            ...prev,
+                                            end: e.target.value,
+                                        }))
+                                    }
+                                />
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <input id="allDay" type="checkbox" checked={form.allDay} onChange={(e) => setForm((prev) => ({ ...prev, allDay: e.target.checked }))} />
+                            <input
+                                id="allDay"
+                                type="checkbox"
+                                checked={form.allDay}
+                                onChange={(e) =>
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        allDay: e.target.checked,
+                                    }))
+                                }
+                            />
                             <Label htmlFor="allDay">Todo el día</Label>
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="description">Descripción</Label>
-                            <Textarea id="description" value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} />
+                            <Textarea
+                                id="description"
+                                value={form.description}
+                                onChange={(e) =>
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        description: e.target.value,
+                                    }))
+                                }
+                            />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="location">Ubicación</Label>
-                            <Input id="location" value={form.location} onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))} />
+                            <Input
+                                id="location"
+                                value={form.location}
+                                onChange={(e) =>
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        location: e.target.value,
+                                    }))
+                                }
+                            />
                         </div>
                     </div>
 
                     <DialogFooter className="gap-2">
                         {form.id && (
-                            <Button variant="destructive" disabled={submitting} onClick={handleDelete}>
+                            <Button
+                                variant="destructive"
+                                disabled={submitting}
+                                onClick={handleDelete}
+                            >
                                 Eliminar
                             </Button>
                         )}
@@ -328,7 +466,8 @@ export default function GoogleCalendarPage() {
 
 function handleCalendarError(error: unknown) {
     const payload = (error ?? {}) as { message?: string };
-    const message = payload.message || 'No se pudo completar la operación con Google Calendar.';
+    const message =
+        payload.message || 'No se pudo completar la operación con Google Calendar.';
     if (message.includes('expiró')) {
         toast.error('Tu conexión con Google expiró, vuelve a conectar.');
         return;
@@ -338,7 +477,9 @@ function handleCalendarError(error: unknown) {
 }
 
 function getCsrfToken(): string {
-    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const token = document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute('content');
     return token ?? '';
 }
 

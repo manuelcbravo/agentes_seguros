@@ -72,20 +72,22 @@ export function DataTable<TData>({
 
     return (
         <div className="space-y-3">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <Input
-                    value={search}
-                    onChange={(event) => {
-                        setSearch(event.target.value);
-                        setPage(1);
-                    }}
-                    placeholder={searchPlaceholder}
-                    className="w-full sm:max-w-sm"
-                />
-                <p className="text-xs text-muted-foreground">
-                    {filteredData.length} resultados
-                </p>
-            </div>
+            {searchColumn && (
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <Input
+                        value={search}
+                        onChange={(event) => {
+                            setSearch(event.target.value);
+                            setPage(1);
+                        }}
+                        placeholder={searchPlaceholder}
+                        className="w-full sm:max-w-sm"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                        {filteredData.length} resultados
+                    </p>
+                </div>
+            )}
 
             <div className="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card">
                 <Table>
