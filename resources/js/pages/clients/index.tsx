@@ -25,6 +25,7 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
+    DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { Field, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -33,7 +34,7 @@ import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, SharedData } from '@/types';
 
 type ClientRow = {
-    id: number;
+    id: string;
     first_name: string;
     last_name: string;
     full_name: string;
@@ -46,18 +47,18 @@ type ClientRow = {
 };
 
 type MediaFile = {
-    id: number;
+    id: string;
     original_name: string;
     path: string;
     url: string;
     mime_type: string | null;
     size: number;
-    table_id: string;
-    related_id: number;
+    related_table: string;
+    related_uuid: string;
 };
 
 type ClientForm = {
-    id: number | null;
+    id: string | null;
     first_name: string;
     last_name: string;
     email: string;
@@ -157,37 +158,9 @@ export default function ClientsIndex({
         if (!fileManagerClient) return [];
 
         return files.filter(
-            (file) => file.table_id === FILES_TABLE_ID && file.related_id === fileManagerClient.id,
+            (file) => file.related_table === FILES_TABLE_ID && file.related_uuid === fileManagerClient.id,
         );
     }, [fileManagerClient, files]);
-
-    const uploadFilesToClientContext = async (selectedFiles: File[]) => {
-        if (!fileManagerClient || selectedFiles.length === 0) return;
-
-        setUploadingFile(true);
-
-        for (const file of selectedFiles) {
-            // Asegura que solo se guarden archivos en el contexto tabla + id del cliente activo.
-            const uploadForm = new FormData();
-            uploadForm.append('file', file);
-            uploadForm.append('table_id', FILES_TABLE_ID);
-            uploadForm.append('related_id', String(fileManagerClient.id));
-
-            await new Promise<void>((resolve, reject) => {
-                router.post(route('files.store'), uploadForm, {
-                    forceFormData: true,
-                    preserveScroll: true,
-                    onSuccess: () => resolve(),
-                    onError: () => reject(new Error('upload_failed')),
-                });
-            }).catch(() => {
-                toast.error(`No se pudo subir: ${file.name}`);
-            });
-        }
-
-        setUploadingFile(false);
-        toast.success('Archivos subidos al repositorio.');
-    };
 
     const columns: DataTableColumn<ClientRow>[] = [
         {
@@ -254,6 +227,7 @@ export default function ClientsIndex({
                         <DropdownMenuItem onClick={() => setFileManagerClient(row)}>
                             <FolderKanban className="mr-2 size-4" /> Files
                         </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem
                             variant="destructive"
                             onClick={() => setActiveClient(row)}
@@ -433,19 +407,19 @@ export default function ClientsIndex({
                 onOpenChange={(open) => {
                     if (!open) setFileManagerClient(null);
                 }}
-                title={fileManagerClient ? `Files · ${fileManagerClient.full_name}` : 'Files'}
-                description="Gestiona solo los archivos del cliente activo (subir, descargar o eliminar) para evitar cruces entre registros."
+                title={fileManagerClient ? `Archivos · ${fileManagerClient.full_name}` : 'Archivos'}
+                description="Gestiona los archivos del cliente activo (subir, descargar, renombrar o eliminar) sin salir del flujo."
                 storedFiles={contextualFiles}
                 tableId={FILES_TABLE_ID}
-                relatedId={fileManagerClient?.id ?? null}
+                relatedUuid={fileManagerClient?.id ?? null}
                 onDeleteStoredFile={(fileId) => {
                     if (!fileManagerClient) return;
 
                     router.delete(route('files.destroy', fileId), {
                         preserveScroll: true,
                         data: {
-                            table_id: FILES_TABLE_ID,
-                            related_id: fileManagerClient.id,
+                            related_table: FILES_TABLE_ID,
+                            related_uuid: fileManagerClient.id,
                         },
                         onError: () => toast.error('No se pudo eliminar el archivo.'),
                     });

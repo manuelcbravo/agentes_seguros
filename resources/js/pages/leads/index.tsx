@@ -33,8 +33,7 @@ type PaginatedLeads = {
 };
 
 type LeadFile = {
-    id: number;
-    uuid: string;
+    id: string;
     original_name: string;
     path: string;
     url: string;

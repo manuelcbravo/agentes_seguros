@@ -17,6 +17,7 @@ import {
     ContextMenuSubContent,
     ContextMenuSubTrigger,
     ContextMenuTrigger,
+    ContextMenuSeparator
 } from '@/components/ui/context-menu';
 import {
     AlertDialog,
@@ -45,8 +46,7 @@ type LeadItem = {
 };
 
 type LeadFile = {
-    id: number;
-    uuid: string;
+    id: string;
     original_name: string;
     path: string;
     url: string;
@@ -229,10 +229,11 @@ export default function LeadsKanban({
                                                             ))}
                                                         </ContextMenuSubContent>
                                                     </ContextMenuSub>
+                                                    <ContextMenuSeparator />
                                                     <ContextMenuItem onClick={actions.onArchive}>
                                                         <Archive className="mr-2 size-4" /> Archivar
                                                     </ContextMenuItem>
-                                                    <ContextMenuItem onClick={actions.onDelete}>
+                                                    <ContextMenuItem variant="destructive" onClick={actions.onDelete}>
                                                         <Trash2 className="mr-2 size-4" /> Eliminar
                                                     </ContextMenuItem>
                                                 </ContextMenuContent>

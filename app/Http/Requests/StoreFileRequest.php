@@ -7,6 +7,10 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreFileRequest extends FormRequest
 {
+    public function authorize(): bool
+    {
+        return true;
+    }
     /**
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -14,8 +18,8 @@ class StoreFileRequest extends FormRequest
     {
         return [
             'file' => ['required', 'file', 'max:10240'],
-            'table_id' => ['required', 'string', 'max:80'],
-            'related_id' => ['required', 'integer', 'min:1'],
+            'related_table' => ['required', 'string', 'max:80'],
+            'related_uuid' => ['required', 'uuid'],
         ];
     }
 }

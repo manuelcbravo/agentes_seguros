@@ -31,11 +31,10 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Progress } from '@/Components/ui/progress';
+import { Progress } from '@/components/ui/progress';
 
 type StoredFile = {
-    id: number;
-    uuid: string;
+    id: string;
     original_name: string;
     path: string;
     url: string;
@@ -52,7 +51,7 @@ type FilePickerDialogProps = {
     tableId?: string;
     relatedUuid?: string | null;
     onUpload?: (files: File[]) => void;
-    onDeleteStoredFile?: (fileId: number) => void;
+    onDeleteStoredFile?: (fileId: string) => void;
     onDownloadStoredFile?: (file: StoredFile) => void;
     accept?: string;
     maxSizeHint?: string;
@@ -93,7 +92,7 @@ export function FilePickerDialog({
     const [isDragging, setIsDragging] = useState(false);
     const [isUploadingLocal, setIsUploadingLocal] = useState(false);
     const [progress, setProgress] = useState(0);
-    const [renamingFileId, setRenamingFileId] = useState<number | null>(null);
+    const [renamingFileId, setRenamingFileId] = useState<string | null>(null);
     const [renameValue, setRenameValue] = useState('');
 
     const uploadWithContext = async (files: File[]) => {
@@ -234,7 +233,7 @@ export function FilePickerDialog({
                     <div className="space-y-2">
                         <p className="text-sm font-medium">Archivos cargados</p>
                         <p className="text-xs text-muted-foreground">
-                            Se muestran únicamente los archivos del contexto actual. Clic derecho para descargar, renombrar o eliminar.
+                            Clic derecho para descargar, renombrar o eliminar.
                         </p>
                         <div className="max-h-[430px] overflow-y-auto rounded-lg border p-2">
                             {storedFiles.length === 0 ? (

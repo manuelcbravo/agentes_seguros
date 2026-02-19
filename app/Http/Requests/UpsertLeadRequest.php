@@ -37,18 +37,7 @@ class UpsertLeadRequest extends FormRequest
             'agent_id' => ['nullable', 'uuid', 'exists:agents,id'],
             'first_name' => ['required', 'string', 'max:150'],
             'last_name' => ['nullable', 'string', 'max:150'],
-            'phone' => [
-                'required',
-                'string',
-                'max:30',
-                Rule::unique('leads', 'phone')->ignore($leadId)->where(function ($query) use ($agentId) {
-                    if ($agentId) {
-                        $query->where('agent_id', $agentId);
-                    }
-
-                    $query->whereNull('deleted_at');
-                }),
-            ],
+            'phone' => [ 'nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:255'],
             'source' => ['required', 'in:facebook,google,whatsapp,referral,landing,other'],
             'status' => ['sometimes', 'in:nuevo,contactado,perfilado,en_pausa,seguimiento,en_tramite,ganado,no_interesado'],

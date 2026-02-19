@@ -20,8 +20,6 @@ return new class extends Migration {
             $table->enum('status', ['nuevo', 'contactado', 'cotizacion_enviada', 'negociacion', 'ganado', 'perdido'])->default('nuevo');
             $table->timestamps();
             $table->softDeletes();
-
-            $table->unique(['agent_id', 'phone']);
         });
     }
 
