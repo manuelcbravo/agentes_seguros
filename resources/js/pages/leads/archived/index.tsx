@@ -30,19 +30,17 @@ type PaginatedLeads = {
 export default function ArchivedLeadsIndex({
     leads,
     filters,
-    agents,
     statusOptions,
 }: {
     leads: PaginatedLeads;
-    filters: { search: string; status: string | null; agent_id: string | null };
-    agents: Array<{ id: string; name: string }>;
+    filters: { search: string; status: string | null };
     statusOptions: Array<{ value: string; label: string }>;
 }) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
-    const [agentId, setAgentId] = useState(filters.agent_id ?? '');
     const [activeLead, setActiveLead] = useState<LeadRow | null>(null);
     const [leadToRestore, setLeadToRestore] = useState<LeadRow | null>(null);
+    const [isRestoring, setIsRestoring] = useState(false);
     const { flash } = usePage<SharedData>().props;
 
     useEffect(() => {
@@ -64,7 +62,6 @@ export default function ArchivedLeadsIndex({
             {
                 search,
                 status: status || undefined,
-                agent_id: agentId || undefined,
                 page,
             },
             { preserveState: true, preserveScroll: true },
@@ -89,21 +86,13 @@ export default function ArchivedLeadsIndex({
                 </div>
 
                 <div className="rounded-xl border p-4">
-                    <div className="grid gap-3 md:grid-cols-4">
+                    <div className="grid gap-3 md:grid-cols-3">
                         <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nombre, correo o telefono..." />
                         <select value={status} onChange={(event) => setStatus(event.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
                             <option value="">Todos los estatus</option>
                             {statusOptions.map((option) => (
                                 <option key={option.value} value={option.value}>
                                     {option.label}
-                                </option>
-                            ))}
-                        </select>
-                        <select value={agentId} onChange={(event) => setAgentId(event.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
-                            <option value="">Todos los agentes</option>
-                            {agents.map((agent) => (
-                                <option key={agent.id} value={agent.id}>
-                                    {agent.name}
                                 </option>
                             ))}
                         </select>
@@ -135,21 +124,23 @@ export default function ArchivedLeadsIndex({
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction
+                            disabled={isRestoring}
                             onClick={() => {
-                                if (!leadToRestore) return;
+                                if (!leadToRestore || isRestoring) return;
 
+                                setIsRestoring(true);
                                 router.post(route('leads.unarchive', leadToRestore.id), undefined, {
                                     preserveScroll: true,
                                     onSuccess: () => {
-                                        toast.success('Lead restaurado correctamente.');
                                         setLeadToRestore(null);
                                         router.reload({ only: ['leads', 'flash'] });
                                     },
                                     onError: () => toast.error('No se pudo restaurar el lead.'),
+                                    onFinish: () => setIsRestoring(false),
                                 });
                             }}
                         >
-                            <ArchiveRestore className="mr-2 size-4" /> Restaurar
+                            <ArchiveRestore className="mr-2 size-4" /> {isRestoring ? 'Restaurando...' : 'Restaurar'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

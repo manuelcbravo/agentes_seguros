@@ -45,7 +45,6 @@ type LeadFile = {
 
 type LeadForm = {
     id: string | null;
-    agent_id?: string;
     first_name: string;
     last_name: string;
     phone: string;
@@ -64,7 +63,6 @@ const FILES_TABLE_ID = 'leads';
 
 export default function LeadsIndex({
     leads,
-    agents,
     filters,
     statusOptions,
     sourceOptions,
@@ -73,8 +71,7 @@ export default function LeadsIndex({
     files,
 }: {
     leads: PaginatedLeads;
-    agents: Array<{ id: string; name: string }>;
-    filters: { search: string; status: string | null; agent_id: string | null };
+    filters: { search: string; status: string | null };
     statusOptions: Array<{ value: string; label: string }>;
     sourceOptions: Array<{ value: string; label: string }>;
     title: string;
@@ -83,11 +80,11 @@ export default function LeadsIndex({
 }) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
-    const [agentId, setAgentId] = useState(filters.agent_id ?? '');
     const [activeLead, setActiveLead] = useState<LeadRow | null>(null);
     const [leadForFiles, setLeadForFiles] = useState<LeadRow | null>(null);
     const [leadToConvert, setLeadToConvert] = useState<LeadRow | null>(null);
     const [leadToArchive, setLeadToArchive] = useState<LeadRow | null>(null);
+    const [isArchiving, setIsArchiving] = useState(false);
     const [formMode, setFormMode] = useState<'create' | 'edit' | 'view' | null>(null);
     const { flash } = usePage<SharedData>().props;
 
@@ -121,7 +118,6 @@ export default function LeadsIndex({
             {
                 search,
                 status: fixedStatus ?? (status || undefined),
-                agent_id: agentId || undefined,
                 page,
             },
             { preserveState: true, preserveScroll: true },
@@ -141,7 +137,6 @@ export default function LeadsIndex({
         form.clearErrors();
         form.setData({
             id: lead.id,
-            agent_id: lead.agent_id,
             first_name: lead.first_name,
             last_name: lead.last_name ?? '',
             phone: lead.phone,
@@ -185,7 +180,7 @@ export default function LeadsIndex({
 
                 <div className="rounded-xl border p-4">
                     <div className="space-y-3">
-                        <div className="grid gap-3 md:grid-cols-4">
+                        <div className="grid gap-3 md:grid-cols-3">
                             <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nombre, correo o telefono..." />
                             <select
                                 value={fixedStatus ?? status}
@@ -197,14 +192,6 @@ export default function LeadsIndex({
                                 {statusOptions.map((option) => (
                                     <option key={option.value} value={option.value}>
                                         {option.label}
-                                    </option>
-                                ))}
-                            </select>
-                            <select value={agentId} onChange={(event) => setAgentId(event.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
-                                <option value="">Todos los agentes</option>
-                                {agents.map((agent) => (
-                                    <option key={agent.id} value={agent.id}>
-                                        {agent.name}
                                     </option>
                                 ))}
                             </select>
@@ -246,7 +233,7 @@ export default function LeadsIndex({
                     event.preventDefault();
                     form.transform((data) => {
                         if (formMode === 'create') {
-                            const { agent_id, status, ...payload } = data;
+                            const { status, ...payload } = data;
 
                             return payload;
                         }
@@ -320,24 +307,6 @@ export default function LeadsIndex({
                                 </select>
                                 {form.errors.status && <FieldError>{form.errors.status}</FieldError>}
                             </Field>
-                            <Field>
-                                <Label htmlFor="lead-agent">Agente</Label>
-                                <select
-                                    id="lead-agent"
-                                    value={form.data.agent_id ?? ''}
-                                    disabled={formMode === 'view'}
-                                    onChange={(event) => form.setData('agent_id', event.target.value)}
-                                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                                >
-                                    <option value="">Selecciona agente</option>
-                                    {agents.map((agent) => (
-                                        <option key={agent.id} value={agent.id}>
-                                            {agent.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                {form.errors.agent_id && <FieldError>{form.errors.agent_id}</FieldError>}
-                            </Field>
                         </>
                     )}
                 </div>
@@ -383,21 +352,23 @@ export default function LeadsIndex({
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction
+                            disabled={isArchiving}
                             onClick={() => {
-                                if (!leadToArchive) return;
+                                if (!leadToArchive || isArchiving) return;
 
+                                setIsArchiving(true);
                                 router.post(route('leads.archive', leadToArchive.id), undefined, {
                                     preserveScroll: true,
                                     onSuccess: () => {
-                                        toast.success('Lead archivado correctamente.');
                                         setLeadToArchive(null);
                                         router.reload({ only: ['leads', 'flash'] });
                                     },
                                     onError: () => toast.error('No se pudo archivar el lead.'),
+                                    onFinish: () => setIsArchiving(false),
                                 });
                             }}
                         >
-                            Archivar
+                            {isArchiving ? 'Archivando...' : 'Archivar'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
