@@ -9,6 +9,7 @@ import {
     Trash2,
     UserPlus,
     Users,
+    BookPlus 
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -227,6 +228,9 @@ export default function ClientsIndex({
                         <DropdownMenuItem onClick={() => setFileManagerClient(row)}>
                             <FolderKanban className="mr-2 size-4" /> Files
                         </DropdownMenuItem>
+                        <DropdownMenuItem >
+                            <BookPlus className="mr-2 size-4" /> Generar póliza
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                             variant="destructive"
@@ -286,6 +290,53 @@ export default function ClientsIndex({
                 onSubmit={submitForm}
             >
                 <div className="grid gap-4 md:grid-cols-2">
+                    <Field>
+                        <Label>Imagen</Label>
+                        <div className="flex items-center gap-3">
+                            <Avatar className="size-16 border">
+                                <AvatarImage
+                                    src={localAvatarPreview ?? activeClient?.avatar_url}
+                                    alt="Preview"
+                                />
+                                <AvatarFallback>
+                                    <ImagePlus className="size-4" />
+                                </AvatarFallback>
+                            </Avatar>
+                            <div className="space-x-2">
+                                <input
+                                    id="client-avatar-input"
+                                    ref={avatarInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(event) => {
+                                        form.setData('avatar', event.target.files?.[0] ?? null);
+                                        form.setData('avatar_path', null);
+                                    }}
+                                />
+                                <Button type="button" variant="outline" onClick={() => avatarInputRef.current?.click()}>
+                                    Seleccionar imagen
+                                </Button>
+                                {(form.data.avatar || form.data.avatar_path) && (
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={() => {
+                                            form.setData('avatar', null);
+                                            form.setData('avatar_path', null);
+                                        }}
+                                    >
+                                        Quitar
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                        <p className="mt-2 text-xs text-muted-foreground">
+                            La imagen se guarda directamente al guardar el cliente.
+                        </p>
+                        {form.errors.avatar && <FieldError>{form.errors.avatar}</FieldError>}
+                        {form.errors.avatar_path && <FieldError>{form.errors.avatar_path}</FieldError>}
+                    </Field>
                     <Field>
                         <Label htmlFor="client-first-name">Nombre</Label>
                         <Input
@@ -350,54 +401,6 @@ export default function ClientsIndex({
                         <option value="0">Inactivo</option>
                     </select>
                     {form.errors.is_active && <FieldError>{form.errors.is_active}</FieldError>}
-                </Field>
-
-                <Field>
-                    <Label>Imagen de perfil</Label>
-                    <div className="flex items-center gap-3">
-                        <Avatar className="size-16 border">
-                            <AvatarImage
-                                src={localAvatarPreview ?? activeClient?.avatar_url}
-                                alt="Preview"
-                            />
-                            <AvatarFallback>
-                                <ImagePlus className="size-4" />
-                            </AvatarFallback>
-                        </Avatar>
-                        <div className="space-x-2">
-                            <input
-                                id="client-avatar-input"
-                                ref={avatarInputRef}
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(event) => {
-                                    form.setData('avatar', event.target.files?.[0] ?? null);
-                                    form.setData('avatar_path', null);
-                                }}
-                            />
-                            <Button type="button" variant="outline" onClick={() => avatarInputRef.current?.click()}>
-                                Seleccionar imagen
-                            </Button>
-                            {(form.data.avatar || form.data.avatar_path) && (
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    onClick={() => {
-                                        form.setData('avatar', null);
-                                        form.setData('avatar_path', null);
-                                    }}
-                                >
-                                    Quitar
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-                    <p className="mt-2 text-xs text-muted-foreground">
-                        La imagen se guarda directamente al guardar el cliente.
-                    </p>
-                    {form.errors.avatar && <FieldError>{form.errors.avatar}</FieldError>}
-                    {form.errors.avatar_path && <FieldError>{form.errors.avatar_path}</FieldError>}
                 </Field>
             </CrudFormDialog>
 

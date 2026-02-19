@@ -17,7 +17,7 @@ return new class extends Migration {
             $table->uuid('insured_id');
 
             $table->string('status')->index();
-            $table->string('payment_channel')->nullable();
+            $table->integer('payment_channel')->nullable();
             $table->string('product')->nullable();
             $table->date('coverage_start')->nullable();
             $table->decimal('risk_premium', 14, 2)->nullable();

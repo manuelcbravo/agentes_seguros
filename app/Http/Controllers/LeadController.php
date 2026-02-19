@@ -181,16 +181,14 @@ class LeadController extends Controller
         return back()->with('success', 'Lead eliminado correctamente.');
     }
 
-    public function updateStatus(UpdateLeadStatusRequest $request, Lead $lead): JsonResponse
+    public function updateStatus(UpdateLeadStatusRequest $request, Lead $lead): RedirectResponse
     {
         $this->authorizeLead($request, $lead);
         $lead->update([
             'status' => $request->validated('status'),
         ]);
 
-        return response()->json([
-            'message' => 'Estatus actualizado correctamente.',
-        ]);
+        return back()->with('success', 'Estatus actualizado correctamente.');
     }
 
     private function renderLeadTable(Request $request, string $page, string $title, ?string $fixedStatus, bool $onlyArchived): Response

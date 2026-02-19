@@ -16,6 +16,9 @@ use App\Http\Controllers\LeadController;
 use App\Http\Controllers\Config\RoleController;
 use App\Http\Controllers\Config\UserController;
 use App\Http\Controllers\GoogleCalendarController;
+use App\Http\Controllers\Polizas\AseguradoController;
+use App\Http\Controllers\Polizas\BeneficiarioController;
+use App\Http\Controllers\Polizas\PolizaController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -69,6 +72,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::patch('files/{file}/rename', [FileController::class, 'rename'])->name('files.rename');
     Route::resource('files', FileController::class)->only(['index', 'store', 'destroy']);
+
+    Route::get('polizas', [PolizaController::class, 'index'])->name('polizas.index');
+    Route::post('polizas/upsert', [PolizaController::class, 'upsert'])->name('polizas.upsert');
+    Route::delete('polizas/{id}', [PolizaController::class, 'destroy'])->name('polizas.destroy');
+
+    Route::get('asegurados', [AseguradoController::class, 'index'])->name('asegurados.index');
+    Route::post('asegurados/upsert', [AseguradoController::class, 'upsert'])->name('asegurados.upsert');
+    Route::delete('asegurados/{id}', [AseguradoController::class, 'destroy'])->name('asegurados.destroy');
+
+    Route::get('beneficiarios', [BeneficiarioController::class, 'index'])->name('beneficiarios.index');
+    Route::post('beneficiarios/upsert', [BeneficiarioController::class, 'upsert'])->name('beneficiarios.upsert');
+    Route::delete('beneficiarios/{id}', [BeneficiarioController::class, 'destroy'])->name('beneficiarios.destroy');
     Route::prefix('catalogs')->name('catalogs.')->group(function () {
         Route::resource('currencies', CurrencyController::class)->only(['index', 'store', 'destroy']);
         Route::resource('marital-statuses', MaritalStatusController::class)

@@ -7,7 +7,8 @@ import {
     LayoutGrid,
     Settings,
     Users,
-    Contact
+    Contact,
+    ShieldCheck
 } from 'lucide-react';
 import { route } from 'ziggy-js';
 import { NavConfig } from '@/components/nav-config';
@@ -71,6 +72,25 @@ const mainNavItems: NavItem[] = [
             {
                 title: 'Archivados',
                 href: route('leads.archived.index'),
+            },
+        ],
+    },
+    {
+        title: 'Pólizas',
+        href: route('polizas.index'),
+        icon: ShieldCheck,
+        children: [
+            {
+                title: 'Pólizas',
+                href: route('polizas.index'),
+            },
+            {
+                title: 'Asegurados',
+                href: route('asegurados.index'),
+            },
+            {
+                title: 'Beneficiarios',
+                href: route('beneficiarios.index'),
             },
         ],
     },
