@@ -13,7 +13,7 @@ class UpdateLeadStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['required', 'in:nuevo,contacto_intento,contactado,perfilado,cotizacion_enviada,seguimiento,en_tramite,ganado,no_interesado'],
+            'status' => ['required', 'in:nuevo,contactado,perfilado,en_pausa,seguimiento,en_tramite,ganado,no_interesado'],
         ];
     }
 }

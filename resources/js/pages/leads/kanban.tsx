@@ -1,18 +1,51 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { Columns3, GripVertical, Plus } from 'lucide-react';
+import { ArrowRightLeft, Columns3, Eye, FolderKanban, GripVertical, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { route } from 'ziggy-js';
+import { FilePickerDialog } from '@/components/file-picker-dialog';
 import { LeadStatusBadge, statusLabel } from '@/components/leads/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuSub,
+    ContextMenuSubContent,
+    ContextMenuSubTrigger,
+    ContextMenuTrigger,
+} from '@/components/ui/context-menu';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { useLeadActions } from '@/hooks/use-lead-actions';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, SharedData } from '@/types';
 
+type MediaFile = {
+    id: number;
+    uuid: string;
+    original_name: string;
+    path: string;
+    url: string;
+    mime_type: string | null;
+    size: number;
+    related_table: string;
+    related_uuid: string | null;
+};
+
 type LeadItem = {
     id: number;
+    uuid: string;
     agent_id: string;
+    client_id?: string | null;
     first_name: string;
     last_name: string | null;
     phone: string;
@@ -22,16 +55,25 @@ type LeadItem = {
     created_at: string;
 };
 
+const FILES_TABLE_ID = 'leads';
+
 export default function LeadsKanban({
     leads,
     boardStatuses,
+    statusOptions,
+    files,
 }: {
     leads: LeadItem[];
     boardStatuses: string[];
+    statusOptions: Array<{ value: string; label: string }>;
+    files: MediaFile[];
 }) {
     const [boardLeads, setBoardLeads] = useState<LeadItem[]>(leads);
     const [draggedId, setDraggedId] = useState<number | null>(null);
     const { flash } = usePage<SharedData>().props;
+    const { filesLead, setFilesLead, convertLead, setConvertLead, moveLead, convertToClient } = useLeadActions(() => {
+        toast.success('Estatus actualizado correctamente.');
+    });
 
     useEffect(() => {
         if (flash?.success) toast.success(flash.success);
@@ -46,6 +88,12 @@ export default function LeadsKanban({
             })),
         [boardLeads, boardStatuses],
     );
+
+    const contextualFiles = useMemo(() => {
+        if (!filesLead) return [];
+
+        return files.filter((file) => file.related_table === FILES_TABLE_ID && file.related_uuid === filesLead.uuid);
+    }, [files, filesLead]);
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Leads', href: route('leads.index') },
@@ -115,23 +163,59 @@ export default function LeadsKanban({
                                 </CardHeader>
                                 <CardContent className="space-y-3 p-3">
                                     {column.leads.map((lead) => (
-                                        <article
-                                            key={lead.id}
-                                            draggable
-                                            onDragStart={() => setDraggedId(lead.id)}
-                                            className="cursor-grab rounded-lg border bg-card p-3 shadow-sm transition hover:shadow"
-                                        >
-                                            <div className="mb-2 flex items-center justify-between">
-                                                <p className="text-sm font-semibold">{`${lead.first_name} ${lead.last_name ?? ''}`.trim()}</p>
-                                                <GripVertical className="size-4 text-muted-foreground" />
-                                            </div>
-                                            <p className="text-xs text-muted-foreground">{lead.phone}</p>
-                                            <p className="text-xs text-muted-foreground">{lead.email ?? 'Sin correo'}</p>
-                                            <div className="mt-3 flex items-center justify-between">
-                                                <LeadStatusBadge status={lead.status} />
-                                                <span className="text-[11px] text-muted-foreground">{new Date(lead.created_at).toLocaleDateString('es-MX')}</span>
-                                            </div>
-                                        </article>
+                                        <ContextMenu key={lead.id}>
+                                            <ContextMenuTrigger asChild>
+                                                <article
+                                                    draggable
+                                                    onDragStart={() => setDraggedId(lead.id)}
+                                                    className="cursor-grab rounded-lg border bg-card p-3 shadow-sm transition hover:shadow"
+                                                >
+                                                    <div className="mb-2 flex items-center justify-between">
+                                                        <p className="text-sm font-semibold">{`${lead.first_name} ${lead.last_name ?? ''}`.trim()}</p>
+                                                        <GripVertical className="size-4 text-muted-foreground" />
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground">{lead.phone}</p>
+                                                    <p className="text-xs text-muted-foreground">{lead.email ?? 'Sin correo'}</p>
+                                                    <div className="mt-3 flex items-center justify-between">
+                                                        <LeadStatusBadge status={lead.status} />
+                                                        <span className="text-[11px] text-muted-foreground">{new Date(lead.created_at).toLocaleDateString('es-MX')}</span>
+                                                    </div>
+                                                </article>
+                                            </ContextMenuTrigger>
+                                            <ContextMenuContent className="w-56">
+                                                <ContextMenuItem onClick={() => router.visit(route('leads.index'))}>
+                                                    <Eye className="mr-2 size-4" /> Ver / Editar
+                                                </ContextMenuItem>
+                                                <ContextMenuItem onClick={() => setFilesLead(lead)}>
+                                                    <FolderKanban className="mr-2 size-4" /> Archivos
+                                                </ContextMenuItem>
+                                                <ContextMenuItem onClick={() => setConvertLead(lead)} disabled={lead.status === 'ganado'}>
+                                                    <RefreshCw className="mr-2 size-4" /> Convertir a cliente
+                                                </ContextMenuItem>
+                                                <ContextMenuSub>
+                                                    <ContextMenuSubTrigger>
+                                                        <ArrowRightLeft className="mr-2 size-4" /> Cambiar estatus
+                                                    </ContextMenuSubTrigger>
+                                                    <ContextMenuSubContent className="w-52">
+                                                        {statusOptions.map((status) => (
+                                                            <ContextMenuItem
+                                                                key={status.value}
+                                                                disabled={status.value === lead.status}
+                                                                onClick={() => {
+                                                                    setBoardLeads((current) => current.map((item) => (item.id === lead.id ? { ...item, status: status.value } : item)));
+                                                                    moveLead(lead.id, status.value);
+                                                                }}
+                                                            >
+                                                                {status.label}
+                                                            </ContextMenuItem>
+                                                        ))}
+                                                    </ContextMenuSubContent>
+                                                </ContextMenuSub>
+                                                <ContextMenuItem variant="destructive" onClick={() => router.delete(route('leads.destroy', lead.id))}>
+                                                    <Trash2 className="mr-2 size-4" /> Eliminar
+                                                </ContextMenuItem>
+                                            </ContextMenuContent>
+                                        </ContextMenu>
                                     ))}
                                     {column.leads.length === 0 && (
                                         <div className="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">
@@ -147,6 +231,51 @@ export default function LeadsKanban({
                     </div>
                 </div>
             </div>
+
+            <FilePickerDialog
+                key={filesLead?.id ?? 'kanban-lead-files-manager'}
+                open={filesLead !== null}
+                onOpenChange={(open) => {
+                    if (!open) setFilesLead(null);
+                }}
+                title={filesLead ? `Archivos · ${filesLead.first_name} ${filesLead.last_name ?? ''}` : 'Archivos'}
+                description="Gestiona solo los archivos del lead activo para evitar cruces entre registros."
+                storedFiles={contextualFiles}
+                tableId={FILES_TABLE_ID}
+                relatedUuid={filesLead?.uuid ?? null}
+                onDeleteStoredFile={(fileId) => {
+                    if (!filesLead) return;
+
+                    router.delete(route('files.destroy', fileId), {
+                        preserveScroll: true,
+                        data: {
+                            related_table: FILES_TABLE_ID,
+                            related_uuid: filesLead.uuid,
+                        },
+                        onError: () => toast.error('No se pudo eliminar el archivo.'),
+                    });
+                }}
+                onDownloadStoredFile={(file) => {
+                    window.open(file.url, '_blank', 'noopener,noreferrer');
+                }}
+                accept="*/*"
+                maxSizeHint="Cualquier formato · máximo 10MB"
+            />
+
+            <Dialog open={convertLead !== null} onOpenChange={(open) => !open && setConvertLead(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Convertir a cliente</DialogTitle>
+                        <DialogDescription>
+                            Esto creará un cliente y marcará el lead como Ganado.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setConvertLead(null)}>Cancelar</Button>
+                        <Button onClick={convertToClient}>Confirmar</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

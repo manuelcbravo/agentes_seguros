@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UpdateLeadStatusRequest;
 use App\Http\Requests\UpsertLeadRequest;
 use App\Models\Agent;
+use App\Models\Client;
+use App\Models\File;
 use App\Models\Lead;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -18,10 +20,9 @@ class LeadController extends Controller
 {
     private const MAIN_KANBAN_STATUSES = [
         'nuevo',
-        'contacto_intento',
         'contactado',
         'perfilado',
-        'cotizacion_enviada',
+        'en_pausa',
         'seguimiento',
         'en_tramite',
     ];
@@ -60,7 +61,9 @@ class LeadController extends Controller
             'sourceOptions' => $this->sourceOptions(),
             'leads' => $query->get([
                 'id',
+                'uuid',
                 'agent_id',
+                'client_id',
                 'first_name',
                 'last_name',
                 'phone',
@@ -69,6 +72,7 @@ class LeadController extends Controller
                 'status',
                 'created_at',
             ]),
+            'files' => File::query()->latest()->get(),
             'agents' => Agent::query()->orderBy('name')->get(['id', 'name']),
             'filters' => [
                 'search' => trim((string) $request->string('search', '')),
@@ -91,7 +95,7 @@ class LeadController extends Controller
             'phone' => $data['phone'],
             'email' => $data['email'] ?? null,
             'source' => $data['source'],
-            'status' => $data['status'],
+            'status' => isset($data['id']) ? ($data['status'] ?? $lead->status) : 'nuevo',
         ]);
 
         $lead->save();
@@ -117,6 +121,50 @@ class LeadController extends Controller
         return response()->json([
             'message' => 'Estatus actualizado correctamente.',
         ]);
+    }
+
+    public function convertToClient(Request $request, Lead $lead): RedirectResponse
+    {
+        $this->authorizeLead($request, $lead);
+
+        if ($lead->client_id) {
+            return back()->with('success', 'Este lead ya está vinculado a un cliente.');
+        }
+
+        $existingClient = null;
+
+        if ($lead->phone || $lead->email) {
+            $existingClient = Client::query()
+                ->where(function (Builder $query) use ($lead): void {
+                    if ($lead->phone) {
+                        $query->where('phone', $lead->phone);
+                    }
+
+                    if ($lead->email) {
+                        $query->orWhere('email', $lead->email);
+                    }
+                })
+                ->latest()
+                ->first();
+        }
+
+        $client = $existingClient ?? Client::query()->create([
+            'agent_id' => $lead->agent_id,
+            'first_name' => $lead->first_name,
+            'last_name' => $lead->last_name ?? '-',
+            'email' => $lead->email,
+            'phone' => $lead->phone,
+            'source' => $lead->source,
+            'is_active' => true,
+        ]);
+
+        $lead->update([
+            'status' => 'ganado',
+            'client_id' => $client->id,
+            'converted_at' => now(),
+        ]);
+
+        return back()->with('success', 'Lead convertido a cliente correctamente.');
     }
 
     private function renderLeadTable(Request $request, string $page, string $title, ?string $fixedStatus): Response
@@ -151,6 +199,7 @@ class LeadController extends Controller
                 'status' => $status,
                 'agent_id' => $agentId,
             ],
+            'files' => File::query()->latest()->get(),
             'leads' => $leads,
             'agents' => Agent::query()->orderBy('name')->get(['id', 'name']),
         ]);
@@ -225,10 +274,9 @@ class LeadController extends Controller
     {
         return [
             ['value' => 'nuevo', 'label' => 'Nuevo'],
-            ['value' => 'contacto_intento', 'label' => 'Intento de contacto'],
             ['value' => 'contactado', 'label' => 'Contactado'],
             ['value' => 'perfilado', 'label' => 'Perfilado'],
-            ['value' => 'cotizacion_enviada', 'label' => 'Cotización enviada'],
+            ['value' => 'en_pausa', 'label' => 'En pausa'],
             ['value' => 'seguimiento', 'label' => 'Seguimiento'],
             ['value' => 'en_tramite', 'label' => 'En trámite'],
             ['value' => 'ganado', 'label' => 'Ganado'],

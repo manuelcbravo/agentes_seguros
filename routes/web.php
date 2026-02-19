@@ -61,6 +61,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('leads/ganados', [LeadController::class, 'ganados'])->name('leads.ganados');
     Route::get('leads/no-interesados', [LeadController::class, 'noInteresados'])->name('leads.no-interesados');
     Route::patch('leads/{lead}/status', [LeadController::class, 'updateStatus'])->name('leads.update-status');
+    Route::post('leads/{lead}/convert-to-client', [LeadController::class, 'convertToClient'])->name('leads.convert-to-client');
     Route::resource('leads', LeadController::class)->only(['index', 'store', 'destroy']);
 
     Route::resource('files', FileController::class)->only(['index', 'store', 'destroy']);

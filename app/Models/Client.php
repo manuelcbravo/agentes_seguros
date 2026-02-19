@@ -7,6 +7,7 @@ use Mattiverse\Userstamps\Traits\Userstamps;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use App\Models\Concerns\HasUuid;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Client extends Model
 {
@@ -16,6 +17,7 @@ class Client extends Model
     protected $fillable = [
         'uuid',
         'company_id',
+        'agent_id',
 
         // datos personales
         'first_name',
@@ -155,5 +157,10 @@ class Client extends Model
     public function isBlacklisted(): bool
     {
         return $this->is_blacklisted;
+    }
+
+    public function agent(): BelongsTo
+    {
+        return $this->belongsTo(Agent::class);
     }
 }
