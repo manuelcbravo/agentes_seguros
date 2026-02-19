@@ -68,6 +68,10 @@ const mainNavItems: NavItem[] = [
                 title: 'No interesados',
                 href: route('leads.no-interesados'),
             },
+            {
+                title: 'Archivados',
+                href: route('leads.archived.index'),
+            },
         ],
     },
 ];

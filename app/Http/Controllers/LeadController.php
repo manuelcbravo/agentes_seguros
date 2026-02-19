@@ -36,17 +36,22 @@ class LeadController extends Controller
 
     public function index(Request $request): Response
     {
-        return $this->renderLeadTable($request, 'leads/index', 'Leads', null);
+        return $this->renderLeadTable($request, 'leads/index', 'Leads', null, false);
+    }
+
+    public function archived(Request $request): Response
+    {
+        return $this->renderLeadTable($request, 'leads/archived/index', 'Leads archivados', null, true);
     }
 
     public function ganados(Request $request): Response
     {
-        return $this->renderLeadTable($request, 'leads/index', 'Leads ganados', 'ganado');
+        return $this->renderLeadTable($request, 'leads/index', 'Leads ganados', 'ganado', false);
     }
 
     public function noInteresados(Request $request): Response
     {
-        return $this->renderLeadTable($request, 'leads/index', 'Leads no interesados', 'no_interesado');
+        return $this->renderLeadTable($request, 'leads/index', 'Leads no interesados', 'no_interesado', false);
     }
 
     public function kanban(Request $request): Response
@@ -107,6 +112,37 @@ class LeadController extends Controller
         return back()->with('success', isset($data['id']) ? 'Lead actualizado correctamente.' : 'Lead creado correctamente.');
     }
 
+    public function archive(Request $request, Lead $lead): RedirectResponse
+    {
+        $this->authorizeLead($request, $lead);
+
+        if (method_exists($lead, 'archive')) {
+            $lead->archive();
+        } else {
+            $lead->forceFill(['archived_at' => now()])->save();
+        }
+
+        return back()->with('success', 'Lead archivado correctamente.');
+    }
+
+    public function unarchive(Request $request, string $lead): RedirectResponse
+    {
+        $query = $this->baseQuery($request, true);
+        $leadModel = $query->whereKey($lead)->firstOrFail();
+
+        $this->authorizeLead($request, $leadModel);
+
+        if (method_exists($leadModel, 'unarchive')) {
+            $leadModel->unarchive();
+        } elseif (method_exists($leadModel, 'unArchive')) {
+            $leadModel->unArchive();
+        } else {
+            $leadModel->forceFill(['archived_at' => null])->save();
+        }
+
+        return back()->with('success', 'Lead restaurado correctamente.');
+    }
+
     public function convertToClient(Request $request, Lead $lead): RedirectResponse
     {
         $this->authorizeLead($request, $lead);
@@ -163,13 +199,13 @@ class LeadController extends Controller
         ]);
     }
 
-    private function renderLeadTable(Request $request, string $page, string $title, ?string $fixedStatus): Response
+    private function renderLeadTable(Request $request, string $page, string $title, ?string $fixedStatus, bool $onlyArchived): Response
     {
         $search = trim((string) $request->string('search', ''));
         $status = $fixedStatus ?? ($request->string('status')->toString() ?: null);
         $agentId = $request->string('agent_id')->toString() ?: null;
 
-        $leads = $this->baseQuery($request)
+        $leads = $this->baseQuery($request, $onlyArchived)
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $nestedQuery) use ($search) {
                     $nestedQuery->where('first_name', 'like', "%{$search}%")
@@ -205,9 +241,23 @@ class LeadController extends Controller
         ]);
     }
 
-    private function baseQuery(Request $request): Builder
+    private function baseQuery(Request $request, bool $onlyArchived = false): Builder
     {
         $query = Lead::query()->with('agent:id,name');
+
+        if ($onlyArchived) {
+            if (method_exists(Lead::class, 'scopeWithArchived')) {
+                $query->withArchived();
+            }
+
+            $query->whereNotNull('archived_at');
+        } else {
+            if (method_exists(Lead::class, 'scopeWithoutArchived')) {
+                $query->withoutArchived();
+            } else {
+                $query->whereNull('archived_at');
+            }
+        }
 
         /** @var User|null $user */
         $user = $request->user();

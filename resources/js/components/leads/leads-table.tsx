@@ -1,4 +1,4 @@
-import { ArrowRightLeft, Eye, FolderKanban, MoreHorizontal, Pencil, Trash2, UserPlus } from 'lucide-react';
+import { Archive, ArrowRightLeft, Eye, FolderKanban, MoreHorizontal, Pencil, RotateCcw, Trash2, UserPlus } from 'lucide-react';
 import { DataTable, type DataTableColumn } from '@/components/data-table';
 import { LeadStatusBadge } from '@/components/leads/status-badge';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,9 @@ type Props = {
     onView: (lead: LeadRow) => void;
     onFiles: (lead: LeadRow) => void;
     onConvert: (lead: LeadRow) => void;
+    onArchive?: (lead: LeadRow) => void;
+    onUnarchive?: (lead: LeadRow) => void;
+    mode?: 'default' | 'archived';
     onStatusUpdated?: () => void;
 };
 
@@ -55,6 +58,9 @@ export function LeadsTable({
     onView,
     onFiles,
     onConvert,
+    onArchive,
+    onUnarchive,
+    mode = 'default',
     onStatusUpdated,
 }: Props) {
     const getLeadActions = useLeadActions({
@@ -64,6 +70,8 @@ export function LeadsTable({
         onDelete,
         onFiles,
         onConvert,
+        onArchive,
+        onUnarchive,
         onStatusUpdated,
     });
 
@@ -126,34 +134,47 @@ export function LeadsTable({
                             <DropdownMenuItem onClick={actions.onView}>
                                 <Eye className="mr-2 size-4" /> Ver
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={actions.onEdit}>
-                                <Pencil className="mr-2 size-4" /> Editar
-                            </DropdownMenuItem>
+                            {mode !== 'archived' && (
+                                <DropdownMenuItem onClick={actions.onEdit}>
+                                    <Pencil className="mr-2 size-4" /> Editar
+                                </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem onClick={actions.onFiles}>
                                 <FolderKanban className="mr-2 size-4" /> Archivos
                             </DropdownMenuItem>
-                            {actions.canConvert && (
+                            {mode !== 'archived' && actions.canConvert && (
                                 <DropdownMenuItem onClick={actions.onConvert}>
                                     <UserPlus className="mr-2 size-4" /> Convertir a cliente
                                 </DropdownMenuItem>
                             )}
-                            <DropdownMenuSub>
-                                <DropdownMenuSubTrigger>
-                                    <ArrowRightLeft className="mr-2 size-4" /> Cambiar estatus
-                                </DropdownMenuSubTrigger>
-                                <DropdownMenuSubContent>
-                                    {actions.statusOptions.map((status) => (
-                                        <DropdownMenuItem
-                                            key={status.value}
-                                            disabled={status.value === row.status}
-                                            onClick={() => actions.moveToStatus(status.value)}
-                                        >
-                                            {status.label}
-                                        </DropdownMenuItem>
-                                    ))}
-                                </DropdownMenuSubContent>
-                            </DropdownMenuSub>
+                            {mode !== 'archived' && (
+                                <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger>
+                                        <ArrowRightLeft className="mr-2 size-4" /> Cambiar estatus
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuSubContent>
+                                        {actions.statusOptions.map((status) => (
+                                            <DropdownMenuItem
+                                                key={status.value}
+                                                disabled={status.value === row.status}
+                                                onClick={() => actions.moveToStatus(status.value)}
+                                            >
+                                                {status.label}
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuSubContent>
+                                </DropdownMenuSub>
+                            )}
                             <DropdownMenuSeparator />
+                            {mode === 'archived' ? (
+                                <DropdownMenuItem onClick={actions.onUnarchive}>
+                                    <RotateCcw className="mr-2 size-4" /> Restaurar
+                                </DropdownMenuItem>
+                            ) : (
+                                <DropdownMenuItem onClick={actions.onArchive}>
+                                    <Archive className="mr-2 size-4" /> Archivar
+                                </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem variant="destructive" onClick={actions.onDelete}>
                                 <Trash2 className="mr-2 size-4" /> Eliminar
                             </DropdownMenuItem>

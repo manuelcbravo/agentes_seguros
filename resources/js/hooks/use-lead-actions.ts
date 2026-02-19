@@ -13,6 +13,8 @@ type Params<TLead extends LeadActionLead> = {
     onDelete: (lead: TLead) => void;
     onFiles: (lead: TLead) => void;
     onConvert: (lead: TLead) => void;
+    onArchive?: (lead: TLead) => void;
+    onUnarchive?: (lead: TLead) => void;
     onStatusUpdated?: () => void;
 };
 
@@ -23,16 +25,22 @@ export function useLeadActions<TLead extends LeadActionLead>({
     onDelete,
     onFiles,
     onConvert,
+    onArchive,
+    onUnarchive,
     onStatusUpdated,
 }: Params<TLead>) {
     return (lead: TLead) => ({
         canConvert: lead.status !== 'ganado',
+        canArchive: Boolean(onArchive),
+        canUnarchive: Boolean(onUnarchive),
         statusOptions,
         onView: () => onView(lead),
         onEdit: () => onEdit(lead),
         onDelete: () => onDelete(lead),
         onFiles: () => onFiles(lead),
         onConvert: () => onConvert(lead),
+        onArchive: () => onArchive?.(lead),
+        onUnarchive: () => onUnarchive?.(lead),
         moveToStatus: (status: string) => {
             router.patch(
                 route('leads.update-status', lead.id),
