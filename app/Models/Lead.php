@@ -6,10 +6,11 @@ use App\Models\Concerns\AssignsAgentOwnership;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Concerns\HasUuid;
 
 class Lead extends Model
 {
-    use AssignsAgentOwnership, SoftDeletes;
+    use AssignsAgentOwnership, SoftDeletes, HasUuid;
 
     protected $fillable = [
         'agent_id',
