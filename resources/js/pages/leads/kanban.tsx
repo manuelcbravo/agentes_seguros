@@ -1,5 +1,5 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { ArrowRightLeft, Columns3, Eye, FolderKanban, GripVertical, Pencil, Plus, Trash2, UserPlus } from 'lucide-react';
+import { Archive, ArrowRightLeft, Columns3, Eye, FolderKanban, GripVertical, Pencil, Plus, Trash2, UserPlus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { route } from 'ziggy-js';
@@ -74,6 +74,7 @@ export default function LeadsKanban({
     const [activeLead, setActiveLead] = useState<LeadItem | null>(null);
     const [leadForFiles, setLeadForFiles] = useState<LeadItem | null>(null);
     const [leadToConvert, setLeadToConvert] = useState<LeadItem | null>(null);
+    const [leadToArchive, setLeadToArchive] = useState<LeadItem | null>(null);
     const { flash } = usePage<SharedData>().props;
 
     useEffect(() => {
@@ -108,6 +109,7 @@ export default function LeadsKanban({
         onDelete: (lead) => setActiveLead(lead),
         onFiles: (lead) => setLeadForFiles(lead),
         onConvert: (lead) => setLeadToConvert(lead),
+        onArchive: (lead) => setLeadToArchive(lead),
         onStatusUpdated: () => toast.success('Estatus actualizado correctamente.'),
     });
 
@@ -227,6 +229,9 @@ export default function LeadsKanban({
                                                             ))}
                                                         </ContextMenuSubContent>
                                                     </ContextMenuSub>
+                                                    <ContextMenuItem onClick={actions.onArchive}>
+                                                        <Archive className="mr-2 size-4" /> Archivar
+                                                    </ContextMenuItem>
                                                     <ContextMenuItem onClick={actions.onDelete}>
                                                         <Trash2 className="mr-2 size-4" /> Eliminar
                                                     </ContextMenuItem>
@@ -276,6 +281,38 @@ export default function LeadsKanban({
                 accept="*/*"
                 maxSizeHint="Cualquier formato · máximo 10MB"
             />
+
+
+            <AlertDialog open={leadToArchive !== null} onOpenChange={(open) => !open && setLeadToArchive(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Archivar lead</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            ¿Archivar este lead? Ya no aparecerá en Leads ni en Kanban.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                if (!leadToArchive) return;
+
+                                router.post(route('leads.archive', leadToArchive.id), undefined, {
+                                    preserveScroll: true,
+                                    onSuccess: () => {
+                                        toast.success('Lead archivado correctamente.');
+                                        setLeadToArchive(null);
+                                        setBoardLeads((current) => current.filter((lead) => lead.id !== leadToArchive.id));
+                                    },
+                                    onError: () => toast.error('No se pudo archivar el lead.'),
+                                });
+                            }}
+                        >
+                            Archivar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <AlertDialog open={leadToConvert !== null} onOpenChange={(open) => !open && setLeadToConvert(null)}>
                 <AlertDialogContent>

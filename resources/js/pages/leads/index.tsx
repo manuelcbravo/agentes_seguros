@@ -1,5 +1,5 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { Columns, Filter, Plus, Trophy, UserRoundX, Users } from 'lucide-react';
+import { Archive, Columns, Filter, Plus, Trophy, UserRoundX, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { route } from 'ziggy-js';
@@ -88,6 +88,7 @@ export default function LeadsIndex({
     const [activeLead, setActiveLead] = useState<LeadRow | null>(null);
     const [leadForFiles, setLeadForFiles] = useState<LeadRow | null>(null);
     const [leadToConvert, setLeadToConvert] = useState<LeadRow | null>(null);
+    const [leadToArchive, setLeadToArchive] = useState<LeadRow | null>(null);
     const [formMode, setFormMode] = useState<'create' | 'edit' | 'view' | null>(null);
     const { flash } = usePage<SharedData>().props;
 
@@ -173,6 +174,9 @@ export default function LeadsIndex({
                             <Button variant="outline" onClick={() => router.visit(route('leads.kanban'))}>
                                 <Columns className="mr-2 size-4" /> Kanban
                             </Button>
+                            <Button variant="outline" onClick={() => router.visit(route('leads.archived.index'))}>
+                                <Archive className="mr-2 size-4" /> Archivados
+                            </Button>
                             <Button onClick={openCreateDialog}>
                                 <Plus className="mr-2 size-4" /> Nuevo lead
                             </Button>
@@ -220,6 +224,7 @@ export default function LeadsIndex({
                     onFiles={setLeadForFiles}
                     onConvert={setLeadToConvert}
                     onDelete={(lead) => setActiveLead(lead)}
+                    onArchive={(lead) => setLeadToArchive(lead)}
                     onStatusUpdated={() => toast.success('Estatus actualizado correctamente.')}
                 />
             </div>
@@ -366,6 +371,38 @@ export default function LeadsIndex({
                 accept="*/*"
                 maxSizeHint="Cualquier formato · máximo 10MB"
             />
+
+
+            <AlertDialog open={leadToArchive !== null} onOpenChange={(open) => !open && setLeadToArchive(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Archivar lead</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            ¿Archivar este lead? Ya no aparecerá en Leads ni en Kanban.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                if (!leadToArchive) return;
+
+                                router.post(route('leads.archive', leadToArchive.id), undefined, {
+                                    preserveScroll: true,
+                                    onSuccess: () => {
+                                        toast.success('Lead archivado correctamente.');
+                                        setLeadToArchive(null);
+                                        router.reload({ only: ['leads', 'flash'] });
+                                    },
+                                    onError: () => toast.error('No se pudo archivar el lead.'),
+                                });
+                            }}
+                        >
+                            Archivar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <AlertDialog open={leadToConvert !== null} onOpenChange={(open) => !open && setLeadToConvert(null)}>
                 <AlertDialogContent>

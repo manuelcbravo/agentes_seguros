@@ -58,10 +58,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
     Route::get('leads/kanban', [LeadController::class, 'kanban'])->name('leads.kanban');
+    Route::get('leads/archived', [LeadController::class, 'archived'])->name('leads.archived.index');
     Route::get('leads/ganados', [LeadController::class, 'ganados'])->name('leads.ganados');
     Route::get('leads/no-interesados', [LeadController::class, 'noInteresados'])->name('leads.no-interesados');
     Route::patch('leads/{lead}/status', [LeadController::class, 'updateStatus'])->name('leads.update-status');
     Route::post('leads/{lead}/convert-to-client', [LeadController::class, 'convertToClient'])->name('leads.convertToClient');
+    Route::post('leads/{lead}/archive', [LeadController::class, 'archive'])->name('leads.archive');
+    Route::post('leads/{lead}/unarchive', [LeadController::class, 'unarchive'])->name('leads.unarchive');
     Route::resource('leads', LeadController::class)->only(['index', 'store', 'destroy']);
 
     Route::patch('files/{file}/rename', [FileController::class, 'rename'])->name('files.rename');

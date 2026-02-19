@@ -7,10 +7,11 @@ use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use LaravelArchivable\Archivable;
 
 class Lead extends Model
 {
-    use AssignsAgentOwnership, SoftDeletes, HasUuid;
+    use AssignsAgentOwnership, SoftDeletes, HasUuid, Archivable;
 
     protected $fillable = [
         'agent_id',
@@ -26,6 +27,7 @@ class Lead extends Model
 
     protected $casts = [
         'converted_at' => 'datetime',
+        'archived_at' => 'datetime',
     ];
 
     public function agent(): BelongsTo
