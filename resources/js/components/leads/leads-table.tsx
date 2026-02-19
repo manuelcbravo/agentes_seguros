@@ -131,19 +131,19 @@ export function LeadsTable({
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={actions.onView}>
+                            <DropdownMenuItem onSelect={(event) => { event.preventDefault(); actions.onView(); }}>
                                 <Eye className="mr-2 size-4" /> Ver
                             </DropdownMenuItem>
                             {mode !== 'archived' && (
-                                <DropdownMenuItem onClick={actions.onEdit}>
+                                <DropdownMenuItem onSelect={(event) => { event.preventDefault(); actions.onEdit(); }}>
                                     <Pencil className="mr-2 size-4" /> Editar
                                 </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem onClick={actions.onFiles}>
+                            <DropdownMenuItem onSelect={(event) => { event.preventDefault(); actions.onFiles(); }}>
                                 <FolderKanban className="mr-2 size-4" /> Archivos
                             </DropdownMenuItem>
                             {mode !== 'archived' && actions.canConvert && (
-                                <DropdownMenuItem onClick={actions.onConvert}>
+                                <DropdownMenuItem onSelect={(event) => { event.preventDefault(); actions.onConvert(); }}>
                                     <UserPlus className="mr-2 size-4" /> Convertir a cliente
                                 </DropdownMenuItem>
                             )}
@@ -157,7 +157,7 @@ export function LeadsTable({
                                             <DropdownMenuItem
                                                 key={status.value}
                                                 disabled={status.value === row.status}
-                                                onClick={() => actions.moveToStatus(status.value)}
+                                                onSelect={(event) => { event.preventDefault(); actions.moveToStatus(status.value); }}
                                             >
                                                 {status.label}
                                             </DropdownMenuItem>
@@ -167,15 +167,15 @@ export function LeadsTable({
                             )}
                             <DropdownMenuSeparator />
                             {mode === 'archived' ? (
-                                <DropdownMenuItem onClick={actions.onUnarchive}>
+                                <DropdownMenuItem onSelect={(event) => { event.preventDefault(); actions.onUnarchive(); }}>
                                     <RotateCcw className="mr-2 size-4" /> Restaurar
                                 </DropdownMenuItem>
                             ) : (
-                                <DropdownMenuItem onClick={actions.onArchive}>
+                                <DropdownMenuItem onSelect={(event) => { event.preventDefault(); actions.onArchive(); }}>
                                     <Archive className="mr-2 size-4" /> Archivar
                                 </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem variant="destructive" onClick={actions.onDelete}>
+                            <DropdownMenuItem variant="destructive" onSelect={(event) => { event.preventDefault(); actions.onDelete(); }}>
                                 <Trash2 className="mr-2 size-4" /> Eliminar
                             </DropdownMenuItem>
                         </DropdownMenuContent>

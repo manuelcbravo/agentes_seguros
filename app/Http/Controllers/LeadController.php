@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateLeadStatusRequest;
 use App\Http\Requests\UpsertLeadRequest;
-use App\Models\Agent;
 use App\Models\Client;
 use App\Models\File;
 use App\Models\Lead;
@@ -81,11 +80,6 @@ class LeadController extends Controller
                 ->where('related_table', 'leads')
                 ->latest()
                 ->get(),
-            'agents' => Agent::query()->orderBy('name')->get(['id', 'name']),
-            'filters' => [
-                'search' => trim((string) $request->string('search', '')),
-                'agent_id' => $request->string('agent_id')->toString() ?: null,
-            ],
         ]);
     }
 
@@ -203,8 +197,6 @@ class LeadController extends Controller
     {
         $search = trim((string) $request->string('search', ''));
         $status = $fixedStatus ?? ($request->string('status')->toString() ?: null);
-        $agentId = $request->string('agent_id')->toString() ?: null;
-
         $leads = $this->baseQuery($request, $onlyArchived)
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $nestedQuery) use ($search) {
@@ -215,7 +207,6 @@ class LeadController extends Controller
                 });
             })
             ->when($status, fn (Builder $query) => $query->where('status', $status))
-            ->when($agentId, fn (Builder $query) => $query->where('agent_id', $agentId))
             ->latest()
             ->paginate(10)
             ->withQueryString();
@@ -229,7 +220,6 @@ class LeadController extends Controller
             'filters' => [
                 'search' => $search,
                 'status' => $status,
-                'agent_id' => $agentId,
             ],
             'leads' => $leads,
             'files' => File::query()
@@ -237,7 +227,6 @@ class LeadController extends Controller
                 ->where('related_table', 'leads')
                 ->latest()
                 ->get(),
-            'agents' => Agent::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -246,17 +235,11 @@ class LeadController extends Controller
         $query = Lead::query()->with('agent:id,name');
 
         if ($onlyArchived) {
-            if (method_exists(Lead::class, 'scopeWithArchived')) {
-                $query->withArchived();
-            }
-
-            $query->whereNotNull('archived_at');
+            $query = $this->applyArchivedScope($query);
+        } elseif (method_exists(Lead::class, 'scopeWithoutArchived')) {
+            $query->withoutArchived();
         } else {
-            if (method_exists(Lead::class, 'scopeWithoutArchived')) {
-                $query->withoutArchived();
-            } else {
-                $query->whereNull('archived_at');
-            }
+            $query->whereNull('archived_at');
         }
 
         /** @var User|null $user */
@@ -268,11 +251,54 @@ class LeadController extends Controller
 
         $user->loadMissing('agent');
 
-        if ($this->isSuperAdmin($user)) {
-            return $query;
+        $currentAgentId = $this->resolveCurrentAgentId($user);
+
+        if (! $currentAgentId) {
+            return $query->whereRaw('1 = 0');
         }
 
-        return $query->where('agent_id', $user->agent?->id);
+        return $query->where('agent_id', $currentAgentId);
+    }
+
+    private function applyArchivedScope(Builder $query): Builder
+    {
+        if (method_exists(Lead::class, 'scopeOnlyArchived')) {
+            return $query->onlyArchived();
+        }
+
+        if (method_exists(Lead::class, 'scopeArchived')) {
+            return $query->archived();
+        }
+
+        if (method_exists(Lead::class, 'scopeWithArchived')) {
+            return $query->withArchived()->whereNotNull('archived_at');
+        }
+
+        return Lead::query()
+            ->with('agent:id,name')
+            ->withoutGlobalScopes()
+            ->whereNotNull('archived_at');
+    }
+
+    private function resolveCurrentAgentId(User $user): ?string
+    {
+        $agentId = $user->agent_id ?? $user->agent?->id;
+
+        return $agentId ? (string) $agentId : null;
+    }
+
+    private function currentAgentIdFromRequest(Request $request): ?string
+    {
+        /** @var User|null $user */
+        $user = $request->user();
+
+        if (! $user) {
+            return null;
+        }
+
+        $user->loadMissing('agent');
+
+        return $this->resolveCurrentAgentId($user);
     }
 
     private function resolveAgentId(Request $request, array $data, bool $isUpdating): string
@@ -282,24 +308,24 @@ class LeadController extends Controller
         $user?->loadMissing('agent');
 
         if (! $isUpdating) {
-            if (! $user?->agent?->id) {
+            $agentId = $this->currentAgentIdFromRequest($request);
+
+            if (! $agentId) {
                 throw ValidationException::withMessages([
                     'agent_id' => 'No se pudo asignar el agente del usuario autenticado.',
                 ]);
             }
 
-            return (string) $user->agent->id;
+            return $agentId;
         }
 
-        if ($user && $this->isSuperAdmin($user) && ! empty($data['agent_id'])) {
-            return (string) $data['agent_id'];
-        }
+        $agentId = $this->currentAgentIdFromRequest($request);
 
-        if (! $user || ! $user->agent?->id) {
+        if (! $agentId) {
             return (string) ($data['agent_id'] ?? '');
         }
 
-        return (string) $user->agent->id;
+        return $agentId;
     }
 
     private function authorizeLead(Request $request, Lead $lead): void
@@ -311,20 +337,11 @@ class LeadController extends Controller
             abort(403);
         }
 
-        if ($this->isSuperAdmin($user)) {
-            return;
-        }
+        $agentId = $this->currentAgentIdFromRequest($request);
 
-        if ($lead->exists && $lead->agent_id !== $user->agent?->id) {
+        if (! $agentId || ($lead->exists && $lead->agent_id !== $agentId)) {
             abort(403);
         }
-    }
-
-    private function isSuperAdmin(User $user): bool
-    {
-        return $user->hasRole('SuperAdmin')
-            || $user->hasRole('superadmin')
-            || $user->hasRole('super_admin');
     }
 
     /**

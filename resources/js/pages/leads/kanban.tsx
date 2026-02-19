@@ -75,6 +75,7 @@ export default function LeadsKanban({
     const [leadForFiles, setLeadForFiles] = useState<LeadItem | null>(null);
     const [leadToConvert, setLeadToConvert] = useState<LeadItem | null>(null);
     const [leadToArchive, setLeadToArchive] = useState<LeadItem | null>(null);
+    const [isArchiving, setIsArchiving] = useState(false);
     const { flash } = usePage<SharedData>().props;
 
     useEffect(() => {
@@ -132,7 +133,7 @@ export default function LeadsKanban({
             { status },
             {
                 preserveScroll: true,
-                onSuccess: () => toast.success('Lead movido correctamente.'),
+                onSuccess: () => toast.success('Estatus actualizado correctamente.'),
                 onError: () => {
                     setBoardLeads(previous);
                     toast.error('No se pudo mover el lead.');
@@ -199,17 +200,17 @@ export default function LeadsKanban({
                                                     </article>
                                                 </ContextMenuTrigger>
                                                 <ContextMenuContent>
-                                                    <ContextMenuItem onClick={actions.onView}>
+                                                    <ContextMenuItem onSelect={(event) => { event.preventDefault(); actions.onView(); }}>
                                                         <Eye className="mr-2 size-4" /> Ver
                                                     </ContextMenuItem>
-                                                    <ContextMenuItem onClick={actions.onEdit}>
+                                                    <ContextMenuItem onSelect={(event) => { event.preventDefault(); actions.onEdit(); }}>
                                                         <Pencil className="mr-2 size-4" /> Editar
                                                     </ContextMenuItem>
-                                                    <ContextMenuItem onClick={actions.onFiles}>
+                                                    <ContextMenuItem onSelect={(event) => { event.preventDefault(); actions.onFiles(); }}>
                                                         <FolderKanban className="mr-2 size-4" /> Archivos
                                                     </ContextMenuItem>
                                                     {actions.canConvert && (
-                                                        <ContextMenuItem onClick={actions.onConvert}>
+                                                        <ContextMenuItem onSelect={(event) => { event.preventDefault(); actions.onConvert(); }}>
                                                             <UserPlus className="mr-2 size-4" /> Convertir a cliente
                                                         </ContextMenuItem>
                                                     )}
@@ -222,7 +223,7 @@ export default function LeadsKanban({
                                                                 <ContextMenuItem
                                                                     key={status.value}
                                                                     disabled={status.value === lead.status}
-                                                                    onClick={() => actions.moveToStatus(status.value)}
+                                                                    onSelect={(event) => { event.preventDefault(); actions.moveToStatus(status.value); }}
                                                                 >
                                                                     {status.label}
                                                                 </ContextMenuItem>
@@ -230,10 +231,10 @@ export default function LeadsKanban({
                                                         </ContextMenuSubContent>
                                                     </ContextMenuSub>
                                                     <ContextMenuSeparator />
-                                                    <ContextMenuItem onClick={actions.onArchive}>
+                                                    <ContextMenuItem onSelect={(event) => { event.preventDefault(); actions.onArchive(); }}>
                                                         <Archive className="mr-2 size-4" /> Archivar
                                                     </ContextMenuItem>
-                                                    <ContextMenuItem variant="destructive" onClick={actions.onDelete}>
+                                                    <ContextMenuItem variant="destructive" onSelect={(event) => { event.preventDefault(); actions.onDelete(); }}>
                                                         <Trash2 className="mr-2 size-4" /> Eliminar
                                                     </ContextMenuItem>
                                                 </ContextMenuContent>
@@ -295,21 +296,23 @@ export default function LeadsKanban({
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction
+                            disabled={isArchiving}
                             onClick={() => {
-                                if (!leadToArchive) return;
+                                if (!leadToArchive || isArchiving) return;
 
+                                setIsArchiving(true);
                                 router.post(route('leads.archive', leadToArchive.id), undefined, {
                                     preserveScroll: true,
                                     onSuccess: () => {
-                                        toast.success('Lead archivado correctamente.');
                                         setLeadToArchive(null);
                                         setBoardLeads((current) => current.filter((lead) => lead.id !== leadToArchive.id));
                                     },
                                     onError: () => toast.error('No se pudo archivar el lead.'),
+                                    onFinish: () => setIsArchiving(false),
                                 });
                             }}
                         >
-                            Archivar
+                            {isArchiving ? 'Archivando...' : 'Archivar'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
