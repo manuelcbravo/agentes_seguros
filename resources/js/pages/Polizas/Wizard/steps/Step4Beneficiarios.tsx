@@ -1,0 +1,188 @@
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
+import { useMemo, useState } from 'react';
+
+export default function Step4Beneficiarios({
+    beneficiaries,
+    setBeneficiaries,
+    relationships,
+}: any) {
+    const [open, setOpen] = useState(false);
+    const [newBeneficiary, setNewBeneficiary] = useState({
+        name: '',
+        relationship_id: '',
+        benefit_percentage: 0,
+    });
+    const total = useMemo(
+        () =>
+            beneficiaries.reduce(
+                (sum: number, b: any) =>
+                    sum + Number(b.benefit_percentage || 0),
+                0,
+            ),
+        [beneficiaries],
+    );
+
+    const addBeneficiary = () => {
+        if (!newBeneficiary.name) return;
+        setBeneficiaries([...beneficiaries, { ...newBeneficiary }]);
+        setNewBeneficiary({
+            name: '',
+            relationship_id: '',
+            benefit_percentage: 0,
+        });
+        setOpen(false);
+    };
+
+    return (
+        <div className="space-y-4">
+            {total !== 100 && (
+                <Alert variant="destructive">
+                    <AlertTitle>Validación pendiente</AlertTitle>
+                    <AlertDescription>
+                        Para terminar, la suma debe ser 100%.
+                    </AlertDescription>
+                </Alert>
+            )}
+            <div>
+                <div className="mb-2 flex items-center justify-between text-sm">
+                    <span>Total asignado</span>
+                    <strong>{total}%</strong>
+                </div>
+                <Progress
+                    value={Math.min(100, total)}
+                    className={total === 100 ? 'text-emerald-500' : ''}
+                />
+            </div>
+            <div className="rounded-lg border">
+                <table className="w-full text-sm">
+                    <thead className="bg-muted/30">
+                        <tr>
+                            <th className="p-2 text-left">Nombre</th>
+                            <th className="p-2 text-left">Parentesco</th>
+                            <th className="p-2 text-left">%</th>
+                            <th className="p-2" />
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {beneficiaries.map((b: any, index: number) => (
+                            <tr
+                                key={`${b.id ?? 'new'}-${index}`}
+                                className="border-t"
+                            >
+                                <td className="p-2">{b.name}</td>
+                                <td className="p-2">
+                                    {relationships.find(
+                                        (r: any) => r.id === b.relationship_id,
+                                    )?.name ?? '—'}
+                                </td>
+                                <td className="p-2">
+                                    <Input
+                                        type="number"
+                                        min={0}
+                                        max={100}
+                                        value={b.benefit_percentage}
+                                        onChange={(e) =>
+                                            setBeneficiaries(
+                                                beneficiaries.map(
+                                                    (row: any, i: number) =>
+                                                        i === index
+                                                            ? {
+                                                                  ...row,
+                                                                  benefit_percentage:
+                                                                      e.target
+                                                                          .value,
+                                                              }
+                                                            : row,
+                                                ),
+                                            )
+                                        }
+                                    />
+                                </td>
+                                <td className="p-2 text-right">
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() =>
+                                            setBeneficiaries(
+                                                beneficiaries.filter(
+                                                    (_: any, i: number) =>
+                                                        i !== index,
+                                                ),
+                                            )
+                                        }
+                                    >
+                                        Quitar
+                                    </Button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            <Dialog open={open} onOpenChange={setOpen}>
+                <DialogTrigger asChild>
+                    <Button>Agregar beneficiario</Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Agregar beneficiario</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                        <Input
+                            placeholder="Nombre"
+                            value={newBeneficiary.name}
+                            onChange={(e) =>
+                                setNewBeneficiary({
+                                    ...newBeneficiary,
+                                    name: e.target.value,
+                                })
+                            }
+                        />
+                        <select
+                            className="h-10 w-full rounded-md border px-3"
+                            value={newBeneficiary.relationship_id}
+                            onChange={(e) =>
+                                setNewBeneficiary({
+                                    ...newBeneficiary,
+                                    relationship_id: e.target.value,
+                                })
+                            }
+                        >
+                            <option value="">Parentesco</option>
+                            {relationships.map((r: any) => (
+                                <option key={r.id} value={r.id}>
+                                    {r.name}
+                                </option>
+                            ))}
+                        </select>
+                        <Input
+                            type="number"
+                            min={0}
+                            max={100}
+                            placeholder="%"
+                            value={newBeneficiary.benefit_percentage}
+                            onChange={(e) =>
+                                setNewBeneficiary({
+                                    ...newBeneficiary,
+                                    benefit_percentage: Number(e.target.value),
+                                })
+                            }
+                        />
+                        <Button onClick={addBeneficiary} className="w-full">
+                            Guardar beneficiario
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+}
