@@ -96,9 +96,8 @@ class Insured extends Model
 
     public function toSearchableArray(): array
     {
-        $fullName = $this->full_name;
         $searchText = mb_strtolower(implode(' ', array_filter([
-            $fullName,
+            $this->full_name,
             $this->email,
             $this->phone,
             $this->rfc,
@@ -109,7 +108,7 @@ class Insured extends Model
         return [
             'id' => $this->id,
             'agent_id' => $this->agent_id,
-            'full_name' => $fullName,
+            'full_name' => $this->full_name,
             'email' => $this->email,
             'phone' => $this->phone,
             'rfc' => $this->rfc,

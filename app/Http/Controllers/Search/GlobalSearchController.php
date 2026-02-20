@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-
+use Illuminate\Database\QueryException;
 class GlobalSearchController extends Controller
 {
     public function index(Request $request): JsonResponse
@@ -183,13 +183,20 @@ class GlobalSearchController extends Controller
         $scoutResults = collect();
 
         if (in_array('Laravel\\Scout\\Searchable', class_uses_recursive($modelClass), true)) {
-            $builder = $modelClass::search(mb_strtolower($query));
+             try {
+                $builder = $modelClass::search(mb_strtolower($query));
 
-            if (method_exists($builder, 'where') && $agentId) {
-                $builder->where('agent_id', $agentId);
+                if (method_exists($builder, 'where') && $agentId) {
+                    $builder->where('agent_id', $agentId);
+                }
+
+                $scoutResults = $builder->take($limit * 2)->get();
+            } catch (QueryException $exception) {
+                // Cuando Scout usa el motor de base de datos, intenta consultar columnas
+                // virtuales como "full_name" o "search_text" que no existen físicamente.
+                // En ese caso hacemos fallback al query SQL seguro definido por entidad.
+                report($exception);
             }
-
-            $scoutResults = $builder->take($limit * 2)->get();
         }
 
         $safeScopedScout = $scoutResults
