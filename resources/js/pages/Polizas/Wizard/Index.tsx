@@ -1,4 +1,7 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { route } from 'ziggy-js';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -8,9 +11,6 @@ import {
 } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import AppLayout from '@/layouts/app-layout';
-import { useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
-import { route } from 'ziggy-js';
 import type { BreadcrumbItem, SharedData } from '@/types';
 import StepHeader from './components/StepHeader';
 import Stepper from './components/Stepper';
@@ -18,6 +18,14 @@ import Step1Contratante from './steps/Step1Contratante';
 import Step2Asegurado from './steps/Step2Asegurado';
 import Step3Poliza from './steps/Step3Poliza';
 import Step4Beneficiarios from './steps/Step4Beneficiarios';
+
+type SelectedClient = {
+    id: string;
+    full_name: string;
+    phone?: string;
+    email?: string;
+    rfc?: string;
+};
 
 const steps = [
     { key: 1, title: 'Contratante', description: 'Selecciona cliente' },
@@ -28,7 +36,7 @@ const steps = [
 
 export default function PolicyWizardPage({
     policy,
-    clients,
+    preselectedClient,
     insureds,
     relationships,
     paymentChannels,
@@ -38,6 +46,9 @@ export default function PolicyWizardPage({
     const [sameAsClient, setSameAsClient] = useState(true);
     const [beneficiaries, setBeneficiaries] = useState(
         policy?.beneficiaries ?? [],
+    );
+    const [selectedClient, setSelectedClient] = useState<SelectedClient | null>(
+        preselectedClient ?? null,
     );
     const { flash } = usePage<SharedData>().props;
 
@@ -70,24 +81,7 @@ export default function PolicyWizardPage({
         if (flash?.error) toast.error(flash.error);
     }, [flash?.error, flash?.success]);
 
-    const clientOptions = useMemo(
-        () =>
-            clients.map((c: any) => ({
-                ...c,
-                full_name: [
-                    c.first_name,
-                    c.middle_name,
-                    c.last_name,
-                    c.second_last_name,
-                ]
-                    .filter(Boolean)
-                    .join(' '),
-            })),
-        [clients],
-    );
-    const contratante = clientOptions.find(
-        (c: any) => c.id === form.data.client_id,
-    );
+    const contratante = selectedClient;
     const totalPercent = beneficiaries.reduce(
         (sum: number, b: any) => sum + Number(b.benefit_percentage || 0),
         0,
@@ -143,11 +137,12 @@ export default function PolicyWizardPage({
                         </div>
                         {step === 1 && (
                             <Step1Contratante
-                                clients={clientOptions}
+                                preselectedClient={preselectedClient}
                                 selectedId={form.data.client_id}
                                 setSelectedId={(v) =>
                                     form.setData('client_id', v)
                                 }
+                                onClientSelected={setSelectedClient}
                             />
                         )}
                         {step === 2 && (
@@ -204,6 +199,9 @@ export default function PolicyWizardPage({
                             </Button>
                             {step < 4 ? (
                                 <Button
+                                    disabled={
+                                        step === 1 && !form.data.client_id
+                                    }
                                     onClick={() => {
                                         saveCurrentStep();
                                         setStep((s) => Math.min(4, s + 1));

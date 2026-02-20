@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('cat_relationships', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+            $table->id();
             $table->string('code', 30)->unique();
             $table->string('name', 150)->unique();
             $table->timestamps();

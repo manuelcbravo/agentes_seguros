@@ -20,9 +20,16 @@ use Inertia\Response;
 
 class PolicyWizardController extends Controller
 {
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('Polizas/Wizard/Index', $this->wizardProps());
+        $preselectedClient = null;
+        $clientId = $request->query('client_id');
+
+        if (is_string($clientId) && $clientId !== '') {
+            $preselectedClient = $this->ownedClient($clientId);
+        }
+
+        return Inertia::render('Polizas/Wizard/Index', $this->wizardProps(null, $preselectedClient));
     }
 
     public function edit(string $policyId): Response
@@ -261,21 +268,47 @@ class PolicyWizardController extends Controller
         return $policy;
     }
 
-    private function wizardProps(?Policy $policy = null): array
+    private function ownedClient(string $clientId): Client
     {
-        $agentId = (string) auth()->user()->agent_id;
+        $client = Client::query()->findOrFail($clientId);
 
+        if ((string) $client->agent_id !== (string) auth()->user()->agent_id) {
+            abort(403);
+        }
+
+        return $client;
+    }
+
+    private function serializeClient(?Client $client): ?array
+    {
+        if (! $client) {
+            return null;
+        }
+
+        return [
+            'id' => $client->id,
+            'full_name' => $client->full_name,
+            'phone' => $client->phone,
+            'email' => $client->email,
+            'rfc' => $client->rfc,
+        ];
+    }
+
+    private function wizardProps(?Policy $policy = null, ?Client $preselectedClient = null): array
+    {
         $policy?->load(['beneficiaries:id,policy_id,name,relationship_id,benefit_percentage', 'client:id,first_name,middle_name,last_name,second_last_name,email,phone,rfc', 'insured:id,client_id,email,phone,rfc,birthday,occupation,company_name']);
+
+        $selectedClient = $preselectedClient;
+
+        if (! $selectedClient && $policy?->client) {
+            $selectedClient = $policy->client;
+        }
 
         return [
             'policy' => $policy,
-            'clients' => Client::query()
-                ->where('agent_id', $agentId)
-                ->select(['id', 'first_name', 'middle_name', 'last_name', 'second_last_name', 'email', 'phone', 'rfc'])
-                ->orderBy('first_name')
-                ->get(),
+            'preselectedClient' => $this->serializeClient($selectedClient),
             'insureds' => Insured::query()
-                ->where('agent_id', $agentId)
+                ->where('agent_id', (string) auth()->user()->agent_id)
                 ->select(['id', 'client_id', 'email', 'phone', 'rfc', 'birthday', 'occupation', 'company_name'])
                 ->latest()
                 ->get(),

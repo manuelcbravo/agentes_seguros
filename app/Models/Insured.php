@@ -7,10 +7,11 @@ use App\Models\Concerns\AssignsAgentOwnership;
 use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Scout\Searchable;
 
 class Insured extends Model
 {
-     use AssignsAgentOwnership, HasUuid, SoftDeletes;
+     use AssignsAgentOwnership, HasUuid, SoftDeletes, Searchable;
 
     protected $fillable = [
         'agent_id',
@@ -74,5 +75,29 @@ class Insured extends Model
     public function policies()
     {
         return $this->hasMany(Policy::class);
+    }
+
+    public function toSearchableArray(): array
+    {
+        $fullName = $this->client?->full_name;
+        $searchText = mb_strtolower(implode(' ', array_filter([
+            $fullName,
+            $this->email,
+            $this->phone,
+            $this->rfc,
+            $this->occupation,
+            $this->company_name,
+        ])));
+
+        return [
+            'id' => $this->id,
+            'agent_id' => $this->agent_id,
+            'full_name' => $fullName,
+            'email' => $this->email,
+            'phone' => $this->phone,
+            'rfc' => $this->rfc,
+            'occupation' => $this->occupation,
+            'search_text' => $searchText,
+        ];
     }
 }

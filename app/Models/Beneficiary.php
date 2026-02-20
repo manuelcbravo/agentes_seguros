@@ -7,10 +7,11 @@ use App\Models\Concerns\AssignsAgentOwnership;
 use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Scout\Searchable;
 
 class Beneficiary extends Model
 {
-    use AssignsAgentOwnership, HasUuid, SoftDeletes;
+    use AssignsAgentOwnership, HasUuid, SoftDeletes, Searchable;
 
     protected $fillable = [
         'agent_id',
@@ -56,5 +57,26 @@ class Beneficiary extends Model
     public function relationshipCatalog(): BelongsTo
     {
         return $this->belongsTo(CatRelationship::class, 'relationship_id');
+    }
+
+    public function toSearchableArray(): array
+    {
+        $searchText = mb_strtolower(implode(' ', array_filter([
+            $this->name,
+            $this->rfc,
+            $this->occupation,
+            $this->company_name,
+            $this->policy?->status,
+        ])));
+
+        return [
+            'id' => $this->id,
+            'agent_id' => $this->agent_id,
+            'name' => $this->name,
+            'rfc' => $this->rfc,
+            'occupation' => $this->occupation,
+            'policy_status' => $this->policy?->status,
+            'search_text' => $searchText,
+        ];
     }
 }

@@ -8,6 +8,7 @@ use App\Models\Concerns\HasUuid;
 use App\Models\Traits\HasTrackingActivities;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Scout\Searchable;
 
 class Policy extends Model
 {
@@ -15,7 +16,7 @@ class Policy extends Model
     public const STATUS_ACTIVE = 'activo';
     public const STATUS_EXPIRED = 'caducada';
 
-    use AssignsAgentOwnership, HasUuid, SoftDeletes, HasTrackingActivities;
+    use AssignsAgentOwnership, HasUuid, SoftDeletes, HasTrackingActivities, Searchable;
 
     protected $fillable = [
         'client_id',
@@ -78,5 +79,25 @@ class Policy extends Model
     public function beneficiaries()
     {
         return $this->hasMany(Beneficiary::class);
+    }
+
+    public function toSearchableArray(): array
+    {
+        $searchText = mb_strtolower(implode(' ', array_filter([
+            $this->product,
+            $this->status,
+            $this->periodicity,
+            $this->client?->full_name,
+        ])));
+
+        return [
+            'id' => $this->id,
+            'agent_id' => $this->agent_id,
+            'product' => $this->product,
+            'status' => $this->status,
+            'periodicity' => $this->periodicity,
+            'client_name' => $this->client?->full_name,
+            'search_text' => $searchText,
+        ];
     }
 }

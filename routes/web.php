@@ -11,11 +11,13 @@ use App\Http\Controllers\Catalog\SexController;
 use App\Http\Controllers\AgentController;
 use App\Http\Controllers\AgentLicenseController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\Clients\ClientSearchController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\Config\RoleController;
 use App\Http\Controllers\Config\UserController;
 use App\Http\Controllers\GoogleCalendarController;
+use App\Http\Controllers\Search\GlobalSearchController;
 use App\Http\Controllers\Polizas\AseguradoController;
 use App\Http\Controllers\Polizas\BeneficiarioController;
 use App\Http\Controllers\Polizas\PolizaController;
@@ -55,6 +57,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
     
     Route::resource('clients', ClientController::class)->only(['index', 'store', 'destroy']);
+    Route::get('clients/search', [ClientSearchController::class, 'index'])->name('clients.search');
     Route::resource('agents', AgentController::class)->only(['index', 'store', 'destroy']);
 
     Route::resource('agent-licenses', AgentLicenseController::class)
@@ -115,6 +118,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('tracking/upsert', [TrackingActivityController::class, 'upsert'])->name('tracking.upsert');
     Route::delete('tracking/{id}', [TrackingActivityController::class, 'destroy'])->name('tracking.destroy');
     Route::get('tracking/pendientes', [TrackingActivityController::class, 'pendientes'])->name('tracking.pendientes');
+
+    Route::get('/search/global', [GlobalSearchController::class, 'index'])->name('search.global');
 
 });
 require __DIR__.'/settings.php';

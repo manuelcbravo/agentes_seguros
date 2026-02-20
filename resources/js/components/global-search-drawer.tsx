@@ -1,14 +1,8 @@
+import { useMemo, useState, type KeyboardEventHandler } from 'react';
 import { Search } from 'lucide-react';
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
     Sheet,
     SheetContent,
@@ -16,27 +10,84 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { ResultGroup } from '@/components/global-search/ResultGroup';
+import { useGlobalSearch } from '@/components/global-search/useGlobalSearch';
 
-const mockResults = [
-    {
-        title: 'Cliente: María Hernández',
-        description: 'Última actualización: hoy · Estado: Activo',
-        tag: 'Clientes',
-    },
-    {
-        title: 'Agente: Javier Soto',
-        description: '3 licencias vigentes · 1 por vencer',
-        tag: 'Agentes',
-    },
-    {
-        title: 'Aseguradora: Seguros Atlas',
-        description: '25 pólizas asociadas · Catálogo',
-        tag: 'Catálogos',
-    },
-];
+function LoadingState() {
+    return (
+        <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, index) => (
+                <div
+                    key={`search-skeleton-${index}`}
+                    className="space-y-2 rounded-xl border border-border/50 p-4"
+                >
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-4 w-4/5" />
+                    <Skeleton className="h-3 w-2/3" />
+                </div>
+            ))}
+        </div>
+    );
+}
 
 export function GlobalSearchDrawer() {
     const [open, setOpen] = useState(false);
+    const {
+        query,
+        setQuery,
+        loading,
+        groups,
+        flatItems,
+        activeIndex,
+        setActiveIndex,
+        openItem,
+        total,
+        tookMs,
+        minLengthMet,
+        normalizedQuery,
+    } = useGlobalSearch(open);
+
+    const offsets = useMemo(() => {
+        let running = 0;
+        return groups.map((group) => {
+            const start = running;
+            running += group.items.length;
+            return { key: group.key, start };
+        });
+    }, [groups]);
+
+    const handleKeyDown: KeyboardEventHandler<HTMLDivElement> = (event) => {
+        if (event.key === 'Escape') {
+            setOpen(false);
+            return;
+        }
+
+        if (flatItems.length === 0) return;
+
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            setActiveIndex((current) =>
+                current < 0 ? 0 : (current + 1) % flatItems.length,
+            );
+        }
+
+        if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            setActiveIndex((current) =>
+                current <= 0 ? flatItems.length - 1 : current - 1,
+            );
+        }
+
+        if (
+            event.key === 'Enter' &&
+            activeIndex >= 0 &&
+            flatItems[activeIndex]
+        ) {
+            event.preventDefault();
+            openItem(flatItems[activeIndex]);
+            setOpen(false);
+        }
+    };
 
     return (
         <>
@@ -51,47 +102,84 @@ export function GlobalSearchDrawer() {
             </Button>
 
             <Sheet open={open} onOpenChange={setOpen}>
-                <SheetContent side="right" className="w-full p-0 sm:max-w-xl">
+                <SheetContent
+                    side="right"
+                    className="w-full p-0 sm:max-w-2xl"
+                    onKeyDown={handleKeyDown}
+                >
                     <div className="flex h-full flex-col">
                         <SheetHeader className="border-b px-6 py-5 text-left">
                             <SheetTitle>Búsqueda global</SheetTitle>
                             <SheetDescription>
-                                Encuentra clientes, agentes, licencias y
-                                catálogos en segundos.
+                                Busca clientes, asegurados, beneficiarios y
+                                pólizas al instante.
                             </SheetDescription>
                         </SheetHeader>
 
-                        <div className="space-y-4 overflow-y-auto p-6">
+                        <div className="space-y-4 border-b px-6 py-4">
                             <div className="relative">
                                 <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
-                                    placeholder="Buscar por nombre, correo, licencia o aseguradora..."
-                                    className="pl-9"
+                                    value={query}
+                                    onChange={(event) =>
+                                        setQuery(event.target.value)
+                                    }
+                                    autoFocus
+                                    placeholder="Ej. Manuel, 55..., correo o producto..."
+                                    className="h-11 rounded-xl border-border/70 pl-9"
                                 />
                             </div>
-
-                            <div className="space-y-3">
-                                {mockResults.map((result) => (
-                                    <Card
-                                        key={result.title}
-                                        className="transition-colors hover:bg-muted/40"
-                                    >
-                                        <CardHeader className="pb-2">
-                                            <CardDescription>
-                                                {result.tag}
-                                            </CardDescription>
-                                            <CardTitle className="text-base">
-                                                {result.title}
-                                            </CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p className="text-sm text-muted-foreground">
-                                                {result.description}
-                                            </p>
-                                        </CardContent>
-                                    </Card>
-                                ))}
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                <p>
+                                    ↑ ↓ para navegar · Enter para abrir · Esc
+                                    para cerrar
+                                </p>
+                                {minLengthMet && !loading && total > 0 && (
+                                    <p>
+                                        {total} resultado
+                                        {total === 1 ? '' : 's'} · {tookMs} ms
+                                    </p>
+                                )}
                             </div>
+                        </div>
+
+                        <div className="flex-1 space-y-4 overflow-y-auto bg-muted/15 p-6">
+                            {!minLengthMet ? (
+                                <div className="rounded-xl border border-dashed bg-background p-6 text-center text-sm text-muted-foreground">
+                                    Escribe al menos 3 caracteres para buscar.
+                                </div>
+                            ) : loading ? (
+                                <LoadingState />
+                            ) : groups.length === 0 ? (
+                                <div className="rounded-xl border bg-background p-8 text-center">
+                                    <p className="text-sm font-medium">
+                                        Sin resultados para “{normalizedQuery}”.
+                                    </p>
+                                    <p className="mt-2 text-xs text-muted-foreground">
+                                        Prueba por nombre, teléfono, correo, RFC
+                                        o estatus.
+                                    </p>
+                                </div>
+                            ) : (
+                                groups.map((group) => (
+                                    <ResultGroup
+                                        key={group.key}
+                                        group={group}
+                                        query={normalizedQuery}
+                                        activeIndex={activeIndex}
+                                        startIndex={
+                                            offsets.find(
+                                                (offset) =>
+                                                    offset.key === group.key,
+                                            )?.start ?? 0
+                                        }
+                                        onOpen={(item) => {
+                                            openItem(item);
+                                            setOpen(false);
+                                        }}
+                                    />
+                                ))
+                            )}
                         </div>
                     </div>
                 </SheetContent>

@@ -6,11 +6,12 @@ use App\Models\Traits\HasTrackingActivities;
 use Illuminate\Database\Eloquent\Model;
 use Mattiverse\Userstamps\Traits\Userstamps;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Scout\Searchable;
 use App\Models\Concerns\HasUuid;
 
 class Client extends Model
 {
-    use Userstamps, SoftDeletes, HasUuid, HasTrackingActivities;
+    use Userstamps, SoftDeletes, HasUuid, HasTrackingActivities, Searchable;
 
     // ===== MASS ASSIGNMENT =====
     protected $fillable = [
@@ -146,5 +147,25 @@ class Client extends Model
     public function isBlacklisted(): bool
     {
         return $this->is_blacklisted;
+    }
+
+    public function toSearchableArray(): array
+    {
+        $searchText = mb_strtolower(implode(' ', array_filter([
+            $this->full_name,
+            $this->email,
+            $this->phone,
+            $this->rfc,
+        ])));
+
+        return [
+            'id' => $this->id,
+            'agent_id' => $this->agent_id,
+            'full_name' => $this->full_name,
+            'email' => $this->email,
+            'phone' => $this->phone,
+            'rfc' => $this->rfc,
+            'search_text' => $searchText,
+        ];
     }
 }

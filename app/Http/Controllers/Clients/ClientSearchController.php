@@ -1,0 +1,49 @@
+<?php
+
+namespace App\Http\Controllers\Clients;
+
+use App\Http\Controllers\Controller;
+use App\Models\Client;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class ClientSearchController extends Controller
+{
+    public function index(Request $request): JsonResponse
+    {
+        $agentId = (string) auth()->user()->agent_id;
+        $query = trim((string) $request->string('query'));
+
+        $clients = Client::query()
+            ->where('agent_id', $agentId)
+            ->when($query !== '', function ($builder) use ($query) {
+                $builder->where(function ($inner) use ($query) {
+                    $inner->where('first_name', 'like', "%{$query}%")
+                        ->orWhere('middle_name', 'like', "%{$query}%")
+                        ->orWhere('last_name', 'like', "%{$query}%")
+                        ->orWhere('second_last_name', 'like', "%{$query}%")
+                        ->orWhere('email', 'like', "%{$query}%")
+                        ->orWhere('phone', 'like', "%{$query}%");
+                });
+            })
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->limit(15)
+            ->get(['id', 'first_name', 'middle_name', 'last_name', 'second_last_name', 'phone', 'email', 'rfc'])
+            ->map(function (Client $client) {
+                $subtitleParts = array_filter([$client->phone, $client->email]);
+
+                return [
+                    'id' => $client->id,
+                    'label' => $client->first_name . ' ' . $client->middle_name . ' ' . $client->last_name . ' ' . $client->second_last_name,
+                    'subtitle' => $subtitleParts !== [] ? implode(' • ', $subtitleParts) : 'Sin teléfono ni email',
+                    'phone' => $client->phone,
+                    'email' => $client->email,
+                    'rfc' => $client->rfc,
+                ];
+            })
+            ->values();
+
+        return response()->json($clients);
+    }
+}

@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('cat_sexes', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+            $table->id();
             $table->string('code', 10)->unique();
             $table->string('name', 100)->unique();
             $table->timestamps();

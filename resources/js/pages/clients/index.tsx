@@ -249,7 +249,13 @@ export default function ClientsIndex({
                         >
                             <FolderKanban className="mr-2 size-4" /> Files
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={() =>
+                                router.get(route('polizas.wizard.create'), {
+                                    client_id: row.id,
+                                })
+                            }
+                        >
                             <BookPlus className="mr-2 size-4" /> Generar póliza
                         </DropdownMenuItem>
                         <DropdownMenuItem
