@@ -10,6 +10,11 @@ use App\Models\Policy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use App\Models\Tracking\CatTrackingActivityType;
+use App\Models\Tracking\CatTrackingChannel;
+use App\Models\Tracking\CatTrackingOutcome;
+use App\Models\Tracking\CatTrackingPriority;
+use App\Models\Tracking\CatTrackingStatus;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -52,6 +57,7 @@ class PolizaController extends Controller
             'insureds' => $insureds,
             'paymentChannels' => $paymentChannels,
             'filters' => ['search' => $search, 'payment_channel' => $paymentChannel],
+            'trackingCatalogs' => $this->trackingCatalogs(),
         ]);
     }
 
@@ -92,5 +98,17 @@ class PolizaController extends Controller
         $poliza->delete();
 
         return back()->with('success', 'Póliza eliminada correctamente.');
+    }
+
+
+    private function trackingCatalogs(): array
+    {
+        return [
+            'activityTypes' => CatTrackingActivityType::query()->where('is_active', true)->orderBy('sort_order')->get(['id', 'key', 'name']),
+            'channels' => CatTrackingChannel::query()->where('is_active', true)->orderBy('sort_order')->get(['id', 'key', 'name']),
+            'statuses' => CatTrackingStatus::query()->where('is_active', true)->orderBy('sort_order')->get(['id', 'key', 'name']),
+            'priorities' => CatTrackingPriority::query()->where('is_active', true)->orderBy('sort_order')->get(['id', 'key', 'name']),
+            'outcomes' => CatTrackingOutcome::query()->where('is_active', true)->orderBy('sort_order')->get(['id', 'key', 'name']),
+        ];
     }
 }

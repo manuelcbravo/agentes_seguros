@@ -76,10 +76,18 @@ export default function ArchivedLeadsIndex({
                 <div className="rounded-xl border border-sidebar-border/70 bg-sidebar-accent/20 p-4">
                     <div className="flex items-center justify-between gap-3">
                         <div className="space-y-1">
-                            <h1 className="text-xl font-semibold">Leads archivados</h1>
-                            <p className="text-sm text-muted-foreground">Revisa oportunidades pausadas y restáuralas cuando sea necesario.</p>
+                            <h1 className="text-xl font-semibold">
+                                Leads archivados
+                            </h1>
+                            <p className="text-sm text-muted-foreground">
+                                Revisa oportunidades pausadas y restáuralas
+                                cuando sea necesario.
+                            </p>
                         </div>
-                        <Button variant="outline" onClick={() => router.visit(route('leads.index'))}>
+                        <Button
+                            variant="outline"
+                            onClick={() => router.visit(route('leads.index'))}
+                        >
                             Volver a leads
                         </Button>
                     </div>
@@ -87,8 +95,16 @@ export default function ArchivedLeadsIndex({
 
                 <div className="rounded-xl border p-4">
                     <div className="grid gap-3 md:grid-cols-3">
-                        <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nombre, correo o telefono..." />
-                        <select value={status} onChange={(event) => setStatus(event.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+                        <Input
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                            placeholder="Buscar por nombre, correo o telefono..."
+                        />
+                        <select
+                            value={status}
+                            onChange={(event) => setStatus(event.target.value)}
+                            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                        >
                             <option value="">Todos los estatus</option>
                             {statusOptions.map((option) => (
                                 <option key={option.value} value={option.value}>
@@ -107,19 +123,36 @@ export default function ArchivedLeadsIndex({
                     data={leads.data}
                     statusOptions={statusOptions}
                     onEdit={() => undefined}
-                    onView={(lead) => router.visit(route('leads.index', { search: lead.first_name }))}
-                    onFiles={(lead) => router.visit(route('leads.index', { search: lead.first_name }))}
+                    onView={(lead) =>
+                        router.visit(
+                            route('leads.index', { search: lead.first_name }),
+                        )
+                    }
+                    onFiles={(lead) =>
+                        router.visit(
+                            route('leads.index', { search: lead.first_name }),
+                        )
+                    }
                     onConvert={() => undefined}
                     onDelete={(lead) => setActiveLead(lead)}
                     onUnarchive={(lead) => setLeadToRestore(lead)}
+                    onTracking={() => undefined}
                 />
             </div>
 
-            <AlertDialog open={leadToRestore !== null} onOpenChange={(open) => !open && setLeadToRestore(null)}>
+            <AlertDialog
+                open={leadToRestore !== null}
+                onOpenChange={(open) => !open && setLeadToRestore(null)}
+            >
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Restaurar lead archivado</AlertDialogTitle>
-                        <AlertDialogDescription>Este lead volverá a mostrarse en el listado principal y en el tablero Kanban.</AlertDialogDescription>
+                        <AlertDialogTitle>
+                            Restaurar lead archivado
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Este lead volverá a mostrarse en el listado
+                            principal y en el tablero Kanban.
+                        </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
@@ -129,18 +162,28 @@ export default function ArchivedLeadsIndex({
                                 if (!leadToRestore || isRestoring) return;
 
                                 setIsRestoring(true);
-                                router.post(route('leads.unarchive', leadToRestore.id), undefined, {
-                                    preserveScroll: true,
-                                    onSuccess: () => {
-                                        setLeadToRestore(null);
-                                        router.reload({ only: ['leads', 'flash'] });
+                                router.post(
+                                    route('leads.unarchive', leadToRestore.id),
+                                    undefined,
+                                    {
+                                        preserveScroll: true,
+                                        onSuccess: () => {
+                                            setLeadToRestore(null);
+                                            router.reload({
+                                                only: ['leads', 'flash'],
+                                            });
+                                        },
+                                        onError: () =>
+                                            toast.error(
+                                                'No se pudo restaurar el lead.',
+                                            ),
+                                        onFinish: () => setIsRestoring(false),
                                     },
-                                    onError: () => toast.error('No se pudo restaurar el lead.'),
-                                    onFinish: () => setIsRestoring(false),
-                                });
+                                );
                             }}
                         >
-                            <ArchiveRestore className="mr-2 size-4" /> {isRestoring ? 'Restaurando...' : 'Restaurar'}
+                            <ArchiveRestore className="mr-2 size-4" />{' '}
+                            {isRestoring ? 'Restaurando...' : 'Restaurar'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -151,13 +194,18 @@ export default function ArchivedLeadsIndex({
                 onOpenChange={(open) => !open && setActiveLead(null)}
                 title="Eliminar lead"
                 entityLabel="el lead"
-                itemName={activeLead ? `${activeLead.first_name} ${activeLead.last_name ?? ''}`.trim() : undefined}
+                itemName={
+                    activeLead
+                        ? `${activeLead.first_name} ${activeLead.last_name ?? ''}`.trim()
+                        : undefined
+                }
                 onConfirm={() => {
                     if (!activeLead) return;
 
                     router.delete(route('leads.destroy', activeLead.id), {
                         onSuccess: () => setActiveLead(null),
-                        onError: () => toast.error('No se pudo eliminar el lead.'),
+                        onError: () =>
+                            toast.error('No se pudo eliminar el lead.'),
                     });
                 }}
             />

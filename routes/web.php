@@ -101,7 +101,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('products', ProductController::class)->only(['index', 'store', 'destroy']);
     });
 
-    Route::get('tracking', [TrackingActivityController::class, 'index'])->name('tracking.index');
+    Route::get('tracking', [TrackingActivityController::class, 'globalIndex'])->name('tracking.index');
+    Route::get('tracking/entity', [TrackingActivityController::class, 'entityIndex'])->name('tracking.entity');
     Route::post('tracking/upsert', [TrackingActivityController::class, 'upsert'])->name('tracking.upsert');
     Route::delete('tracking/{id}', [TrackingActivityController::class, 'destroy'])->name('tracking.destroy');
     Route::get('tracking/pendientes', [TrackingActivityController::class, 'pendientes'])->name('tracking.pendientes');

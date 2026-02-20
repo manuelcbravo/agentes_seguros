@@ -9,7 +9,8 @@ import {
     Trash2,
     UserPlus,
     Users,
-    BookPlus 
+    BookPlus,
+    Activity,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -26,11 +27,12 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-    DropdownMenuSeparator
+    DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Field, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { TrackingDrawer } from '@/components/tracking/TrackingDrawer';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, SharedData } from '@/types';
 
@@ -78,13 +80,25 @@ const FILES_TABLE_ID = 'clients';
 export default function ClientsIndex({
     clients,
     files,
+    trackingCatalogs,
 }: {
     clients: ClientRow[];
     files: MediaFile[];
+    trackingCatalogs: {
+        activityTypes: Array<{ id: number; key: string; name: string }>;
+        channels: Array<{ id: number; key: string; name: string }>;
+        statuses: Array<{ id: number; key: string; name: string }>;
+        priorities: Array<{ id: number; key: string; name: string }>;
+        outcomes: Array<{ id: number; key: string; name: string }>;
+    };
 }) {
     const [activeClient, setActiveClient] = useState<ClientRow | null>(null);
     const [formMode, setFormMode] = useState<'create' | 'edit' | null>(null);
-    const [fileManagerClient, setFileManagerClient] = useState<ClientRow | null>(null);
+    const [fileManagerClient, setFileManagerClient] =
+        useState<ClientRow | null>(null);
+    const [trackingClient, setTrackingClient] = useState<ClientRow | null>(
+        null,
+    );
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const { flash } = usePage<SharedData>().props;
 
@@ -159,7 +173,9 @@ export default function ClientsIndex({
         if (!fileManagerClient) return [];
 
         return files.filter(
-            (file) => file.related_table === FILES_TABLE_ID && file.related_uuid === fileManagerClient.id,
+            (file) =>
+                file.related_table === FILES_TABLE_ID &&
+                file.related_uuid === fileManagerClient.id,
         );
     }, [fileManagerClient, files]);
 
@@ -180,7 +196,10 @@ export default function ClientsIndex({
                     <div>
                         <p className="font-medium">{row.full_name}</p>
                         <p className="text-xs text-muted-foreground">
-                            Alta {new Date(row.created_at).toLocaleDateString('es-MX')}
+                            Alta{' '}
+                            {new Date(row.created_at).toLocaleDateString(
+                                'es-MX',
+                            )}
                         </p>
                     </div>
                 </div>
@@ -225,11 +244,18 @@ export default function ClientsIndex({
                         <DropdownMenuItem onClick={() => openEditDialog(row)}>
                             <Pencil className="mr-2 size-4" /> Editar
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setFileManagerClient(row)}>
+                        <DropdownMenuItem
+                            onClick={() => setFileManagerClient(row)}
+                        >
                             <FolderKanban className="mr-2 size-4" /> Files
                         </DropdownMenuItem>
-                        <DropdownMenuItem >
+                        <DropdownMenuItem>
                             <BookPlus className="mr-2 size-4" /> Generar póliza
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={() => setTrackingClient(row)}
+                        >
+                            <Activity className="mr-2 size-4" /> Seguimiento
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
@@ -254,9 +280,12 @@ export default function ClientsIndex({
                         <div className="flex items-center gap-3">
                             <Users className="size-5 text-primary" />
                             <div>
-                                <h1 className="text-xl font-semibold">Clientes</h1>
+                                <h1 className="text-xl font-semibold">
+                                    Clientes
+                                </h1>
                                 <p className="text-sm text-muted-foreground">
-                                    Gestiona clientes y abre el gestor de archivos desde las opciones de cada cliente.
+                                    Gestiona clientes y abre el gestor de
+                                    archivos desde las opciones de cada cliente.
                                 </p>
                             </div>
                         </div>
@@ -274,6 +303,15 @@ export default function ClientsIndex({
                 />
             </div>
 
+            <TrackingDrawer
+                open={trackingClient !== null}
+                onOpenChange={(open) => !open && setTrackingClient(null)}
+                trackableType="Client"
+                trackableId={trackingClient?.id ?? ''}
+                trackableLabel={trackingClient?.full_name ?? 'Cliente'}
+                catalogs={trackingCatalogs}
+            />
+
             <CrudFormDialog
                 open={formMode !== null}
                 onOpenChange={(open) => {
@@ -285,7 +323,9 @@ export default function ClientsIndex({
                 }}
                 title={formMode === 'edit' ? 'Editar cliente' : 'Nuevo cliente'}
                 description="Captura datos esenciales y guarda el cliente directamente desde este modal."
-                submitLabel={formMode === 'edit' ? 'Guardar cambios' : 'Guardar cliente'}
+                submitLabel={
+                    formMode === 'edit' ? 'Guardar cambios' : 'Guardar cliente'
+                }
                 processing={form.processing}
                 onSubmit={submitForm}
             >
@@ -295,7 +335,10 @@ export default function ClientsIndex({
                         <div className="flex items-center gap-3">
                             <Avatar className="size-16 border">
                                 <AvatarImage
-                                    src={localAvatarPreview ?? activeClient?.avatar_url}
+                                    src={
+                                        localAvatarPreview ??
+                                        activeClient?.avatar_url
+                                    }
                                     alt="Preview"
                                 />
                                 <AvatarFallback>
@@ -310,14 +353,24 @@ export default function ClientsIndex({
                                     accept="image/*"
                                     className="hidden"
                                     onChange={(event) => {
-                                        form.setData('avatar', event.target.files?.[0] ?? null);
+                                        form.setData(
+                                            'avatar',
+                                            event.target.files?.[0] ?? null,
+                                        );
                                         form.setData('avatar_path', null);
                                     }}
                                 />
-                                <Button type="button" variant="outline" onClick={() => avatarInputRef.current?.click()}>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() =>
+                                        avatarInputRef.current?.click()
+                                    }
+                                >
                                     Seleccionar imagen
                                 </Button>
-                                {(form.data.avatar || form.data.avatar_path) && (
+                                {(form.data.avatar ||
+                                    form.data.avatar_path) && (
                                     <Button
                                         type="button"
                                         variant="ghost"
@@ -332,21 +385,30 @@ export default function ClientsIndex({
                             </div>
                         </div>
                         <p className="mt-2 text-xs text-muted-foreground">
-                            La imagen se guarda directamente al guardar el cliente.
+                            La imagen se guarda directamente al guardar el
+                            cliente.
                         </p>
-                        {form.errors.avatar && <FieldError>{form.errors.avatar}</FieldError>}
-                        {form.errors.avatar_path && <FieldError>{form.errors.avatar_path}</FieldError>}
+                        {form.errors.avatar && (
+                            <FieldError>{form.errors.avatar}</FieldError>
+                        )}
+                        {form.errors.avatar_path && (
+                            <FieldError>{form.errors.avatar_path}</FieldError>
+                        )}
                     </Field>
                     <Field>
                         <Label htmlFor="client-first-name">Nombre</Label>
                         <Input
                             id="client-first-name"
                             value={form.data.first_name}
-                            onChange={(event) => form.setData('first_name', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('first_name', event.target.value)
+                            }
                             placeholder="Ej. Camila"
                             aria-invalid={Boolean(form.errors.first_name)}
                         />
-                        {form.errors.first_name && <FieldError>{form.errors.first_name}</FieldError>}
+                        {form.errors.first_name && (
+                            <FieldError>{form.errors.first_name}</FieldError>
+                        )}
                     </Field>
 
                     <Field>
@@ -354,11 +416,15 @@ export default function ClientsIndex({
                         <Input
                             id="client-last-name"
                             value={form.data.last_name}
-                            onChange={(event) => form.setData('last_name', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('last_name', event.target.value)
+                            }
                             placeholder="Ej. Salinas"
                             aria-invalid={Boolean(form.errors.last_name)}
                         />
-                        {form.errors.last_name && <FieldError>{form.errors.last_name}</FieldError>}
+                        {form.errors.last_name && (
+                            <FieldError>{form.errors.last_name}</FieldError>
+                        )}
                     </Field>
                 </div>
 
@@ -369,11 +435,15 @@ export default function ClientsIndex({
                             id="client-email"
                             type="email"
                             value={form.data.email}
-                            onChange={(event) => form.setData('email', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('email', event.target.value)
+                            }
                             placeholder="cliente@email.com"
                             aria-invalid={Boolean(form.errors.email)}
                         />
-                        {form.errors.email && <FieldError>{form.errors.email}</FieldError>}
+                        {form.errors.email && (
+                            <FieldError>{form.errors.email}</FieldError>
+                        )}
                     </Field>
 
                     <Field>
@@ -381,11 +451,15 @@ export default function ClientsIndex({
                         <Input
                             id="client-phone"
                             value={form.data.phone}
-                            onChange={(event) => form.setData('phone', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('phone', event.target.value)
+                            }
                             placeholder="55 1234 5678"
                             aria-invalid={Boolean(form.errors.phone)}
                         />
-                        {form.errors.phone && <FieldError>{form.errors.phone}</FieldError>}
+                        {form.errors.phone && (
+                            <FieldError>{form.errors.phone}</FieldError>
+                        )}
                     </Field>
                 </div>
 
@@ -395,12 +469,19 @@ export default function ClientsIndex({
                         id="client-active"
                         className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                         value={form.data.is_active ? '1' : '0'}
-                        onChange={(event) => form.setData('is_active', event.target.value === '1')}
+                        onChange={(event) =>
+                            form.setData(
+                                'is_active',
+                                event.target.value === '1',
+                            )
+                        }
                     >
                         <option value="1">Activo</option>
                         <option value="0">Inactivo</option>
                     </select>
-                    {form.errors.is_active && <FieldError>{form.errors.is_active}</FieldError>}
+                    {form.errors.is_active && (
+                        <FieldError>{form.errors.is_active}</FieldError>
+                    )}
                 </Field>
             </CrudFormDialog>
 
@@ -410,7 +491,11 @@ export default function ClientsIndex({
                 onOpenChange={(open) => {
                     if (!open) setFileManagerClient(null);
                 }}
-                title={fileManagerClient ? `Archivos · ${fileManagerClient.full_name}` : 'Archivos'}
+                title={
+                    fileManagerClient
+                        ? `Archivos · ${fileManagerClient.full_name}`
+                        : 'Archivos'
+                }
                 description="Gestiona los archivos del cliente activo (subir, descargar, renombrar o eliminar) sin salir del flujo."
                 storedFiles={contextualFiles}
                 tableId={FILES_TABLE_ID}
@@ -424,7 +509,8 @@ export default function ClientsIndex({
                             related_table: FILES_TABLE_ID,
                             related_uuid: fileManagerClient.id,
                         },
-                        onError: () => toast.error('No se pudo eliminar el archivo.'),
+                        onError: () =>
+                            toast.error('No se pudo eliminar el archivo.'),
                     });
                 }}
                 onDownloadStoredFile={(file) => {
@@ -445,7 +531,8 @@ export default function ClientsIndex({
 
                     router.delete(route('clients.destroy', activeClient.id), {
                         onSuccess: () => setActiveClient(null),
-                        onError: () => toast.error('No se pudo eliminar el cliente.'),
+                        onError: () =>
+                            toast.error('No se pudo eliminar el cliente.'),
                     });
                 }}
             />

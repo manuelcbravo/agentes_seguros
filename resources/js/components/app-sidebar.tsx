@@ -8,7 +8,7 @@ import {
     Settings,
     Users,
     Contact,
-    ShieldCheck
+    ShieldCheck,
 } from 'lucide-react';
 import { route } from 'ziggy-js';
 import { NavConfig } from '@/components/nav-config';
@@ -104,6 +104,10 @@ const mainNavItems: NavItem[] = [
                 title: 'Pendientes',
                 href: route('tracking.pendientes'),
             },
+            {
+                title: 'Seguimiento',
+                href: route('tracking.index'),
+            },
         ],
     },
 ];
@@ -117,7 +121,7 @@ const configNavItems: NavItem[] = [
             {
                 title: 'Licencias',
                 href: route('agent-licenses.index'),
-            }
+            },
         ],
     },
     {

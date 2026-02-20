@@ -1,4 +1,15 @@
-import { Archive, ArrowRightLeft, Eye, FolderKanban, MoreHorizontal, Pencil, RotateCcw, Trash2, UserPlus } from 'lucide-react';
+import {
+    Activity,
+    Archive,
+    ArrowRightLeft,
+    Eye,
+    FolderKanban,
+    MoreHorizontal,
+    Pencil,
+    RotateCcw,
+    Trash2,
+    UserPlus,
+} from 'lucide-react';
 import { DataTable, type DataTableColumn } from '@/components/data-table';
 import { LeadStatusBadge } from '@/components/leads/status-badge';
 import { Button } from '@/components/ui/button';
@@ -35,6 +46,7 @@ type Props = {
     onView: (lead: LeadRow) => void;
     onFiles: (lead: LeadRow) => void;
     onConvert: (lead: LeadRow) => void;
+    onTracking: (lead: LeadRow) => void;
     onArchive?: (lead: LeadRow) => void;
     onUnarchive?: (lead: LeadRow) => void;
     mode?: 'default' | 'archived';
@@ -58,6 +70,7 @@ export function LeadsTable({
     onView,
     onFiles,
     onConvert,
+    onTracking,
     onArchive,
     onUnarchive,
     mode = 'default',
@@ -79,11 +92,17 @@ export function LeadsTable({
         {
             key: 'full_name',
             header: 'Lead',
-            accessor: (row) => `${row.first_name} ${row.last_name ?? ''}`.trim(),
+            accessor: (row) =>
+                `${row.first_name} ${row.last_name ?? ''}`.trim(),
             cell: (row) => (
                 <div>
-                    <p className="font-medium">{`${row.first_name} ${row.last_name ?? ''}`.trim()}</p>
-                    <p className="text-xs text-muted-foreground">Alta {new Date(row.created_at).toLocaleDateString('es-MX')}</p>
+                    <p className="font-medium">
+                        {`${row.first_name} ${row.last_name ?? ''}`.trim()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                        Alta{' '}
+                        {new Date(row.created_at).toLocaleDateString('es-MX')}
+                    </p>
                 </div>
             ),
         },
@@ -94,7 +113,9 @@ export function LeadsTable({
             cell: (row) => (
                 <div>
                     <p>{row.phone}</p>
-                    <p className="text-xs text-muted-foreground">{row.email ?? 'Sin correo'}</p>
+                    <p className="text-xs text-muted-foreground">
+                        {row.email ?? 'Sin correo'}
+                    </p>
                 </div>
             ),
         },
@@ -126,38 +147,80 @@ export function LeadsTable({
                 return (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-8">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8"
+                            >
                                 <MoreHorizontal className="size-4" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onSelect={(event) => { event.preventDefault(); actions.onView(); }}>
+                            <DropdownMenuItem
+                                onSelect={(event) => {
+                                    event.preventDefault();
+                                    actions.onView();
+                                }}
+                            >
                                 <Eye className="mr-2 size-4" /> Ver
                             </DropdownMenuItem>
                             {mode !== 'archived' && (
-                                <DropdownMenuItem onSelect={(event) => { event.preventDefault(); actions.onEdit(); }}>
+                                <DropdownMenuItem
+                                    onSelect={(event) => {
+                                        event.preventDefault();
+                                        actions.onEdit();
+                                    }}
+                                >
                                     <Pencil className="mr-2 size-4" /> Editar
                                 </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem onSelect={(event) => { event.preventDefault(); actions.onFiles(); }}>
-                                <FolderKanban className="mr-2 size-4" /> Archivos
+                            <DropdownMenuItem
+                                onSelect={(event) => {
+                                    event.preventDefault();
+                                    actions.onFiles();
+                                }}
+                            >
+                                <FolderKanban className="mr-2 size-4" />{' '}
+                                Archivos
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onSelect={(event) => {
+                                    event.preventDefault();
+                                    onTracking(row);
+                                }}
+                            >
+                                <Activity className="mr-2 size-4" /> Seguimiento
                             </DropdownMenuItem>
                             {mode !== 'archived' && actions.canConvert && (
-                                <DropdownMenuItem onSelect={(event) => { event.preventDefault(); actions.onConvert(); }}>
-                                    <UserPlus className="mr-2 size-4" /> Convertir a cliente
+                                <DropdownMenuItem
+                                    onSelect={(event) => {
+                                        event.preventDefault();
+                                        actions.onConvert();
+                                    }}
+                                >
+                                    <UserPlus className="mr-2 size-4" />{' '}
+                                    Convertir a cliente
                                 </DropdownMenuItem>
                             )}
                             {mode !== 'archived' && (
                                 <DropdownMenuSub>
                                     <DropdownMenuSubTrigger>
-                                        <ArrowRightLeft className="mr-2 size-4" /> Cambiar estatus
+                                        <ArrowRightLeft className="mr-2 size-4" />{' '}
+                                        Cambiar estatus
                                     </DropdownMenuSubTrigger>
                                     <DropdownMenuSubContent>
                                         {actions.statusOptions.map((status) => (
                                             <DropdownMenuItem
                                                 key={status.value}
-                                                disabled={status.value === row.status}
-                                                onSelect={(event) => { event.preventDefault(); actions.moveToStatus(status.value); }}
+                                                disabled={
+                                                    status.value === row.status
+                                                }
+                                                onSelect={(event) => {
+                                                    event.preventDefault();
+                                                    actions.moveToStatus(
+                                                        status.value,
+                                                    );
+                                                }}
                                             >
                                                 {status.label}
                                             </DropdownMenuItem>
@@ -167,15 +230,32 @@ export function LeadsTable({
                             )}
                             <DropdownMenuSeparator />
                             {mode === 'archived' ? (
-                                <DropdownMenuItem onSelect={(event) => { event.preventDefault(); actions.onUnarchive(); }}>
-                                    <RotateCcw className="mr-2 size-4" /> Restaurar
+                                <DropdownMenuItem
+                                    onSelect={(event) => {
+                                        event.preventDefault();
+                                        actions.onUnarchive();
+                                    }}
+                                >
+                                    <RotateCcw className="mr-2 size-4" />{' '}
+                                    Restaurar
                                 </DropdownMenuItem>
                             ) : (
-                                <DropdownMenuItem onSelect={(event) => { event.preventDefault(); actions.onArchive(); }}>
+                                <DropdownMenuItem
+                                    onSelect={(event) => {
+                                        event.preventDefault();
+                                        actions.onArchive();
+                                    }}
+                                >
                                     <Archive className="mr-2 size-4" /> Archivar
                                 </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem variant="destructive" onSelect={(event) => { event.preventDefault(); actions.onDelete(); }}>
+                            <DropdownMenuItem
+                                variant="destructive"
+                                onSelect={(event) => {
+                                    event.preventDefault();
+                                    actions.onDelete();
+                                }}
+                            >
                                 <Trash2 className="mr-2 size-4" /> Eliminar
                             </DropdownMenuItem>
                         </DropdownMenuContent>

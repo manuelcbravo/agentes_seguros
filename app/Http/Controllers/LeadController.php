@@ -167,6 +167,7 @@ class LeadController extends Controller
                 'phone' => $lead->phone,
                 'source' => $lead->source,
                 'is_active' => true,
+                'agent_id' => $lead->agent_id,
             ]);
         }
 
