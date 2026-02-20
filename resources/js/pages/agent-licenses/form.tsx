@@ -6,7 +6,6 @@ import { Textarea } from '@/components/ui/textarea';
 type SimpleOption = {
     id: string;
     name: string;
-    email?: string | null;
     code?: string | null;
 };
 
@@ -32,7 +31,6 @@ type LicenseFormErrors = Partial<Record<keyof LicenseFormData, string>>;
 type Props = {
     data: LicenseFormData;
     errors: LicenseFormErrors;
-    agents: SimpleOption[];
     insuranceCompanies: SimpleOption[];
     statusOptions: StatusOption[];
     setData: <K extends keyof LicenseFormData>(
@@ -44,7 +42,6 @@ type Props = {
 export function AgentLicenseForm({
     data,
     errors,
-    agents,
     insuranceCompanies,
     statusOptions,
     setData,
@@ -52,29 +49,6 @@ export function AgentLicenseForm({
     return (
         <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-                <Field>
-                    <Label htmlFor="license-agent">Agente</Label>
-                    <select
-                        id="license-agent"
-                        value={data.agent_id}
-                        onChange={(event) =>
-                            setData('agent_id', event.target.value)
-                        }
-                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs ring-offset-background transition-[color,box-shadow] outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    >
-                        <option value="">Selecciona un agente</option>
-                        {agents.map((agent) => (
-                            <option key={agent.id} value={agent.id}>
-                                {agent.name}
-                                {agent.email ? ` · ${agent.email}` : ''}
-                            </option>
-                        ))}
-                    </select>
-                    {errors.agent_id && (
-                        <FieldError>{errors.agent_id}</FieldError>
-                    )}
-                </Field>
-
                 <Field>
                     <Label htmlFor="license-insurer">Aseguradora</Label>
                     <select
@@ -101,7 +75,7 @@ export function AgentLicenseForm({
 
             <div className="grid gap-4 md:grid-cols-2">
                 <Field>
-                    <Label htmlFor="license-number">Número de licencia</Label>
+                    <Label htmlFor="license-number">Numero de licencia</Label>
                     <Input
                         id="license-number"
                         value={data.num_licencia}
@@ -138,7 +112,7 @@ export function AgentLicenseForm({
 
             <div className="grid gap-4 md:grid-cols-2">
                 <Field>
-                    <Label htmlFor="license-issue-date">Fecha de emisión</Label>
+                    <Label htmlFor="license-issue-date">Fecha de emision</Label>
                     <Input
                         id="license-issue-date"
                         type="date"
@@ -155,7 +129,7 @@ export function AgentLicenseForm({
 
                 <Field>
                     <Label htmlFor="license-expiration-date">
-                        Fecha de expiración
+                        Fecha de expiracion
                     </Label>
                     <Input
                         id="license-expiration-date"
@@ -180,7 +154,7 @@ export function AgentLicenseForm({
                     onChange={(event) =>
                         setData('observaciones', event.target.value)
                     }
-                    placeholder="Notas internas, restricciones o comentarios de validación..."
+                    placeholder="Notas internas, restricciones o comentarios de validacion..."
                 />
                 {errors.observaciones && (
                     <FieldError>{errors.observaciones}</FieldError>

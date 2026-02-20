@@ -8,6 +8,15 @@ use Illuminate\Validation\Rule;
 
 class UpsertAgentLicenseRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if ($this->user()?->agent_id) {
+            $this->merge([
+                'agent_id' => (string) $this->user()->agent_id,
+            ]);
+        }
+    }
+
     /**
      * @return array<string, ValidationRule|array<mixed>|string>
      */

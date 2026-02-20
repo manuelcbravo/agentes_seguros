@@ -96,12 +96,10 @@ const toDateInputValue = (value: string) => value?.slice(0, 10) ?? '';
 
 export default function AgentLicensesIndex({
     licenses,
-    agents,
     insuranceCompanies,
     statusOptions,
 }: {
     licenses: LicenseRow[];
-    agents: AgentItem[];
     insuranceCompanies: InsuranceCompanyItem[];
     statusOptions: StatusOption[];
 }) {
@@ -338,7 +336,6 @@ export default function AgentLicensesIndex({
                 <AgentLicenseForm
                     data={form.data}
                     errors={form.errors}
-                    agents={agents}
                     insuranceCompanies={insuranceCompanies}
                     statusOptions={statusOptions}
                     setData={form.setData}

@@ -123,7 +123,7 @@ export default function PolicyWizardPage({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Wizard de póliza" />
-            <div className="mx-auto w-full max-w-5xl space-y-4 p-4">
+            <div className="mx-auto w-full max-w-6xl space-y-4 p-4">
                 <StepHeader
                     title={policy ? 'Editar Póliza' : 'Nueva Póliza'}
                     description="Completa los 4 pasos para terminar la póliza"
