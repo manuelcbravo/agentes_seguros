@@ -45,7 +45,6 @@ export default function PolicyWizardPage({
         policy_id: policy?.id ?? '',
         client_id: policy?.client_id ?? '',
         insured_id: policy?.insured_id ?? '',
-        status: policy?.status ?? '',
         payment_channel: policy?.payment_channel ?? '',
         product: policy?.product ?? '',
         coverage_start: policy?.coverage_start ?? '',
@@ -128,7 +127,7 @@ export default function PolicyWizardPage({
                 <StepHeader
                     title={policy ? 'Editar Póliza' : 'Nueva Póliza'}
                     description="Completa los 4 pasos para terminar la póliza"
-                    estatus={policy?.estatus ?? 'borrador'}
+                    status={policy?.status ?? 'borrador'}
                 />
                 <Card className="grid gap-0 md:grid-cols-[280px_1fr]">
                     <CardHeader className="border-r bg-muted/20">

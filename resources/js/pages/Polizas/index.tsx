@@ -1,4 +1,4 @@
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import {
     Activity,
     Filter,
@@ -10,7 +10,6 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { route } from 'ziggy-js';
-import { CrudFormDialog } from '@/components/crud-form-dialog';
 import { DataTable, type DataTableColumn } from '@/components/data-table';
 import {
     AlertDialog,
@@ -22,6 +21,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -29,62 +29,26 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Field, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { TrackingDrawer } from '@/components/tracking/TrackingDrawer';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, SharedData } from '@/types';
 
 type PolizaRow = {
     id: string;
-    insured_id: string;
     status: string;
     payment_channel: string | null;
     product: string | null;
-    coverage_start: string | null;
     risk_premium: string | null;
-    fractional_premium: string | null;
-    periodicity: string | null;
-    month: number | null;
-    currency: number | null;
     insured?: { email: string | null; phone: string | null } | null;
-};
-
-type InsuredOption = { id: string; email: string | null; phone: string | null };
-type PaymentChannelOption = { code: string; name: string };
-
-type PolizaForm = {
-    id: string | null;
-    insured_id: string;
-    status: string;
-    payment_channel: string;
-    product: string;
-    coverage_start: string;
-    risk_premium: string;
-    fractional_premium: string;
-    periodicity: string;
 };
 
 export default function PolizasIndex({
     polizas,
-    insureds,
     paymentChannels,
     filters,
     trackingCatalogs,
-}: {
-    polizas: PolizaRow[];
-    insureds: InsuredOption[];
-    paymentChannels: PaymentChannelOption[];
-    filters: { search: string; payment_channel: string | null };
-    trackingCatalogs: {
-        activityTypes: Array<{ id: number; key: string; name: string }>;
-        channels: Array<{ id: number; key: string; name: string }>;
-        statuses: Array<{ id: number; key: string; name: string }>;
-        priorities: Array<{ id: number; key: string; name: string }>;
-        outcomes: Array<{ id: number; key: string; name: string }>;
-    };
-}) {
+}: any) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [paymentChannel, setPaymentChannel] = useState(
         filters.payment_channel ?? '',
@@ -92,21 +56,8 @@ export default function PolizasIndex({
     const [polizaToDelete, setPolizaToDelete] = useState<PolizaRow | null>(
         null,
     );
-    const [formMode, setFormMode] = useState<'create' | 'edit' | null>(null);
     const [trackingRow, setTrackingRow] = useState<PolizaRow | null>(null);
     const { flash } = usePage<SharedData>().props;
-
-    const form = useForm<PolizaForm>({
-        id: null,
-        insured_id: '',
-        status: '',
-        payment_channel: '',
-        product: '',
-        coverage_start: '',
-        risk_premium: '',
-        fractional_premium: '',
-        periodicity: '',
-    });
 
     useEffect(() => {
         if (flash?.success) toast.success(flash.success);
@@ -126,33 +77,30 @@ export default function PolizasIndex({
         );
     };
 
-    const openCreateDialog = () => {
-        form.reset();
-        form.clearErrors();
-        setFormMode('create');
-    };
-
-    const openEditDialog = (poliza: PolizaRow) => {
-        form.clearErrors();
-        form.setData({
-            id: poliza.id,
-            insured_id: poliza.insured_id,
-            status: poliza.status ?? '',
-            payment_channel: poliza.payment_channel ?? '',
-            product: poliza.product ?? '',
-            coverage_start: poliza.coverage_start ?? '',
-            risk_premium: poliza.risk_premium ?? '',
-            fractional_premium: poliza.fractional_premium ?? '',
-            periodicity: poliza.periodicity ?? '',
-        });
-        setFormMode('edit');
-    };
-
     const paymentChannelLabel = (code: string | null) =>
-        paymentChannels.find((item) => item.code === code)?.name ?? code ?? '—';
+        paymentChannels.find((item: any) => String(item.code) === String(code))
+            ?.name ??
+        code ??
+        '—';
+
+    const statusBadge = (status: PolizaRow['status']) => {
+        if (status === 'activo')
+            return (
+                <Badge className="bg-emerald-500/10 text-emerald-700">
+                    Activo
+                </Badge>
+            );
+        if (status === 'caducada')
+            return <Badge variant="destructive">Caducada</Badge>;
+        return <Badge variant="secondary">Borrador</Badge>;
+    };
 
     const columns: DataTableColumn<PolizaRow>[] = [
-        { key: 'status', header: 'Estatus', cell: (row) => row.status },
+        {
+            key: 'status',
+            header: 'Estatus',
+            cell: (row) => statusBadge(row.status),
+        },
         {
             key: 'product',
             header: 'Producto',
@@ -167,7 +115,6 @@ export default function PolizasIndex({
             key: 'payment_channel',
             header: 'Canal de pago',
             cell: (row) => paymentChannelLabel(row.payment_channel),
-            accessor: (row) => paymentChannelLabel(row.payment_channel),
         },
         {
             key: 'risk_premium',
@@ -186,7 +133,13 @@ export default function PolizasIndex({
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEditDialog(row)}>
+                        <DropdownMenuItem
+                            onClick={() =>
+                                router.visit(
+                                    route('polizas.wizard.edit', row.id),
+                                )
+                            }
+                        >
                             Editar
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setTrackingRow(row)}>
@@ -207,7 +160,6 @@ export default function PolizasIndex({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Pólizas" />
-
             <div className="space-y-4 rounded-xl p-4">
                 <div className="rounded-xl border border-sidebar-border/70 bg-sidebar-accent/20 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -218,51 +170,45 @@ export default function PolizasIndex({
                                     Pólizas
                                 </h1>
                                 <p className="text-sm text-muted-foreground">
-                                    Gestiona pólizas con filtros y acciones
-                                    rápidas.
+                                    Gestiona pólizas y entra al wizard de 4
+                                    pasos.
                                 </p>
                             </div>
                         </div>
-                        <Button onClick={openCreateDialog}>
+                        <Button
+                            onClick={() =>
+                                router.visit(route('polizas.wizard.create'))
+                            }
+                        >
                             <Plus className="mr-2 size-4" /> Nueva póliza
                         </Button>
                     </div>
                 </div>
 
                 <div className="rounded-xl border p-4">
-                    <div className="space-y-3">
-                        <div className="grid gap-3 md:grid-cols-3">
-                            <Input
-                                value={search}
-                                onChange={(event) =>
-                                    setSearch(event.target.value)
-                                }
-                                placeholder="Buscar por estatus, producto o asegurado..."
-                            />
-                            <select
-                                value={paymentChannel}
-                                onChange={(event) =>
-                                    setPaymentChannel(event.target.value)
-                                }
-                                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-                            >
-                                <option value="">
-                                    Todos los métodos de pago
+                    <div className="grid gap-3 md:grid-cols-3">
+                        <Input
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                            placeholder="Buscar por estatus o producto..."
+                        />
+                        <select
+                            value={paymentChannel}
+                            onChange={(event) =>
+                                setPaymentChannel(event.target.value)
+                            }
+                            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                        >
+                            <option value="">Todos los métodos de pago</option>
+                            {paymentChannels.map((option: any) => (
+                                <option key={option.code} value={option.code}>
+                                    {option.name}
                                 </option>
-                                {paymentChannels.map((option) => (
-                                    <option
-                                        key={option.code}
-                                        value={option.code}
-                                    >
-                                        {option.name}
-                                    </option>
-                                ))}
-                            </select>
-                            <Button onClick={applyFilters}>
-                                <Filter className="mr-2 size-4" /> Aplicar
-                                filtros
-                            </Button>
-                        </div>
+                            ))}
+                        </select>
+                        <Button onClick={applyFilters}>
+                            <Filter className="mr-2 size-4" /> Aplicar filtros
+                        </Button>
                     </div>
                 </div>
 
@@ -285,109 +231,6 @@ export default function PolizasIndex({
                 }
                 catalogs={trackingCatalogs}
             />
-
-            <CrudFormDialog
-                open={formMode !== null}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        setFormMode(null);
-                        form.clearErrors();
-                    }
-                }}
-                title={formMode === 'edit' ? 'Editar póliza' : 'Nueva póliza'}
-                description="Captura y actualiza la información comercial de la póliza."
-                submitLabel={
-                    formMode === 'edit' ? 'Guardar cambios' : 'Guardar póliza'
-                }
-                processing={form.processing}
-                onSubmit={(event) => {
-                    event.preventDefault();
-                    form.transform((data) => ({
-                        ...data,
-                        id: data.id || null,
-                        coverage_start: data.coverage_start || null,
-                        risk_premium: data.risk_premium || null,
-                        fractional_premium: data.fractional_premium || null,
-                    }));
-                    form.post(route('polizas.store'), {
-                        onSuccess: () => {
-                            setFormMode(null);
-                            form.reset();
-                        },
-                        onError: () =>
-                            toast.error('Verifica los campos marcados.'),
-                    });
-                }}
-            >
-                <div className="grid gap-4 md:grid-cols-2">
-                    <Field>
-                        <Label>Asegurado</Label>
-                        <select
-                            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-                            value={form.data.insured_id}
-                            onChange={(event) =>
-                                form.setData('insured_id', event.target.value)
-                            }
-                        >
-                            <option value="">Selecciona asegurado</option>
-                            {insureds.map((item) => (
-                                <option key={item.id} value={item.id}>
-                                    {item.email || item.phone || item.id}
-                                </option>
-                            ))}
-                        </select>
-                        {form.errors.insured_id && (
-                            <FieldError>{form.errors.insured_id}</FieldError>
-                        )}
-                    </Field>
-                    <Field>
-                        <Label>Estatus</Label>
-                        <Input
-                            value={form.data.status}
-                            onChange={(event) =>
-                                form.setData('status', event.target.value)
-                            }
-                        />
-                        {form.errors.status && (
-                            <FieldError>{form.errors.status}</FieldError>
-                        )}
-                    </Field>
-                    <Field>
-                        <Label>Producto</Label>
-                        <Input
-                            value={form.data.product}
-                            onChange={(event) =>
-                                form.setData('product', event.target.value)
-                            }
-                        />
-                    </Field>
-                    <Field>
-                        <Label>Canal de pago</Label>
-                        <select
-                            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-                            value={form.data.payment_channel}
-                            onChange={(event) =>
-                                form.setData(
-                                    'payment_channel',
-                                    event.target.value,
-                                )
-                            }
-                        >
-                            <option value="">Selecciona método</option>
-                            {paymentChannels.map((item) => (
-                                <option key={item.code} value={item.code}>
-                                    {item.name}
-                                </option>
-                            ))}
-                        </select>
-                        {form.errors.payment_channel && (
-                            <FieldError>
-                                {form.errors.payment_channel}
-                            </FieldError>
-                        )}
-                    </Field>
-                </div>
-            </CrudFormDialog>
 
             <AlertDialog
                 open={Boolean(polizaToDelete)}

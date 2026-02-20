@@ -11,10 +11,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Policy extends Model
 {
+    public const STATUS_DRAFT = 'borrador';
+    public const STATUS_ACTIVE = 'activo';
+    public const STATUS_EXPIRED = 'caducada';
+
     use AssignsAgentOwnership, HasUuid, SoftDeletes, HasTrackingActivities;
 
     protected $fillable = [
-        'agent_id',
         'client_id',
         'insured_id',
         'status',
@@ -36,6 +39,22 @@ class Policy extends Model
         'month' => 'integer',
     ];
 
+
+
+    public function isDraft(): bool
+    {
+        return $this->status === self::STATUS_DRAFT;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === self::STATUS_ACTIVE;
+    }
+
+    public function isExpired(): bool
+    {
+        return $this->status === self::STATUS_EXPIRED;
+    }
 
     public function agent(): BelongsTo
     {

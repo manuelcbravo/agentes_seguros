@@ -10,22 +10,20 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('policies', function (Blueprint $table) {
-            $table->string('estatus', 20)
-                ->default('borrador')
-                ->after('status');
+            $table->string('status', 20)->default('borrador')->change();
         });
 
-        DB::table('policies')->whereNull('estatus')->update(['estatus' => 'borrador']);
+        DB::statement("UPDATE policies SET status = 'borrador' WHERE status IS NULL OR status = '' OR status NOT IN ('borrador','activo','caducada')");
 
-        DB::statement("ALTER TABLE policies ADD CONSTRAINT policies_estatus_check CHECK (estatus IN ('borrador','activo','caducada'))");
+        DB::statement("ALTER TABLE policies ADD CONSTRAINT policies_status_check CHECK (status IN ('borrador','activo','caducada'))");
 
         if (Schema::hasColumn('policies', 'agent_id')) {
             Schema::table('policies', function (Blueprint $table) {
-                $table->index(['agent_id', 'estatus'], 'policies_agent_id_estatus_index');
+                $table->index(['agent_id', 'status'], 'policies_agent_id_status_index');
             });
         } else {
             Schema::table('policies', function (Blueprint $table) {
-                $table->index('estatus');
+                $table->index('status');
             });
         }
     }
@@ -34,18 +32,16 @@ return new class extends Migration
     {
         if (Schema::hasColumn('policies', 'agent_id')) {
             Schema::table('policies', function (Blueprint $table) {
-                $table->dropIndex('policies_agent_id_estatus_index');
+                $table->dropIndex('policies_agent_id_status_index');
             });
         } else {
             Schema::table('policies', function (Blueprint $table) {
-                $table->dropIndex(['estatus']);
+                $table->dropIndex(['status']);
             });
         }
 
-        DB::statement('ALTER TABLE policies DROP CONSTRAINT IF EXISTS policies_estatus_check');
+        DB::statement('ALTER TABLE policies DROP CONSTRAINT IF EXISTS policies_status_check');
 
-        Schema::table('policies', function (Blueprint $table) {
-            $table->dropColumn('estatus');
-        });
+        DB::statement('ALTER TABLE policies ALTER COLUMN status DROP DEFAULT');
     }
 };

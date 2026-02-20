@@ -14,18 +14,17 @@ export default function Step3Poliza({
                 <h3 className="font-semibold">Datos generales</h3>
                 <div className="grid gap-3 md:grid-cols-2">
                     <div>
-                        <Label>Estado comercial</Label>
-                        <Input
-                            value={data.status}
-                            onChange={(e) => setData('status', e.target.value)}
-                        />
-                    </div>
-                    <div>
                         <Label>Producto</Label>
                         <Input
                             value={data.product}
                             onChange={(e) => setData('product', e.target.value)}
                         />
+                    </div>
+                    <div className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">
+                        El estatus de la póliza se controla automáticamente:{' '}
+                        <strong>borrador</strong> al guardar y{' '}
+                        <strong>activo</strong> al terminar con beneficiarios al
+                        100%.
                     </div>
                 </div>
             </section>

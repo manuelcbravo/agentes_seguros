@@ -47,7 +47,7 @@ class PolicyWizardController extends Controller
         $policy = $this->resolveDraftPolicy($data['policy_id'] ?? null);
         $policy->update([
             'client_id' => $data['client_id'],
-            'estatus' => Policy::STATUS_DRAFT,
+            'status' => Policy::STATUS_DRAFT,
         ]);
 
         return to_route('polizas.wizard.edit', $policy->id)->with('success', 'Paso 1 guardado.');
@@ -119,7 +119,8 @@ class PolicyWizardController extends Controller
 
         $policy->update([
             'insured_id' => $insuredId,
-            'estatus' => Policy::STATUS_DRAFT,
+            'status' => Policy::STATUS_DRAFT,
+
         ]);
 
         return back()->with('success', 'Paso 2 guardado.');
@@ -129,7 +130,6 @@ class PolicyWizardController extends Controller
     {
         $data = $request->validate([
             'policy_id' => ['required', 'uuid'],
-            'status' => ['required', 'string', 'max:120'],
             'payment_channel' => ['nullable', 'integer'],
             'product' => ['nullable', 'string', 'max:160'],
             'coverage_start' => ['nullable', 'date'],
@@ -144,7 +144,7 @@ class PolicyWizardController extends Controller
         $policy = $this->ownedPolicy($data['policy_id']);
         unset($data['policy_id']);
 
-        $policy->update(array_merge($data, ['estatus' => Policy::STATUS_DRAFT]));
+        $policy->update(array_merge($data, ['status' => Policy::STATUS_DRAFT]));
 
         return back()->with('success', 'Paso 3 guardado.');
     }
@@ -194,7 +194,7 @@ class PolicyWizardController extends Controller
                 ->delete();
         });
 
-        $policy->update(['estatus' => Policy::STATUS_DRAFT]);
+        $policy->update(['status' => Policy::STATUS_DRAFT]);
 
         return back()->with('success', 'Paso 4 guardado.');
     }
@@ -202,7 +202,7 @@ class PolicyWizardController extends Controller
     public function saveAndExit(string $policyId): RedirectResponse
     {
         $policy = $this->ownedPolicy($policyId);
-        $policy->update(['estatus' => Policy::STATUS_DRAFT]);
+        $policy->update(['status' => Policy::STATUS_DRAFT]);
 
         return to_route('polizas.index')->with('success', 'Póliza guardada como borrador.');
     }
@@ -220,7 +220,7 @@ class PolicyWizardController extends Controller
         }
 
         $policy->update([
-            'estatus' => Policy::STATUS_ACTIVE,
+            'status' => Policy::STATUS_ACTIVE,
             'coverage_start' => $policy->coverage_start ?? now()->toDateString(),
         ]);
 
@@ -245,8 +245,7 @@ class PolicyWizardController extends Controller
 
         return Policy::query()->create([
             'agent_id' => $agentId,
-            'estatus' => Policy::STATUS_DRAFT,
-            'status' => 'pendiente',
+            'status' => Policy::STATUS_DRAFT,
             'insured_id' => $insuredId,
         ]);
     }

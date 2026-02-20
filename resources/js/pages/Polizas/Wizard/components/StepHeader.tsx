@@ -3,13 +3,13 @@ import { Badge } from '@/components/ui/badge';
 type Props = {
     title: string;
     description: string;
-    estatus?: 'borrador' | 'activo' | 'caducada';
+    status?: 'borrador' | 'activo' | 'caducada';
 };
 
 export default function StepHeader({
     title,
     description,
-    estatus = 'borrador',
+    status = 'borrador',
 }: Props) {
     return (
         <div className="flex items-start justify-between gap-4 border-b pb-4">
@@ -23,16 +23,16 @@ export default function StepHeader({
             </div>
             <Badge
                 variant={
-                    estatus === 'activo'
+                    status === 'activo'
                         ? 'default'
-                        : estatus === 'caducada'
+                        : status === 'caducada'
                           ? 'destructive'
                           : 'secondary'
                 }
             >
-                {estatus === 'activo'
+                {status === 'activo'
                     ? 'Activo'
-                    : estatus === 'caducada'
+                    : status === 'caducada'
                       ? 'Caducada'
                       : 'Borrador'}
             </Badge>

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->date('birthday');
             $table->integer('age_current')->nullable();
             $table->string('phone')->nullable();
+            $table->string('rfc')->nullable();
             $table->string('email')->nullable();
             $table->integer('marital_status')->nullable();
             $table->integer('sex')->nullable();

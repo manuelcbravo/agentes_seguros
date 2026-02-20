@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Polizas;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpsertPolizaRequest;
 use App\Models\CatPaymentChannel;
-use App\Models\Insured;
 use App\Models\Policy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -41,12 +40,6 @@ class PolizaController extends Controller
             ->latest()
             ->get();
 
-        $insureds = Insured::query()
-            ->where('agent_id', $agentId)
-            ->select(['id', 'email', 'phone'])
-            ->orderBy('email')
-            ->get();
-
         $paymentChannels = CatPaymentChannel::query()
             ->select(['code', 'name'])
             ->orderBy('name')
@@ -54,7 +47,6 @@ class PolizaController extends Controller
 
         return Inertia::render('Polizas/index', [
             'polizas' => $polizas,
-            'insureds' => $insureds,
             'paymentChannels' => $paymentChannels,
             'filters' => ['search' => $search, 'payment_channel' => $paymentChannel],
             'trackingCatalogs' => $this->trackingCatalogs(),
