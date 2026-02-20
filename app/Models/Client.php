@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\HasTrackingActivities;
 use Illuminate\Database\Eloquent\Model;
 use Mattiverse\Userstamps\Traits\Userstamps;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -9,7 +10,7 @@ use App\Models\Concerns\HasUuid;
 
 class Client extends Model
 {
-    use Userstamps, SoftDeletes, HasUuid;
+    use Userstamps, SoftDeletes, HasUuid, HasTrackingActivities;
 
     // ===== MASS ASSIGNMENT =====
     protected $fillable = [

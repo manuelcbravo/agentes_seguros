@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\AssignsAgentOwnership;
 use App\Models\Concerns\HasUuid;
+use App\Models\Traits\HasTrackingActivities;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -11,7 +12,7 @@ use LaravelArchivable\Archivable;
 
 class Lead extends Model
 {
-    use AssignsAgentOwnership, SoftDeletes, HasUuid, Archivable;
+    use AssignsAgentOwnership, SoftDeletes, HasUuid, Archivable, HasTrackingActivities;
 
     protected $fillable = [
         'agent_id',

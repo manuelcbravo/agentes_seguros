@@ -8,6 +8,7 @@ import { CrudFormDialog } from '@/components/crud-form-dialog';
 import { FilePickerDialog } from '@/components/file-picker-dialog';
 import { LeadsTable, type LeadRow } from '@/components/leads/leads-table';
 import { LeadStatusBadge } from '@/components/leads/status-badge';
+import { TrackingPanel } from '@/components/tracking/TrackingPanel';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -69,6 +70,7 @@ export default function LeadsIndex({
     title,
     fixedStatus,
     files,
+    trackingCatalogs,
 }: {
     leads: PaginatedLeads;
     filters: { search: string; status: string | null };
@@ -77,6 +79,13 @@ export default function LeadsIndex({
     title: string;
     fixedStatus: string | null;
     files: LeadFile[];
+    trackingCatalogs: {
+        activityTypes: Array<{ id: number; key: string; name: string }>;
+        channels: Array<{ id: number; key: string; name: string }>;
+        statuses: Array<{ id: number; key: string; name: string }>;
+        priorities: Array<{ id: number; key: string; name: string }>;
+        outcomes: Array<{ id: number; key: string; name: string }>;
+    };
 }) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
@@ -84,6 +93,7 @@ export default function LeadsIndex({
     const [leadForFiles, setLeadForFiles] = useState<LeadRow | null>(null);
     const [leadToConvert, setLeadToConvert] = useState<LeadRow | null>(null);
     const [leadToArchive, setLeadToArchive] = useState<LeadRow | null>(null);
+    const [leadForTracking, setLeadForTracking] = useState<LeadRow | null>(null);
     const [isArchiving, setIsArchiving] = useState(false);
     const [formMode, setFormMode] = useState<'create' | 'edit' | 'view' | null>(null);
     const { flash } = usePage<SharedData>().props;
@@ -205,14 +215,28 @@ export default function LeadsIndex({
                 <LeadsTable
                     data={leads.data}
                     statusOptions={statusOptions}
-                    onEdit={(lead) => openEditDialog(lead, 'edit')}
-                    onView={(lead) => openEditDialog(lead, 'view')}
+                    onEdit={(lead) => {
+                        openEditDialog(lead, 'edit');
+                        setLeadForTracking(lead);
+                    }}
+                    onView={(lead) => {
+                        openEditDialog(lead, 'view');
+                        setLeadForTracking(lead);
+                    }}
                     onFiles={setLeadForFiles}
                     onConvert={setLeadToConvert}
                     onDelete={(lead) => setActiveLead(lead)}
                     onArchive={(lead) => setLeadToArchive(lead)}
                     onStatusUpdated={() => toast.success('Estatus actualizado correctamente.')}
                 />
+
+                {leadForTracking && (
+                    <TrackingPanel
+                        trackableType="Lead"
+                        trackableId={leadForTracking.id}
+                        catalogs={trackingCatalogs}
+                    />
+                )}
             </div>
 
             <CrudFormDialog
@@ -233,7 +257,8 @@ export default function LeadsIndex({
                     event.preventDefault();
                     form.transform((data) => {
                         if (formMode === 'create') {
-                            const { status, ...payload } = data;
+                            const payload = { ...data };
+                            delete payload.status;
 
                             return payload;
                         }

@@ -94,6 +94,18 @@ const mainNavItems: NavItem[] = [
             },
         ],
     },
+
+    {
+        title: 'Seguimiento',
+        href: route('tracking.pendientes'),
+        icon: CalendarDays,
+        children: [
+            {
+                title: 'Pendientes',
+                href: route('tracking.pendientes'),
+            },
+        ],
+    },
 ];
 
 const configNavItems: NavItem[] = [

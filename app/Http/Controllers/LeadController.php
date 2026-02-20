@@ -8,6 +8,11 @@ use App\Models\Client;
 use App\Models\File;
 use App\Models\Lead;
 use App\Models\User;
+use App\Models\Tracking\CatTrackingActivityType;
+use App\Models\Tracking\CatTrackingChannel;
+use App\Models\Tracking\CatTrackingOutcome;
+use App\Models\Tracking\CatTrackingPriority;
+use App\Models\Tracking\CatTrackingStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -80,6 +85,7 @@ class LeadController extends Controller
                 ->where('related_table', 'leads')
                 ->latest()
                 ->get(),
+            'trackingCatalogs' => $this->trackingCatalogs(),
         ]);
     }
 
@@ -225,7 +231,19 @@ class LeadController extends Controller
                 ->where('related_table', 'leads')
                 ->latest()
                 ->get(),
+            'trackingCatalogs' => $this->trackingCatalogs(),
         ]);
+    }
+
+    private function trackingCatalogs(): array
+    {
+        return [
+            'activityTypes' => CatTrackingActivityType::query()->where('is_active', true)->orderBy('sort_order')->get(['id', 'key', 'name']),
+            'channels' => CatTrackingChannel::query()->where('is_active', true)->orderBy('sort_order')->get(['id', 'key', 'name']),
+            'statuses' => CatTrackingStatus::query()->where('is_active', true)->orderBy('sort_order')->get(['id', 'key', 'name']),
+            'priorities' => CatTrackingPriority::query()->where('is_active', true)->orderBy('sort_order')->get(['id', 'key', 'name']),
+            'outcomes' => CatTrackingOutcome::query()->where('is_active', true)->orderBy('sort_order')->get(['id', 'key', 'name']),
+        ];
     }
 
     private function baseQuery(Request $request, bool $onlyArchived = false): Builder

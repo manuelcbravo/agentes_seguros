@@ -1,6 +1,6 @@
-import { Head, router, usePage } from '@inertiajs/react';
 import { Calendar, type EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
+import { Head, router, usePage } from '@inertiajs/react';
 import { CalendarDays, Link2, Link2Off, Plus } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';

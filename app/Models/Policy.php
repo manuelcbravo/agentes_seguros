@@ -5,12 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Concerns\AssignsAgentOwnership;
 use App\Models\Concerns\HasUuid;
+use App\Models\Traits\HasTrackingActivities;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Policy extends Model
 {
-    use AssignsAgentOwnership, HasUuid, SoftDeletes;
+    use AssignsAgentOwnership, HasUuid, SoftDeletes, HasTrackingActivities;
 
     protected $fillable = [
         'agent_id',

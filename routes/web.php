@@ -19,6 +19,7 @@ use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\Polizas\AseguradoController;
 use App\Http\Controllers\Polizas\BeneficiarioController;
 use App\Http\Controllers\Polizas\PolizaController;
+use App\Http\Controllers\Tracking\TrackingActivityController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -99,6 +100,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->parameters(['product-types' => 'productType']);
         Route::resource('products', ProductController::class)->only(['index', 'store', 'destroy']);
     });
+
+    Route::get('tracking', [TrackingActivityController::class, 'index'])->name('tracking.index');
+    Route::post('tracking/upsert', [TrackingActivityController::class, 'upsert'])->name('tracking.upsert');
+    Route::delete('tracking/{id}', [TrackingActivityController::class, 'destroy'])->name('tracking.destroy');
+    Route::get('tracking/pendientes', [TrackingActivityController::class, 'pendientes'])->name('tracking.pendientes');
 
 });
 require __DIR__.'/settings.php';
