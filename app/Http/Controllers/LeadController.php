@@ -73,7 +73,9 @@ class LeadController extends Controller
                 'id',
                 'agent_id',
                 'first_name',
+                'middle_name',
                 'last_name',
+                'second_last_name',
                 'phone',
                 'email',
                 'source',
@@ -100,7 +102,9 @@ class LeadController extends Controller
         $lead->fill([
             'agent_id' => $this->resolveAgentId($request, $data, $isUpdating),
             'first_name' => $data['first_name'],
-            'last_name' => $data['last_name'] ?? null,
+            'middle_name' => $data['middle_name'] ?? null,
+            'last_name' => $data['last_name'],
+            'second_last_name' => $data['second_last_name'] ?? null,
             'phone' => $data['phone'],
             'email' => $data['email'] ?? null,
             'source' => $data['source'],
@@ -162,7 +166,9 @@ class LeadController extends Controller
         if (! $existingClient) {
             $existingClient = Client::query()->create([
                 'first_name' => $lead->first_name,
-                'last_name' => $lead->last_name ?? 'Sin apellido',
+                'middle_name' => $lead->middle_name,
+                'last_name' => $lead->last_name,
+                'second_last_name' => $lead->second_last_name,
                 'email' => $lead->email,
                 'phone' => $lead->phone,
                 'source' => $lead->source,
@@ -206,7 +212,9 @@ class LeadController extends Controller
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $nestedQuery) use ($search) {
                     $nestedQuery->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('middle_name', 'like', "%{$search}%")
                         ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('second_last_name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%")
                         ->orWhere('phone', 'like', "%{$search}%");
                 });

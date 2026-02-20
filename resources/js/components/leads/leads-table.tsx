@@ -29,7 +29,10 @@ export type LeadRow = {
     id: string;
     agent_id: string;
     first_name: string;
-    last_name: string | null;
+    middle_name: string | null;
+    last_name: string;
+    second_last_name: string | null;
+    full_name: string;
     phone: string;
     email: string | null;
     source: string;
@@ -93,11 +96,11 @@ export function LeadsTable({
             key: 'full_name',
             header: 'Lead',
             accessor: (row) =>
-                `${row.first_name} ${row.last_name ?? ''}`.trim(),
+                row.full_name,
             cell: (row) => (
                 <div>
                     <p className="font-medium">
-                        {`${row.first_name} ${row.last_name ?? ''}`.trim()}
+                        {row.full_name}
                     </p>
                     <p className="text-xs text-muted-foreground">
                         Alta{' '}

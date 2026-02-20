@@ -55,7 +55,9 @@ type LeadFile = {
 type LeadForm = {
     id: string | null;
     first_name: string;
+    middle_name: string;
     last_name: string;
+    second_last_name: string;
     phone: string;
     email: string;
     source: string;
@@ -113,7 +115,9 @@ export default function LeadsIndex({
     const form = useForm<LeadForm>({
         id: null,
         first_name: '',
+        middle_name: '',
         last_name: '',
+        second_last_name: '',
         phone: '',
         email: '',
         source: 'facebook',
@@ -167,7 +171,9 @@ export default function LeadsIndex({
         form.setData({
             id: lead.id,
             first_name: lead.first_name,
+            middle_name: lead.middle_name ?? '',
             last_name: lead.last_name ?? '',
+            second_last_name: lead.second_last_name ?? '',
             phone: lead.phone,
             email: lead.email ?? '',
             source: lead.source,
@@ -289,7 +295,7 @@ export default function LeadsIndex({
                 trackableId={leadForTracking?.id ?? ''}
                 trackableLabel={
                     leadForTracking
-                        ? `${leadForTracking.first_name} ${leadForTracking.last_name ?? ''}`
+                        ? leadForTracking.full_name
                         : 'Lead'
                 }
                 catalogs={trackingCatalogs}
@@ -321,10 +327,16 @@ export default function LeadsIndex({
                     event.preventDefault();
                     form.transform((data) => {
                         if (formMode === 'create') {
-                            const payload = { ...data };
-                            delete payload.status;
-
-                            return payload;
+                            return {
+                                id: data.id,
+                                first_name: data.first_name,
+                                middle_name: data.middle_name,
+                                last_name: data.last_name,
+                                second_last_name: data.second_last_name,
+                                phone: data.phone,
+                                email: data.email,
+                                source: data.source,
+                            };
                         }
 
                         return data;
@@ -342,7 +354,7 @@ export default function LeadsIndex({
             >
                 <div className="grid gap-4 md:grid-cols-2">
                     <Field>
-                        <Label htmlFor="lead-first-name">Nombre</Label>
+                        <Label htmlFor="lead-first-name">Nombre(s)</Label>
                         <Input
                             id="lead-first-name"
                             value={form.data.first_name}
@@ -356,7 +368,21 @@ export default function LeadsIndex({
                         )}
                     </Field>
                     <Field>
-                        <Label htmlFor="lead-last-name">Apellido</Label>
+                        <Label htmlFor="lead-middle-name">Segundo nombre</Label>
+                        <Input
+                            id="lead-middle-name"
+                            value={form.data.middle_name}
+                            disabled={formMode === 'view'}
+                            onChange={(event) =>
+                                form.setData('middle_name', event.target.value)
+                            }
+                        />
+                        {form.errors.middle_name && (
+                            <FieldError>{form.errors.middle_name}</FieldError>
+                        )}
+                    </Field>
+                    <Field>
+                        <Label htmlFor="lead-last-name">Apellido paterno</Label>
                         <Input
                             id="lead-last-name"
                             value={form.data.last_name}
@@ -367,6 +393,20 @@ export default function LeadsIndex({
                         />
                         {form.errors.last_name && (
                             <FieldError>{form.errors.last_name}</FieldError>
+                        )}
+                    </Field>
+                    <Field>
+                        <Label htmlFor="lead-second-last-name">Apellido materno</Label>
+                        <Input
+                            id="lead-second-last-name"
+                            value={form.data.second_last_name}
+                            disabled={formMode === 'view'}
+                            onChange={(event) =>
+                                form.setData('second_last_name', event.target.value)
+                            }
+                        />
+                        {form.errors.second_last_name && (
+                            <FieldError>{form.errors.second_last_name}</FieldError>
                         )}
                     </Field>
                     <Field>
@@ -460,7 +500,7 @@ export default function LeadsIndex({
                 onOpenChange={(open) => !open && setLeadForFiles(null)}
                 title={
                     leadForFiles
-                        ? `Archivos · ${leadForFiles.first_name} ${leadForFiles.last_name ?? ''}`
+                        ? `Archivos · ${leadForFiles.full_name}`
                         : 'Archivos'
                 }
                 description="Gestiona los archivos del lead activo (subir, descargar, renombrar o eliminar)."

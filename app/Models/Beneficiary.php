@@ -16,7 +16,10 @@ class Beneficiary extends Model
     protected $fillable = [
         'agent_id',
         'policy_id',
-        'name',
+        'first_name',
+        'middle_name',
+        'last_name',
+        'second_last_name',
         'birthday',
         'rfc',
         'address',
@@ -36,6 +39,8 @@ class Beneficiary extends Model
         'benefit_percentage',
     ];
 
+    protected $appends = ['full_name'];
+
     protected $casts = [
         'birthday' => 'date',
         'approx_income' => 'decimal:2',
@@ -44,6 +49,17 @@ class Beneficiary extends Model
         'drinks' => 'boolean',
     ];
 
+
+
+    public function getFullNameAttribute(): string
+    {
+        return trim(preg_replace('/\s+/', ' ', implode(' ', array_filter([
+            $this->first_name,
+            $this->middle_name,
+            $this->last_name,
+            $this->second_last_name,
+        ]))) ?? '');
+    }
 
     public function agent(): BelongsTo
     {
@@ -62,20 +78,18 @@ class Beneficiary extends Model
     public function toSearchableArray(): array
     {
         $searchText = mb_strtolower(implode(' ', array_filter([
-            $this->name,
+            $this->full_name,
             $this->rfc,
             $this->occupation,
             $this->company_name,
-            $this->policy?->status,
         ])));
 
         return [
             'id' => $this->id,
             'agent_id' => $this->agent_id,
-            'name' => $this->name,
+            'full_name' => $this->full_name,
             'rfc' => $this->rfc,
             'occupation' => $this->occupation,
-            'policy_status' => $this->policy?->status,
             'search_text' => $searchText,
         ];
     }

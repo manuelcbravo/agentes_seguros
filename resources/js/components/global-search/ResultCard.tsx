@@ -1,5 +1,3 @@
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 import {
     FileText,
     HeartHandshake,
@@ -7,10 +5,13 @@ import {
     ShieldCheck,
     Users,
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import type { GlobalSearchItem } from './useGlobalSearch';
 
 const typeIcons = {
     client: Users,
+    lead: Users,
     insured: ShieldCheck,
     beneficiary: HeartHandshake,
     policy: FileText,

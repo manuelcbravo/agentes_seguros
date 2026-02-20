@@ -28,7 +28,11 @@ class AseguradoController extends Controller
             ->where('agent_id', $agentId)
             ->when($search !== '', function (Builder $query) use ($search): void {
                 $query->where(function (Builder $nestedQuery) use ($search): void {
-                    $nestedQuery->where('email', 'like', "%{$search}%")
+                    $nestedQuery->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('middle_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('second_last_name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
                         ->orWhere('phone', 'like', "%{$search}%")
                         ->orWhere('occupation', 'like', "%{$search}%")
                         ->orWhere('company_name', 'like', "%{$search}%");

@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { route } from 'ziggy-js';
 import { CrudFormDialog } from '@/components/crud-form-dialog';
 import { DataTable, type DataTableColumn } from '@/components/data-table';
+import { TrackingDrawer } from '@/components/tracking/TrackingDrawer';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -32,12 +33,16 @@ import {
 import { Field, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { TrackingDrawer } from '@/components/tracking/TrackingDrawer';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, SharedData } from '@/types';
 
 type AseguradoRow = {
     id: string;
+    first_name: string;
+    middle_name: string | null;
+    last_name: string;
+    second_last_name: string | null;
+    full_name: string;
     birthday: string;
     age_current: number | null;
     phone: string | null;
@@ -52,6 +57,10 @@ type AseguradoRow = {
 
 type AseguradoForm = {
     id: string | null;
+    first_name: string;
+    middle_name: string;
+    last_name: string;
+    second_last_name: string;
     birthday: string;
     age_current: string;
     phone: string;
@@ -89,6 +98,10 @@ export default function AseguradosIndex({
 
     const form = useForm<AseguradoForm>({
         id: null,
+        first_name: '',
+        middle_name: '',
+        last_name: '',
+        second_last_name: '',
         birthday: '',
         age_current: '',
         phone: '',
@@ -129,6 +142,10 @@ export default function AseguradosIndex({
         form.clearErrors();
         form.setData({
             id: asegurado.id,
+            first_name: asegurado.first_name ?? '',
+            middle_name: asegurado.middle_name ?? '',
+            last_name: asegurado.last_name ?? '',
+            second_last_name: asegurado.second_last_name ?? '',
             birthday: asegurado.birthday ?? '',
             age_current: asegurado.age_current?.toString() ?? '',
             phone: asegurado.phone ?? '',
@@ -144,6 +161,7 @@ export default function AseguradosIndex({
     };
 
     const columns: DataTableColumn<AseguradoRow>[] = [
+        { key: 'full_name', header: 'Nombre completo', cell: (row) => row.full_name },
         { key: 'email', header: 'Correo', cell: (row) => row.email ?? '—' },
         { key: 'phone', header: 'Teléfono', cell: (row) => row.phone ?? '—' },
         {
@@ -225,7 +243,7 @@ export default function AseguradosIndex({
                                 onChange={(event) =>
                                     setSearch(event.target.value)
                                 }
-                                placeholder="Buscar por correo, teléfono u ocupación..."
+                                placeholder="Buscar por nombre, correo, teléfono u ocupación..."
                             />
                             <select
                                 value={smokes}
@@ -259,11 +277,7 @@ export default function AseguradosIndex({
                 trackableType="Insured"
                 trackableId={trackingRow?.id ?? ''}
                 trackableLabel={
-                    trackingRow
-                        ? (trackingRow.email ??
-                          trackingRow.phone ??
-                          trackingRow.id)
-                        : 'Registro'
+                    trackingRow ? trackingRow.full_name : 'Registro'
                 }
                 catalogs={trackingCatalogs}
             />
@@ -305,6 +319,26 @@ export default function AseguradosIndex({
                 }}
             >
                 <div className="grid gap-4 md:grid-cols-2">
+                    <Field>
+                        <Label>Nombre(s)</Label>
+                        <Input value={form.data.first_name} onChange={(event) => form.setData('first_name', event.target.value)} />
+                        {form.errors.first_name && <FieldError>{form.errors.first_name}</FieldError>}
+                    </Field>
+                    <Field>
+                        <Label>Segundo nombre</Label>
+                        <Input value={form.data.middle_name} onChange={(event) => form.setData('middle_name', event.target.value)} />
+                        {form.errors.middle_name && <FieldError>{form.errors.middle_name}</FieldError>}
+                    </Field>
+                    <Field>
+                        <Label>Apellido paterno</Label>
+                        <Input value={form.data.last_name} onChange={(event) => form.setData('last_name', event.target.value)} />
+                        {form.errors.last_name && <FieldError>{form.errors.last_name}</FieldError>}
+                    </Field>
+                    <Field>
+                        <Label>Apellido materno</Label>
+                        <Input value={form.data.second_last_name} onChange={(event) => form.setData('second_last_name', event.target.value)} />
+                        {form.errors.second_last_name && <FieldError>{form.errors.second_last_name}</FieldError>}
+                    </Field>
                     <Field>
                         <Label>Fecha de nacimiento</Label>
                         <Input

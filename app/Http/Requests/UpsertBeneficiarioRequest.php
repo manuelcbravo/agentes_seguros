@@ -18,7 +18,10 @@ class UpsertBeneficiarioRequest extends FormRequest
         return [
             'id' => ['nullable', 'uuid'],
             'policy_id' => ['required', 'uuid', Rule::exists('policies', 'id')->where('agent_id', $agentId)],
-            'name' => ['required', 'string', 'max:180'],
+            'first_name' => ['required', 'string', 'max:150'],
+            'middle_name' => ['nullable', 'string', 'max:150'],
+            'last_name' => ['required', 'string', 'max:150'],
+            'second_last_name' => ['nullable', 'string', 'max:150'],
             'birthday' => ['nullable', 'date'],
             'rfc' => ['nullable', 'string', 'max:30'],
             'relationship' => ['nullable', 'integer'],

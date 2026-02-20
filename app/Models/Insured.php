@@ -16,6 +16,10 @@ class Insured extends Model
     protected $fillable = [
         'agent_id',
         'client_id',
+        'first_name',
+        'middle_name',
+        'last_name',
+        'second_last_name',
         'birthday',
         'rfc',
         'age_current',
@@ -42,6 +46,8 @@ class Insured extends Model
         'children_birthdates',
     ];
 
+    protected $appends = ['full_name'];
+
     protected $casts = [
         'birthday' => 'date',
         'approx_income' => 'decimal:2',
@@ -52,6 +58,17 @@ class Insured extends Model
         'children_birthdates' => 'array',
     ];
 
+
+
+    public function getFullNameAttribute(): string
+    {
+        return trim(preg_replace('/\s+/', ' ', implode(' ', array_filter([
+            $this->first_name,
+            $this->middle_name,
+            $this->last_name,
+            $this->second_last_name,
+        ]))) ?? '');
+    }
 
     public function agent(): BelongsTo
     {
@@ -79,7 +96,7 @@ class Insured extends Model
 
     public function toSearchableArray(): array
     {
-        $fullName = $this->client?->full_name;
+        $fullName = $this->full_name;
         $searchText = mb_strtolower(implode(' ', array_filter([
             $fullName,
             $this->email,

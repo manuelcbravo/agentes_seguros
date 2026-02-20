@@ -1,10 +1,11 @@
-import { cn } from '@/lib/utils';
 import { FileText, HeartHandshake, ShieldCheck, Users } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { ResultCard } from './ResultCard';
 import type { GlobalSearchGroup, GlobalSearchItem } from './useGlobalSearch';
 
 const groupIcons = {
     clients: Users,
+    leads: Users,
     insureds: ShieldCheck,
     beneficiaries: HeartHandshake,
     policies: FileText,

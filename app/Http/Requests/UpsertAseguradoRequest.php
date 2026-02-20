@@ -15,6 +15,10 @@ class UpsertAseguradoRequest extends FormRequest
         return [
             'id' => ['nullable', 'uuid'],
             'client_id' => ['nullable', 'uuid'],
+            'first_name' => ['required', 'string', 'max:150'],
+            'middle_name' => ['nullable', 'string', 'max:150'],
+            'last_name' => ['required', 'string', 'max:150'],
+            'second_last_name' => ['nullable', 'string', 'max:150'],
             'birthday' => ['required', 'date'],
             'age_current' => ['nullable', 'integer', 'min:0'],
             'phone' => ['nullable', 'string', 'max:40'],

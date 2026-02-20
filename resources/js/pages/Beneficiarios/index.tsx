@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { route } from 'ziggy-js';
 import { CrudFormDialog } from '@/components/crud-form-dialog';
 import { DataTable, type DataTableColumn } from '@/components/data-table';
+import { TrackingDrawer } from '@/components/tracking/TrackingDrawer';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -32,14 +33,17 @@ import {
 import { Field, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { TrackingDrawer } from '@/components/tracking/TrackingDrawer';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, SharedData } from '@/types';
 
 type BeneficiarioRow = {
     id: string;
     policy_id: string;
-    name: string;
+    first_name: string;
+    middle_name: string;
+    last_name: string;
+    second_last_name: string;
+    full_name: string;
     birthday: string | null;
     rfc: string | null;
     relationship: number | null;
@@ -52,7 +56,10 @@ type PolizaOption = { id: string; product: string | null; status: string };
 type BeneficiarioForm = {
     id: string | null;
     policy_id: string;
-    name: string;
+    first_name: string;
+    middle_name: string;
+    last_name: string;
+    second_last_name: string;
     birthday: string;
     rfc: string;
     relationship: string;
@@ -91,7 +98,10 @@ export default function BeneficiariosIndex({
     const form = useForm<BeneficiarioForm>({
         id: null,
         policy_id: '',
-        name: '',
+        first_name: '',
+        middle_name: '',
+        last_name: '',
+        second_last_name: '',
         birthday: '',
         rfc: '',
         relationship: '',
@@ -129,7 +139,10 @@ export default function BeneficiariosIndex({
         form.setData({
             id: beneficiario.id,
             policy_id: beneficiario.policy_id,
-            name: beneficiario.name,
+            first_name: beneficiario.first_name,
+            middle_name: beneficiario.middle_name ?? '',
+            last_name: beneficiario.last_name,
+            second_last_name: beneficiario.second_last_name ?? '',
             birthday: beneficiario.birthday ?? '',
             rfc: beneficiario.rfc ?? '',
             relationship: beneficiario.relationship?.toString() ?? '',
@@ -141,7 +154,7 @@ export default function BeneficiariosIndex({
     };
 
     const columns: DataTableColumn<BeneficiarioRow>[] = [
-        { key: 'name', header: 'Nombre', cell: (row) => row.name },
+        { key: 'full_name', header: 'Nombre completo', cell: (row) => row.full_name },
         {
             key: 'policy',
             header: 'Póliza',
@@ -222,7 +235,7 @@ export default function BeneficiariosIndex({
                                 onChange={(event) =>
                                     setSearch(event.target.value)
                                 }
-                                placeholder="Buscar por nombre, RFC u ocupación..."
+                                placeholder="Buscar por nombre, RFC, ocupación o empresa..."
                             />
                             <select
                                 value={policyId}
@@ -258,7 +271,7 @@ export default function BeneficiariosIndex({
                 onOpenChange={(open) => !open && setTrackingRow(null)}
                 trackableType="Beneficiary"
                 trackableId={trackingRow?.id ?? ''}
-                trackableLabel={trackingRow ? trackingRow.name : 'Registro'}
+                trackableLabel={trackingRow ? trackingRow.full_name : 'Registro'}
                 catalogs={trackingCatalogs}
             />
 
@@ -323,16 +336,24 @@ export default function BeneficiariosIndex({
                         )}
                     </Field>
                     <Field>
-                        <Label>Nombre</Label>
-                        <Input
-                            value={form.data.name}
-                            onChange={(event) =>
-                                form.setData('name', event.target.value)
-                            }
-                        />
-                        {form.errors.name && (
-                            <FieldError>{form.errors.name}</FieldError>
-                        )}
+                        <Label>Nombre(s)</Label>
+                        <Input value={form.data.first_name} onChange={(event) => form.setData('first_name', event.target.value)} />
+                        {form.errors.first_name && <FieldError>{form.errors.first_name}</FieldError>}
+                    </Field>
+                    <Field>
+                        <Label>Segundo nombre</Label>
+                        <Input value={form.data.middle_name} onChange={(event) => form.setData('middle_name', event.target.value)} />
+                        {form.errors.middle_name && <FieldError>{form.errors.middle_name}</FieldError>}
+                    </Field>
+                    <Field>
+                        <Label>Apellido paterno</Label>
+                        <Input value={form.data.last_name} onChange={(event) => form.setData('last_name', event.target.value)} />
+                        {form.errors.last_name && <FieldError>{form.errors.last_name}</FieldError>}
+                    </Field>
+                    <Field>
+                        <Label>Apellido materno</Label>
+                        <Input value={form.data.second_last_name} onChange={(event) => form.setData('second_last_name', event.target.value)} />
+                        {form.errors.second_last_name && <FieldError>{form.errors.second_last_name}</FieldError>}
                     </Field>
                     <Field>
                         <Label>RFC</Label>

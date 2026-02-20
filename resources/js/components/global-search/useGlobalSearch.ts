@@ -1,9 +1,9 @@
 import { router } from '@inertiajs/react';
-import { route } from 'ziggy-js';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { route } from 'ziggy-js';
 
 export type GlobalSearchItem = {
-    type: 'client' | 'insured' | 'beneficiary' | 'policy';
+    type: 'client' | 'lead' | 'insured' | 'beneficiary' | 'policy';
     id: string;
     title: string;
     subtitle: string;

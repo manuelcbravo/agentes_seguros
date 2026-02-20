@@ -156,8 +156,7 @@ export function GlobalSearchDrawer() {
                                         Sin resultados para “{normalizedQuery}”.
                                     </p>
                                     <p className="mt-2 text-xs text-muted-foreground">
-                                        Prueba por nombre, teléfono, correo, RFC
-                                        o estatus.
+                                        Prueba por nombre, teléfono, correo, RFC.
                                     </p>
                                 </div>
                             ) : (

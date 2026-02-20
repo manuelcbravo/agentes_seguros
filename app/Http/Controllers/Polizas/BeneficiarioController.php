@@ -30,7 +30,10 @@ class BeneficiarioController extends Controller
             ->with('policy:id,product,status')
             ->when($search !== '', function (Builder $query) use ($search): void {
                 $query->where(function (Builder $nestedQuery) use ($search): void {
-                    $nestedQuery->where('name', 'like', "%{$search}%")
+                    $nestedQuery->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('middle_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('second_last_name', 'like', "%{$search}%")
                         ->orWhere('rfc', 'like', "%{$search}%")
                         ->orWhere('company_name', 'like', "%{$search}%")
                         ->orWhere('occupation', 'like', "%{$search}%");
