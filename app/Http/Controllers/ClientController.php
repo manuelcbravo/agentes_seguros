@@ -53,6 +53,7 @@ class ClientController extends Controller
 
     public function store(UpsertClientRequest $request): RedirectResponse
     {
+        $agentId = (string) auth()->user()->agent_id;
         $data = $request->validated();
         $client = isset($data['id']) ? Client::query()->findOrFail($data['id']) : new Client();
 
@@ -62,6 +63,7 @@ class ClientController extends Controller
             'email' => $data['email'] ?? null,
             'phone' => $data['phone'] ?? null,
             'is_active' => $data['is_active'],
+            'agent_id' => $agentId,
         ]);
 
         if (! empty($data['avatar_path'])) {

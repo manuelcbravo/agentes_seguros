@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -24,6 +25,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'agent_id',
     ];
 
     /**
@@ -55,16 +57,29 @@ class User extends Authenticatable
     protected static function booted(): void
     {
         static::created(function (self $user): void {
-            if (! $user->agent()->exists()) {
-                $user->agent()->create([
+            $agent = $user->agentProfile()->first();
+
+            if (! $agent) {
+                $agent = $user->agentProfile()->create([
                     'name' => $user->name,
                     'email' => $user->email,
                 ]);
             }
+
+            if (! $user->agent_id && $agent) {
+                $user->forceFill([
+                    'agent_id' => $agent->id,
+                ])->saveQuietly();
+            }
         });
     }
 
-    public function agent(): HasOne
+    public function agent(): BelongsTo
+    {
+        return $this->belongsTo(Agent::class);
+    }
+
+    public function agentProfile(): HasOne
     {
         return $this->hasOne(Agent::class);
     }

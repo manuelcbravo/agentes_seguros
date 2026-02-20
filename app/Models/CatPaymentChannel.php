@@ -2,13 +2,12 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CatPaymentChannel extends Model
 {
-    use HasUuid, SoftDeletes;
+    use SoftDeletes;
 
     protected $table = 'cat_payment_channels';
 

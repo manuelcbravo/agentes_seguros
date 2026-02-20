@@ -74,15 +74,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('files', FileController::class)->only(['index', 'store', 'destroy']);
 
     Route::get('polizas', [PolizaController::class, 'index'])->name('polizas.index');
-    Route::post('polizas/upsert', [PolizaController::class, 'upsert'])->name('polizas.upsert');
+    Route::post('polizas', [PolizaController::class, 'store'])->name('polizas.store');
     Route::delete('polizas/{id}', [PolizaController::class, 'destroy'])->name('polizas.destroy');
 
     Route::get('asegurados', [AseguradoController::class, 'index'])->name('asegurados.index');
-    Route::post('asegurados/upsert', [AseguradoController::class, 'upsert'])->name('asegurados.upsert');
+    Route::post('asegurados', [AseguradoController::class, 'store'])->name('asegurados.store');
     Route::delete('asegurados/{id}', [AseguradoController::class, 'destroy'])->name('asegurados.destroy');
 
     Route::get('beneficiarios', [BeneficiarioController::class, 'index'])->name('beneficiarios.index');
-    Route::post('beneficiarios/upsert', [BeneficiarioController::class, 'upsert'])->name('beneficiarios.upsert');
+    Route::post('beneficiarios', [BeneficiarioController::class, 'store'])->name('beneficiarios.store');
     Route::delete('beneficiarios/{id}', [BeneficiarioController::class, 'destroy'])->name('beneficiarios.destroy');
     Route::prefix('catalogs')->name('catalogs.')->group(function () {
         Route::resource('currencies', CurrencyController::class)->only(['index', 'store', 'destroy']);

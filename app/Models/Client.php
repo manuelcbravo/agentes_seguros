@@ -14,6 +14,7 @@ class Client extends Model
     // ===== MASS ASSIGNMENT =====
     protected $fillable = [
         'company_id',
+        'agent_id',
 
         // datos personales
         'first_name',

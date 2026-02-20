@@ -110,7 +110,7 @@ export default function BeneficiariosIndex({ beneficiarios, polizas, filters }: 
                 onSubmit={(event) => {
                     event.preventDefault();
                     form.transform((data) => ({ ...data, id: data.id || null, relationship: data.relationship || null, benefit_percentage: data.benefit_percentage || null, birthday: data.birthday || null }));
-                    form.post(route('beneficiarios.upsert'), {
+                    form.post(route('beneficiarios.store'), {
                         onSuccess: () => {
                             setFormMode(null);
                                                 form.reset();

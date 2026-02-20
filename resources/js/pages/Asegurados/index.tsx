@@ -110,7 +110,7 @@ export default function AseguradosIndex({ asegurados, filters }: { asegurados: A
                 onSubmit={(event) => {
                     event.preventDefault();
                     form.transform((data) => ({ ...data, id: data.id || null, age_current: data.age_current || null, approx_income: data.approx_income || null }));
-                    form.post(route('asegurados.upsert'), {
+                    form.post(route('asegurados.store'), {
                         onSuccess: () => {
                             setFormMode(null);
                                                 form.reset();

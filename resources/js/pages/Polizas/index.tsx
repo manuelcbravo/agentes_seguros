@@ -180,7 +180,7 @@ export default function PolizasIndex({ polizas, insureds, paymentChannels, filte
                 onSubmit={(event) => {
                     event.preventDefault();
                     form.transform((data) => ({ ...data, id: data.id || null, coverage_start: data.coverage_start || null, risk_premium: data.risk_premium || null, fractional_premium: data.fractional_premium || null }));
-                    form.post(route('polizas.upsert'), {
+                    form.post(route('polizas.store'), {
                         onSuccess: () => {
                             setFormMode(null);
                                                 form.reset();

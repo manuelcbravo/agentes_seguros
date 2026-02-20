@@ -35,6 +35,29 @@ class Agent extends Model
         'google_last_sync_at' => 'datetime',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (self $agent): void {
+            $user = $agent->user;
+
+            if ($user && $user->agent_id !== $agent->id) {
+                $user->forceFill([
+                    'agent_id' => $agent->id,
+                ])->saveQuietly();
+            }
+        });
+
+        static::deleted(function (self $agent): void {
+            $user = $agent->user;
+
+            if ($user && $user->agent_id === $agent->id) {
+                $user->forceFill([
+                    'agent_id' => null,
+                ])->saveQuietly();
+            }
+        });
+    }
+
     protected function googleAccessToken(): Attribute
     {
         return Attribute::make(

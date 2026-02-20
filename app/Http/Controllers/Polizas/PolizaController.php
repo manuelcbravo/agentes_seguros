@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Polizas;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpsertPolizaRequest;
 use App\Models\CatPaymentChannel;
 use App\Models\Insured;
 use App\Models\Policy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -55,25 +55,11 @@ class PolizaController extends Controller
         ]);
     }
 
-    public function upsert(Request $request): RedirectResponse
+    public function store(UpsertPolizaRequest $request): RedirectResponse
     {
         $agentId = (string) auth()->user()->agent_id;
 
-        $data = $request->validate([
-            'id' => ['nullable', 'uuid'],
-            'insured_id' => ['required', 'uuid', Rule::exists('insureds', 'id')->where('agent_id', $agentId)],
-            'client_id' => ['nullable', 'uuid'],
-            'status' => ['required', 'string', 'max:120'],
-            'payment_channel' => ['nullable', Rule::exists('cat_payment_channels', 'code')],
-            'product' => ['nullable', 'string', 'max:160'],
-            'coverage_start' => ['nullable', 'date'],
-            'risk_premium' => ['nullable', 'numeric', 'min:0'],
-            'fractional_premium' => ['nullable', 'numeric', 'min:0'],
-            'periodicity' => ['nullable', 'string', 'max:120'],
-            'month' => ['nullable', 'integer', 'between:1,12'],
-            'currency' => ['nullable', 'integer'],
-            'currency_id' => ['nullable', 'uuid'],
-        ]);
+        $data = $request->validated();
 
         $data['agent_id'] = $agentId;
 

@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Polizas;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpsertBeneficiarioRequest;
 use App\Models\Beneficiary;
 use App\Models\Policy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -48,25 +48,11 @@ class BeneficiarioController extends Controller
         ]);
     }
 
-    public function upsert(Request $request): RedirectResponse
+    public function store(UpsertBeneficiarioRequest $request): RedirectResponse
     {
         $agentId = (string) auth()->user()->agent_id;
 
-        $data = $request->validate([
-            'id' => ['nullable', 'uuid'],
-            'policy_id' => ['required', 'uuid', Rule::exists('policies', 'id')->where('agent_id', $agentId)],
-            'name' => ['required', 'string', 'max:180'],
-            'birthday' => ['nullable', 'date'],
-            'rfc' => ['nullable', 'string', 'max:30'],
-            'relationship' => ['nullable', 'integer'],
-            'benefit_percentage' => ['nullable', 'numeric', 'between:0,100'],
-            'occupation' => ['nullable', 'string', 'max:160'],
-            'company_name' => ['nullable', 'string', 'max:160'],
-            'approx_income' => ['nullable', 'numeric', 'min:0'],
-            'address' => ['nullable', 'string'],
-            'smokes' => ['nullable', 'boolean'],
-            'drinks' => ['nullable', 'boolean'],
-        ]);
+        $data = $request->validated();
 
         $data['agent_id'] = $agentId;
         $data['smokes'] = (bool) ($data['smokes'] ?? false);

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Polizas;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpsertAseguradoRequest;
 use App\Models\Insured;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -38,24 +39,11 @@ class AseguradoController extends Controller
         ]);
     }
 
-    public function upsert(Request $request): RedirectResponse
+    public function store(UpsertAseguradoRequest $request): RedirectResponse
     {
         $agentId = (string) auth()->user()->agent_id;
 
-        $data = $request->validate([
-            'id' => ['nullable', 'uuid'],
-            'client_id' => ['nullable', 'uuid'],
-            'birthday' => ['required', 'date'],
-            'age_current' => ['nullable', 'integer', 'min:0'],
-            'phone' => ['nullable', 'string', 'max:40'],
-            'email' => ['nullable', 'email', 'max:160'],
-            'occupation' => ['nullable', 'string', 'max:160'],
-            'company_name' => ['nullable', 'string', 'max:160'],
-            'approx_income' => ['nullable', 'numeric', 'min:0'],
-            'address' => ['nullable', 'string'],
-            'smokes' => ['nullable', 'boolean'],
-            'drinks' => ['nullable', 'boolean'],
-        ]);
+        $data = $request->validated();
 
         $data['agent_id'] = $agentId;
         $data['smokes'] = (bool) ($data['smokes'] ?? false);

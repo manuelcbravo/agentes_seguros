@@ -12,7 +12,9 @@ return new class extends Migration {
     {
         Schema::create('clients', function (Blueprint $table) {
             $table->uuid('id')->primary();
-
+            $table->foreignUuid('agent_id')
+                ->constrained('agents')
+                ->index();
             // Multi tenant (por si luego lo necesitas)
             $table->foreignId('company_id')->nullable()->index();
 

@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('cat_payment_channels', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+            $table->id();
             $table->string('code', 60)->unique();
             $table->string('name', 150)->unique();
             $table->timestamps();
