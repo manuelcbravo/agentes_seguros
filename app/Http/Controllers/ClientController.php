@@ -108,7 +108,7 @@ class ClientController extends Controller
             'insured' => $insured,
             'beneficiaries' => $beneficiaries,
             'files' => File::query()
-                ->select(['id', 'uuid', 'disk', 'path', 'original_name', 'mime_type', 'size', 'related_table', 'related_uuid', 'created_at'])
+                ->select(['id', 'disk', 'path', 'original_name', 'mime_type', 'size', 'related_table', 'related_uuid', 'created_at'])
                 ->where('related_table', 'clients')
                 ->where('related_uuid', $client->id)
                 ->latest()
@@ -116,7 +116,6 @@ class ClientController extends Controller
                 ->map(function (File $file): array {
                     return [
                         'id' => $file->id,
-                        'uuid' => $file->uuid,
                         'path' => $file->path,
                         'original_name' => $file->original_name,
                         'mime_type' => $file->mime_type,

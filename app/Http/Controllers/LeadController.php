@@ -156,15 +156,7 @@ class LeadController extends Controller
 
         $existingClient = $lead->client_id
             ? Client::query()->find($lead->client_id)
-            : Client::query()
-                ->where(function (Builder $query) use ($lead): void {
-                    if ($lead->email) {
-                        $query->orWhere('email', $lead->email);
-                    }
-
-                    $query->orWhere('phone', $lead->phone);
-                })
-                ->first();
+            : null;
 
         if (! $existingClient) {
             $existingClient = Client::query()->create([
@@ -247,7 +239,7 @@ class LeadController extends Controller
             'insured' => $insured,
             'beneficiaries' => $beneficiaries,
             'files' => File::query()
-                ->select(['id', 'uuid', 'disk', 'path', 'original_name', 'mime_type', 'size', 'related_table', 'related_uuid', 'created_at'])
+                ->select(['id', 'disk', 'path', 'original_name', 'mime_type', 'size', 'related_table', 'related_uuid', 'created_at'])
                 ->where('related_table', $client ? 'clients' : 'leads')
                 ->where('related_uuid', $client?->id ?? $lead->id)
                 ->latest()
@@ -255,7 +247,6 @@ class LeadController extends Controller
                 ->map(function (File $file): array {
                     return [
                         'id' => $file->id,
-                        'uuid' => $file->uuid,
                         'path' => $file->path,
                         'original_name' => $file->original_name,
                         'mime_type' => $file->mime_type,

@@ -6,6 +6,7 @@ import {
     Plus,
     ShieldCheck,
     Trash2,
+    Pencil,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -148,7 +149,7 @@ export default function PolizasIndex({
                                 )
                             }
                         >
-                            Editar
+                            <Pencil className="mr-2 size-4" /> Editar
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setTrackingRow(row)}>
                             <Activity className="mr-2 size-4" /> Seguimiento
