@@ -170,7 +170,7 @@ export default function Step4Beneficiarios({
                                 placeholder="Seleccione parentesco"
                                 aria-label="Parentesco"
                             />
-                            <ComboboxContent>
+                            <ComboboxContent className="pointer-events-auto z-[100] overflow-visible">
                                 <ComboboxList>
                                     <ComboboxEmpty>No se encontraron parentescos.</ComboboxEmpty>
                                     <ComboboxItem value="">Parentesco</ComboboxItem>
