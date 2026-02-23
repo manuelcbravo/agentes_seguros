@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { route } from 'ziggy-js';
 import { DataTable, type DataTableColumn } from '@/components/data-table';
+import { TrackingDrawer } from '@/components/tracking/TrackingDrawer';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -24,13 +25,20 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
+    Combobox,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxList,
+} from '@/components/ui/combobox';
+import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { TrackingDrawer } from '@/components/tracking/TrackingDrawer';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, SharedData } from '@/types';
 
@@ -192,20 +200,27 @@ export default function PolizasIndex({
                             onChange={(event) => setSearch(event.target.value)}
                             placeholder="Buscar por estatus o producto..."
                         />
-                        <select
+                        <Combobox
                             value={paymentChannel}
-                            onChange={(event) =>
-                                setPaymentChannel(event.target.value)
-                            }
-                            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                            onValueChange={(value) => setPaymentChannel(value)}
                         >
-                            <option value="">Todos los métodos de pago</option>
-                            {paymentChannels.map((option: any) => (
-                                <option key={option.code} value={option.code}>
-                                    {option.name}
-                                </option>
-                            ))}
-                        </select>
+                            <ComboboxInput
+                                className="w-full"
+                                placeholder="selecciones nombre del catalogo"
+                                aria-label="Método de pago"
+                            />
+                            <ComboboxContent>
+                                <ComboboxList>
+                                    <ComboboxEmpty>No se encontraron métodos de pago.</ComboboxEmpty>
+                                    <ComboboxItem value="">Todos los métodos de pago</ComboboxItem>
+                                    {paymentChannels.map((option: any) => (
+                                        <ComboboxItem key={option.code} value={String(option.code)}>
+                                            {option.name}
+                                        </ComboboxItem>
+                                    ))}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
                         <Button onClick={applyFilters}>
                             <Filter className="mr-2 size-4" /> Aplicar filtros
                         </Button>

@@ -9,6 +9,14 @@ import { CrudFormDialog } from '@/components/crud-form-dialog';
 import { DataTable, type DataTableColumn } from '@/components/data-table';
 import { Button } from '@/components/ui/button';
 import {
+    Combobox,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxList,
+} from '@/components/ui/combobox';
+import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -227,19 +235,27 @@ export default function AgentsIndex({
                 <div className="grid gap-4 md:grid-cols-2">
                     <Field>
                         <Label htmlFor="agent-user-id">Usuario</Label>
-                        <select
-                            id="agent-user-id"
-                            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
+                        <Combobox
                             value={form.data.user_id}
-                            onChange={(event) => form.setData('user_id', event.target.value)}
+                            onValueChange={(value) => form.setData('user_id', value)}
                         >
-                            <option value="">Selecciona un usuario</option>
-                            {users.map((user) => (
-                                <option key={user.id} value={String(user.id)}>
-                                    {user.name} ({user.email})
-                                </option>
-                            ))}
-                        </select>
+                            <ComboboxInput
+                                className="w-full"
+                                placeholder="selecciones nombre del catalogo"
+                                aria-label="Usuario"
+                            />
+                            <ComboboxContent>
+                                <ComboboxList>
+                                    <ComboboxEmpty>No se encontraron usuarios.</ComboboxEmpty>
+                                    <ComboboxItem value="">Selecciona un usuario</ComboboxItem>
+                                    {users.map((user) => (
+                                        <ComboboxItem key={user.id} value={String(user.id)}>
+                                            {user.name} ({user.email})
+                                        </ComboboxItem>
+                                    ))}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
                         {form.errors.user_id && <FieldError>{form.errors.user_id}</FieldError>}
                     </Field>
 

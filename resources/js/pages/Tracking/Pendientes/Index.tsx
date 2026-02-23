@@ -29,6 +29,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
+    Combobox,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxList,
+} from '@/components/ui/combobox';
+import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -283,40 +291,79 @@ export default function TrackingPendientesIndex({
 
                 <div className="space-y-3 rounded-xl border p-4">
                     <div className="grid gap-3 md:grid-cols-4">
-                        <select
-                            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                        <Combobox
                             value={period}
-                            onChange={(e) => setPeriod(e.target.value)}
+                            onValueChange={(value) => setPeriod(value)}
                         >
-                            <option value="">Periodo</option>
-                            <option value="today">Hoy</option>
-                            <option value="week">Esta semana</option>
-                            <option value="month">Este mes</option>
-                        </select>
-                        <select
-                            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                            <ComboboxInput
+                                className="w-full"
+                                placeholder="selecciones nombre del catalogo"
+                                aria-label="Filtrar por periodo"
+                            />
+                            <ComboboxContent>
+                                <ComboboxList>
+                                    <ComboboxEmpty>
+                                        No se encontraron periodos.
+                                    </ComboboxEmpty>
+                                    <ComboboxItem value="">Periodo</ComboboxItem>
+                                    <ComboboxItem value="today">Hoy</ComboboxItem>
+                                    <ComboboxItem value="week">Esta semana</ComboboxItem>
+                                    <ComboboxItem value="month">Este mes</ComboboxItem>
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
+                        <Combobox
                             value={typeId}
-                            onChange={(e) => setTypeId(e.target.value)}
+                            onValueChange={(value) => setTypeId(value)}
                         >
-                            <option value="">Tipo</option>
-                            {catalogs.activityTypes.map((item) => (
-                                <option key={item.id} value={item.id}>
-                                    {item.name}
-                                </option>
-                            ))}
-                        </select>
-                        <select
-                            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                            <ComboboxInput
+                                className="w-full"
+                                placeholder="selecciones nombre del catalogo"
+                                aria-label="Filtrar por tipo"
+                            />
+                            <ComboboxContent>
+                                <ComboboxList>
+                                    <ComboboxEmpty>
+                                        No se encontraron tipos.
+                                    </ComboboxEmpty>
+                                    <ComboboxItem value="">Tipo</ComboboxItem>
+                                    {catalogs.activityTypes.map((item) => (
+                                        <ComboboxItem
+                                            key={item.id}
+                                            value={String(item.id)}
+                                        >
+                                            {item.name}
+                                        </ComboboxItem>
+                                    ))}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
+                        <Combobox
                             value={priorityId}
-                            onChange={(e) => setPriorityId(e.target.value)}
+                            onValueChange={(value) => setPriorityId(value)}
                         >
-                            <option value="">Prioridad</option>
-                            {catalogs.priorities.map((item) => (
-                                <option key={item.id} value={item.id}>
-                                    {item.name}
-                                </option>
-                            ))}
-                        </select>
+                            <ComboboxInput
+                                className="w-full"
+                                placeholder="selecciones nombre del catalogo"
+                                aria-label="Filtrar por prioridad"
+                            />
+                            <ComboboxContent>
+                                <ComboboxList>
+                                    <ComboboxEmpty>
+                                        No se encontraron prioridades.
+                                    </ComboboxEmpty>
+                                    <ComboboxItem value="">Prioridad</ComboboxItem>
+                                    {catalogs.priorities.map((item) => (
+                                        <ComboboxItem
+                                            key={item.id}
+                                            value={String(item.id)}
+                                        >
+                                            {item.name}
+                                        </ComboboxItem>
+                                    ))}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
                         <Button
                             onClick={() =>
                                 router.get(

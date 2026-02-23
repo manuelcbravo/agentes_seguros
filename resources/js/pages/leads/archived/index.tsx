@@ -16,6 +16,14 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import {
+    Combobox,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxList,
+} from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, SharedData } from '@/types';
@@ -100,18 +108,27 @@ export default function ArchivedLeadsIndex({
                             onChange={(event) => setSearch(event.target.value)}
                             placeholder="Buscar por nombre, correo o telefono..."
                         />
-                        <select
+                        <Combobox
                             value={status}
-                            onChange={(event) => setStatus(event.target.value)}
-                            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                            onValueChange={(value) => setStatus(value)}
                         >
-                            <option value="">Todos los estatus</option>
-                            {statusOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                    {option.label}
-                                </option>
-                            ))}
-                        </select>
+                            <ComboboxInput
+                                className="w-full"
+                                placeholder="selecciones nombre del catalogo"
+                                aria-label="Estatus"
+                            />
+                            <ComboboxContent>
+                                <ComboboxList>
+                                    <ComboboxEmpty>No se encontraron estatus.</ComboboxEmpty>
+                                    <ComboboxItem value="">Todos los estatus</ComboboxItem>
+                                    {statusOptions.map((option) => (
+                                        <ComboboxItem key={option.value} value={option.value}>
+                                            {option.label}
+                                        </ComboboxItem>
+                                    ))}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
                         <Button onClick={() => applyFilters()}>
                             <Filter className="mr-2 size-4" /> Aplicar filtros
                         </Button>

@@ -20,9 +20,18 @@ import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog';
 import { CrudFormDialog } from '@/components/crud-form-dialog';
 import { DataTable, type DataTableColumn } from '@/components/data-table';
 import { FilePickerDialog } from '@/components/file-picker-dialog';
+import { TrackingDrawer } from '@/components/tracking/TrackingDrawer';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Combobox,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxList,
+} from '@/components/ui/combobox';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -33,7 +42,6 @@ import {
 import { Field, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { TrackingDrawer } from '@/components/tracking/TrackingDrawer';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, SharedData } from '@/types';
 
@@ -475,20 +483,25 @@ export default function ClientsIndex({
 
                 <Field>
                     <Label htmlFor="client-active">Estado</Label>
-                    <select
-                        id="client-active"
-                        className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    <Combobox
                         value={form.data.is_active ? '1' : '0'}
-                        onChange={(event) =>
-                            form.setData(
-                                'is_active',
-                                event.target.value === '1',
-                            )
+                        onValueChange={(value) =>
+                            form.setData('is_active', value === '1')
                         }
                     >
-                        <option value="1">Activo</option>
-                        <option value="0">Inactivo</option>
-                    </select>
+                        <ComboboxInput
+                            className="w-full"
+                            placeholder="selecciones nombre del catalogo"
+                            aria-label="Estado"
+                        />
+                        <ComboboxContent>
+                            <ComboboxList>
+                                <ComboboxEmpty>No se encontraron estados.</ComboboxEmpty>
+                                <ComboboxItem value="1">Activo</ComboboxItem>
+                                <ComboboxItem value="0">Inactivo</ComboboxItem>
+                            </ComboboxList>
+                        </ComboboxContent>
+                    </Combobox>
                     {form.errors.is_active && (
                         <FieldError>{form.errors.is_active}</FieldError>
                     )}
