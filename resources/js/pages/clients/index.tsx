@@ -484,6 +484,7 @@ export default function ClientsIndex({
                 <Field>
                     <Label htmlFor="client-active">Estado</Label>
                     <Combobox
+                        itemToStringLabel={(value) => (value === '1' ? 'Activo' : 'Inactivo')}
                         value={form.data.is_active ? '1' : '0'}
                         onValueChange={(value) =>
                             form.setData('is_active', value === '1')
@@ -491,7 +492,7 @@ export default function ClientsIndex({
                     >
                         <ComboboxInput
                             className="w-full"
-                            placeholder="selecciones nombre del catalogo"
+                            placeholder="Seleccione estado"
                             aria-label="Estado"
                         />
                         <ComboboxContent>

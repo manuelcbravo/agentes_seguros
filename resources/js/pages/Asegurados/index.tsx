@@ -254,12 +254,13 @@ export default function AseguradosIndex({
                                 placeholder="Buscar por nombre, correo, teléfono u ocupación..."
                             />
                             <Combobox
+                                itemToStringLabel={(value) => ({'': 'Todos', '1': 'Fumadores', '0': 'No fumadores'})[value] ?? ''}
                                 value={smokes}
-                                onValueChange={(value) => setSmokes(value)}
+                                onValueChange={(value) => setSmokes(value ?? '')}
                             >
                                 <ComboboxInput
                                     className="w-full"
-                                    placeholder="selecciones nombre del catalogo"
+                                    placeholder="Seleccione hábito de fumar"
                                     aria-label="Filtro de fumadores"
                                 />
                                 <ComboboxContent>

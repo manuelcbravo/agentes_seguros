@@ -109,12 +109,13 @@ export default function ArchivedLeadsIndex({
                             placeholder="Buscar por nombre, correo o telefono..."
                         />
                         <Combobox
+                            itemToStringLabel={(value) => !value ? 'Todos los estatus' : (statusOptions.find((option) => option.value === value)?.label ?? '')}
                             value={status}
-                            onValueChange={(value) => setStatus(value)}
+                            onValueChange={(value) => setStatus(value ?? '')}
                         >
                             <ComboboxInput
                                 className="w-full"
-                                placeholder="selecciones nombre del catalogo"
+                                placeholder="Seleccione estatus"
                                 aria-label="Estatus"
                             />
                             <ComboboxContent>

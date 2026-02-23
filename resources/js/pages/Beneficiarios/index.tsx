@@ -246,12 +246,13 @@ export default function BeneficiariosIndex({
                                 placeholder="Buscar por nombre, RFC, ocupación o empresa..."
                             />
                             <Combobox
+                                itemToStringLabel={(value) => !value ? 'Todas las pólizas' : (polizas.find((option) => option.id === value)?.product || polizas.find((option) => option.id === value)?.status || '')}
                                 value={policyId}
-                                onValueChange={(value) => setPolicyId(value)}
+                                onValueChange={(value) => setPolicyId(value ?? '')}
                             >
                                 <ComboboxInput
                                     className="w-full"
-                                    placeholder="selecciones nombre del catalogo"
+                                    placeholder="Seleccione póliza"
                                     aria-label="Filtrar por póliza"
                                 />
                                 <ComboboxContent>
@@ -333,12 +334,13 @@ export default function BeneficiariosIndex({
                     <Field>
                         <Label>Póliza</Label>
                         <Combobox
+                            itemToStringLabel={(value) => !value ? 'Seleccione póliza' : (polizas.find((item) => item.id === value)?.product || polizas.find((item) => item.id === value)?.status || '')}
                             value={form.data.policy_id}
-                            onValueChange={(value) => form.setData('policy_id', value)}
+                            onValueChange={(value) => form.setData('policy_id', value ?? '')}
                         >
                             <ComboboxInput
                                 className="w-full"
-                                placeholder="selecciones nombre del catalogo"
+                                placeholder="Seleccione póliza"
                                 aria-label="Póliza"
                             />
                             <ComboboxContent>

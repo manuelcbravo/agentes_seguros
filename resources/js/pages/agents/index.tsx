@@ -236,23 +236,23 @@ export default function AgentsIndex({
                     <Field>
                         <Label htmlFor="agent-user-id">Usuario</Label>
                         <Combobox
+                            items={['', ...users.map((user) => String(user.id))]}
+                            itemToStringLabel={(value) => !value ? 'Seleccione usuario' : (users.find((user) => String(user.id) === value) ? `${users.find((user) => String(user.id) === value)?.name} (${users.find((user) => String(user.id) === value)?.email})` : '')}
                             value={form.data.user_id}
-                            onValueChange={(value) => form.setData('user_id', value)}
+                            onValueChange={(value) => form.setData('user_id', value ?? '')}
                         >
-                            <ComboboxInput
-                                className="w-full"
-                                placeholder="selecciones nombre del catalogo"
-                                aria-label="Usuario"
-                            />
+                            <ComboboxInput className="w-full" placeholder="Seleccione usuario" aria-label="Usuario" />
                             <ComboboxContent>
+                                <ComboboxEmpty>No se encontraron usuarios.</ComboboxEmpty>
                                 <ComboboxList>
-                                    <ComboboxEmpty>No se encontraron usuarios.</ComboboxEmpty>
-                                    <ComboboxItem value="">Selecciona un usuario</ComboboxItem>
-                                    {users.map((user) => (
-                                        <ComboboxItem key={user.id} value={String(user.id)}>
-                                            {user.name} ({user.email})
-                                        </ComboboxItem>
-                                    ))}
+                                    {(value) => {
+                                        const user = users.find((item) => String(item.id) === value);
+                                        return (
+                                            <ComboboxItem key={value} value={value}>
+                                                {!value ? 'Seleccione usuario' : user ? `${user.name} (${user.email})` : ''}
+                                            </ComboboxItem>
+                                        );
+                                    }}
                                 </ComboboxList>
                             </ComboboxContent>
                         </Combobox>

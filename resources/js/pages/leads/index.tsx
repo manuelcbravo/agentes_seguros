@@ -249,13 +249,14 @@ export default function LeadsIndex({
                                 placeholder="Buscar por nombre, correo o telefono..."
                             />
                             <Combobox
+                                itemToStringLabel={(value) => !value ? 'Todos los estatus' : (statusOptions.find((option) => option.value === value)?.label ?? '')}
                                 value={fixedStatus ?? status}
-                                onValueChange={(value) => setStatus(value)}
+                                onValueChange={(value) => setStatus(value ?? '')}
                                 disabled={Boolean(fixedStatus)}
                             >
                                 <ComboboxInput
                                     className="w-full"
-                                    placeholder="selecciones nombre del catalogo"
+                                    placeholder="Seleccione estatus"
                                     aria-label="Estatus"
                                     disabled={Boolean(fixedStatus)}
                                 />
@@ -452,13 +453,14 @@ export default function LeadsIndex({
                     <Field>
                         <Label htmlFor="lead-source">Fuente</Label>
                         <Combobox
+                            itemToStringLabel={(value) => sourceOptions.find((option) => option.value === value)?.label ?? ''}
                             value={form.data.source}
-                            onValueChange={(value) => form.setData('source', value)}
+                            onValueChange={(value) => form.setData('source', value ?? '')}
                             disabled={formMode === 'view'}
                         >
                             <ComboboxInput
                                 className="w-full"
-                                placeholder="selecciones nombre del catalogo"
+                                placeholder="Seleccione fuente"
                                 aria-label="Fuente"
                                 disabled={formMode === 'view'}
                             />
@@ -482,13 +484,14 @@ export default function LeadsIndex({
                             <Field>
                                 <Label htmlFor="lead-status">Estatus</Label>
                                 <Combobox
+                                    itemToStringLabel={(value) => statusOptions.find((option) => option.value === value)?.label ?? ''}
                                     value={form.data.status}
-                                    onValueChange={(value) => form.setData('status', value)}
+                                    onValueChange={(value) => form.setData('status', value ?? '')}
                                     disabled={formMode === 'view'}
                                 >
                                     <ComboboxInput
                                         className="w-full"
-                                        placeholder="selecciones nombre del catalogo"
+                                        placeholder="Seleccione estatus"
                                         aria-label="Estatus"
                                         disabled={formMode === 'view'}
                                     />

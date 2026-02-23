@@ -211,23 +211,20 @@ export default function ProductsIndex({
                     <Field>
                         <Label htmlFor="product-insurance-company">Aseguradora</Label>
                         <Combobox
+                            items={['', ...insuranceCompanies.map((item) => String(item.id))]}
+                            itemToStringLabel={(value) => !value ? 'Seleccione aseguradora' : (insuranceCompanies.find((item) => String(item.id) === value)?.name ?? '')}
                             value={form.data.insurance_company_id}
-                            onValueChange={(value) => form.setData('insurance_company_id', value)}
+                            onValueChange={(value) => form.setData('insurance_company_id', value ?? '')}
                         >
-                            <ComboboxInput
-                                className="w-full"
-                                placeholder="selecciones nombre del catalogo"
-                                aria-label="Aseguradora"
-                            />
+                            <ComboboxInput className="w-full" placeholder="Seleccione aseguradora" aria-label="Aseguradora" />
                             <ComboboxContent>
+                                <ComboboxEmpty>No se encontraron aseguradoras.</ComboboxEmpty>
                                 <ComboboxList>
-                                    <ComboboxEmpty>No se encontraron aseguradoras.</ComboboxEmpty>
-                                    <ComboboxItem value="">Selecciona una aseguradora</ComboboxItem>
-                                    {insuranceCompanies.map((item) => (
-                                        <ComboboxItem key={item.id} value={String(item.id)}>
-                                            {item.name}
+                                    {(value) => (
+                                        <ComboboxItem key={value} value={value}>
+                                            {!value ? 'Seleccione aseguradora' : (insuranceCompanies.find((item) => String(item.id) === value)?.name ?? '')}
                                         </ComboboxItem>
-                                    ))}
+                                    )}
                                 </ComboboxList>
                             </ComboboxContent>
                         </Combobox>
@@ -237,23 +234,20 @@ export default function ProductsIndex({
                     <Field>
                         <Label htmlFor="product-product-type">Tipo de producto</Label>
                         <Combobox
+                            items={['', ...productTypes.map((item) => String(item.id))]}
+                            itemToStringLabel={(value) => !value ? 'Seleccione tipo de producto' : (productTypes.find((item) => String(item.id) === value)?.name ?? '')}
                             value={form.data.product_type_id}
-                            onValueChange={(value) => form.setData('product_type_id', value)}
+                            onValueChange={(value) => form.setData('product_type_id', value ?? '')}
                         >
-                            <ComboboxInput
-                                className="w-full"
-                                placeholder="selecciones nombre del catalogo"
-                                aria-label="Tipo de producto"
-                            />
+                            <ComboboxInput className="w-full" placeholder="Seleccione tipo de producto" aria-label="Tipo de producto" />
                             <ComboboxContent>
+                                <ComboboxEmpty>No se encontraron tipos de producto.</ComboboxEmpty>
                                 <ComboboxList>
-                                    <ComboboxEmpty>No se encontraron tipos de producto.</ComboboxEmpty>
-                                    <ComboboxItem value="">Selecciona un tipo</ComboboxItem>
-                                    {productTypes.map((item) => (
-                                        <ComboboxItem key={item.id} value={String(item.id)}>
-                                            {item.name}
+                                    {(value) => (
+                                        <ComboboxItem key={value} value={value}>
+                                            {!value ? 'Seleccione tipo de producto' : (productTypes.find((item) => String(item.id) === value)?.name ?? '')}
                                         </ComboboxItem>
-                                    ))}
+                                    )}
                                 </ComboboxList>
                             </ComboboxContent>
                         </Combobox>

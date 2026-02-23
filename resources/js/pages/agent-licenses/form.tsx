@@ -60,12 +60,13 @@ export function AgentLicenseForm({
                 <Field>
                     <Label htmlFor="license-insurer">Aseguradora</Label>
                     <Combobox
+                        itemToStringLabel={(value) => !value ? 'Seleccione aseguradora' : (insuranceCompanies.find((company) => company.id === value)?.name ?? '')}
                         value={data.aseguradora_id}
-                        onValueChange={(value) => setData('aseguradora_id', value)}
+                        onValueChange={(value) => setData('aseguradora_id', value ?? '')}
                     >
                         <ComboboxInput
                             className="w-full"
-                            placeholder="selecciones nombre del catalogo"
+                            placeholder="Seleccione aseguradora"
                             aria-label="Aseguradora"
                         />
                         <ComboboxContent>
@@ -107,12 +108,13 @@ export function AgentLicenseForm({
                 <Field>
                     <Label htmlFor="license-status">Estatus</Label>
                     <Combobox
+                        itemToStringLabel={(value) => statusOptions.find((status) => status.value === value)?.label ?? ''}
                         value={data.status}
-                        onValueChange={(value) => setData('status', value)}
+                        onValueChange={(value) => setData('status', value ?? '')}
                     >
                         <ComboboxInput
                             className="w-full"
-                            placeholder="selecciones nombre del catalogo"
+                            placeholder="Seleccione estatus"
                             aria-label="Estatus"
                         />
                         <ComboboxContent>

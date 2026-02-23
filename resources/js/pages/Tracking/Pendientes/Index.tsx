@@ -292,75 +292,106 @@ export default function TrackingPendientesIndex({
                 <div className="space-y-3 rounded-xl border p-4">
                     <div className="grid gap-3 md:grid-cols-4">
                         <Combobox
+                            items={['', 'today', 'week', 'month']}
+                            itemToStringLabel={(value) =>
+                                ({
+                                    '': 'Todos los periodos',
+                                    today: 'Hoy',
+                                    week: 'Esta semana',
+                                    month: 'Este mes',
+                                })[value] ?? ''
+                            }
                             value={period}
-                            onValueChange={(value) => setPeriod(value)}
+                            onValueChange={(value) => setPeriod(value ?? '')}
                         >
                             <ComboboxInput
                                 className="w-full"
-                                placeholder="selecciones nombre del catalogo"
+                                placeholder="Seleccione periodo"
                                 aria-label="Filtrar por periodo"
                             />
                             <ComboboxContent>
+                                <ComboboxEmpty>
+                                    No se encontraron periodos.
+                                </ComboboxEmpty>
                                 <ComboboxList>
-                                    <ComboboxEmpty>
-                                        No se encontraron periodos.
-                                    </ComboboxEmpty>
-                                    <ComboboxItem value="">Periodo</ComboboxItem>
-                                    <ComboboxItem value="today">Hoy</ComboboxItem>
-                                    <ComboboxItem value="week">Esta semana</ComboboxItem>
-                                    <ComboboxItem value="month">Este mes</ComboboxItem>
+                                    {(value) => (
+                                        <ComboboxItem key={value} value={value}>
+                                            {({
+                                                '': 'Todos los periodos',
+                                                today: 'Hoy',
+                                                week: 'Esta semana',
+                                                month: 'Este mes',
+                                            })[value]}
+                                        </ComboboxItem>
+                                    )}
                                 </ComboboxList>
                             </ComboboxContent>
                         </Combobox>
                         <Combobox
+                            items={['', ...catalogs.activityTypes.map((item) => String(item.id))]}
+                            itemToStringLabel={(value) => {
+                                if (!value) return 'Todos los tipos';
+                                return (
+                                    catalogs.activityTypes.find((item) => String(item.id) === value)
+                                        ?.name ?? ''
+                                );
+                            }}
                             value={typeId}
-                            onValueChange={(value) => setTypeId(value)}
+                            onValueChange={(value) => setTypeId(value ?? '')}
                         >
                             <ComboboxInput
                                 className="w-full"
-                                placeholder="selecciones nombre del catalogo"
+                                placeholder="Seleccione tipo de actividad"
                                 aria-label="Filtrar por tipo"
                             />
                             <ComboboxContent>
+                                <ComboboxEmpty>
+                                    No se encontraron tipos.
+                                </ComboboxEmpty>
                                 <ComboboxList>
-                                    <ComboboxEmpty>
-                                        No se encontraron tipos.
-                                    </ComboboxEmpty>
-                                    <ComboboxItem value="">Tipo</ComboboxItem>
-                                    {catalogs.activityTypes.map((item) => (
-                                        <ComboboxItem
-                                            key={item.id}
-                                            value={String(item.id)}
-                                        >
-                                            {item.name}
+                                    {(value) => (
+                                        <ComboboxItem key={value} value={value}>
+                                            {!value
+                                                ? 'Todos los tipos'
+                                                : (catalogs.activityTypes.find(
+                                                      (item) => String(item.id) === value,
+                                                  )?.name ?? '')}
                                         </ComboboxItem>
-                                    ))}
+                                    )}
                                 </ComboboxList>
                             </ComboboxContent>
                         </Combobox>
                         <Combobox
+                            items={['', ...catalogs.priorities.map((item) => String(item.id))]}
+                            itemToStringLabel={(value) => {
+                                if (!value) return 'Todas las prioridades';
+                                return (
+                                    catalogs.priorities.find((item) => String(item.id) === value)
+                                        ?.name ?? ''
+                                );
+                            }}
                             value={priorityId}
-                            onValueChange={(value) => setPriorityId(value)}
+                            onValueChange={(value) => setPriorityId(value ?? '')}
                         >
                             <ComboboxInput
                                 className="w-full"
-                                placeholder="selecciones nombre del catalogo"
+                                placeholder="Seleccione prioridad"
                                 aria-label="Filtrar por prioridad"
                             />
                             <ComboboxContent>
+                                <ComboboxEmpty>
+                                    No se encontraron prioridades.
+                                </ComboboxEmpty>
                                 <ComboboxList>
-                                    <ComboboxEmpty>
-                                        No se encontraron prioridades.
-                                    </ComboboxEmpty>
-                                    <ComboboxItem value="">Prioridad</ComboboxItem>
-                                    {catalogs.priorities.map((item) => (
-                                        <ComboboxItem
-                                            key={item.id}
-                                            value={String(item.id)}
-                                        >
-                                            {item.name}
+                                    {(value) => (
+                                        <ComboboxItem key={value} value={value}>
+                                            {!value
+                                                ? 'Todas las prioridades'
+                                                : (catalogs.priorities.find(
+                                                      (item) => String(item.id) === value,
+                                                  )?.name ?? '')}
                                         </ComboboxItem>
-                                    ))}
+                                    )}
                                 </ComboboxList>
                             </ComboboxContent>
                         </Combobox>

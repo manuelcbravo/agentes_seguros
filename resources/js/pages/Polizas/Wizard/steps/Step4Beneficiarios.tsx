@@ -156,6 +156,7 @@ export default function Step4Beneficiarios({
                             }
                         />
                         <Combobox
+                            itemToStringLabel={(value) => !value ? 'Seleccione parentesco' : (relationships.find((r: any) => String(r.id) === String(value))?.name ?? '')}
                             value={newBeneficiary.relationship_id}
                             onValueChange={(value) =>
                                 setNewBeneficiary({
@@ -166,7 +167,7 @@ export default function Step4Beneficiarios({
                         >
                             <ComboboxInput
                                 className="w-full"
-                                placeholder="selecciones nombre del catalogo"
+                                placeholder="Seleccione parentesco"
                                 aria-label="Parentesco"
                             />
                             <ComboboxContent>

@@ -81,14 +81,15 @@ export default function Step3Poliza({
                         onChange={(e) => setData('month', e.target.value)}
                     />
                     <Combobox
+                        itemToStringLabel={(value) => !value ? 'Seleccione canal de pago' : (paymentChannels.find((p: any) => String(p.code) === String(value))?.name ?? '')}
                         value={data.payment_channel}
                         onValueChange={(value) =>
-                            setData('payment_channel', value)
+                            setData('payment_channel', value ?? '')
                         }
                     >
                         <ComboboxInput
                             className="w-full"
-                            placeholder="selecciones nombre del catalogo"
+                            placeholder="Seleccione canal de pago"
                             aria-label="Canal de pago"
                         />
                         <ComboboxContent>
@@ -112,12 +113,13 @@ export default function Step3Poliza({
                         onChange={(e) => setData('currency', e.target.value)}
                     />
                     <Combobox
+                        itemToStringLabel={(value) => !value ? 'Seleccione moneda' : (currencies.find((c: any) => String(c.id) === String(value))?.name ?? '')}
                         value={data.currency_id}
-                        onValueChange={(value) => setData('currency_id', value)}
+                        onValueChange={(value) => setData('currency_id', value ?? '')}
                     >
                         <ComboboxInput
                             className="w-full"
-                            placeholder="selecciones nombre del catalogo"
+                            placeholder="Seleccione moneda"
                             aria-label="Moneda catálogo"
                         />
                         <ComboboxContent>

@@ -201,12 +201,13 @@ export default function PolizasIndex({
                             placeholder="Buscar por estatus o producto..."
                         />
                         <Combobox
+                            itemToStringLabel={(value) => !value ? 'Todos los métodos de pago' : (paymentChannels.find((option: any) => String(option.code) === String(value))?.name ?? '')}
                             value={paymentChannel}
-                            onValueChange={(value) => setPaymentChannel(value)}
+                            onValueChange={(value) => setPaymentChannel(value ?? '')}
                         >
                             <ComboboxInput
                                 className="w-full"
-                                placeholder="selecciones nombre del catalogo"
+                                placeholder="Seleccione método de pago"
                                 aria-label="Método de pago"
                             />
                             <ComboboxContent>
