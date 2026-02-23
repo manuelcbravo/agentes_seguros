@@ -24,9 +24,18 @@ export default function Step4Beneficiarios({
     setBeneficiaries,
     relationships,
 }: any) {
+    const beneficiaryFullName = (beneficiary: any) =>
+        [beneficiary.first_name, beneficiary.middle_name, beneficiary.last_name, beneficiary.second_last_name]
+            .filter(Boolean)
+            .join(' ')
+            .trim();
+
     const [open, setOpen] = useState(false);
     const [newBeneficiary, setNewBeneficiary] = useState({
-        name: '',
+        first_name: '',
+        middle_name: '',
+        last_name: '',
+        second_last_name: '',
         relationship_id: '',
         benefit_percentage: 0,
     });
@@ -41,10 +50,13 @@ export default function Step4Beneficiarios({
     );
 
     const addBeneficiary = () => {
-        if (!newBeneficiary.name) return;
+        if (!newBeneficiary.first_name || !newBeneficiary.last_name) return;
         setBeneficiaries([...beneficiaries, { ...newBeneficiary }]);
         setNewBeneficiary({
-            name: '',
+            first_name: '',
+            middle_name: '',
+            last_name: '',
+            second_last_name: '',
             relationship_id: '',
             benefit_percentage: 0,
         });
@@ -87,7 +99,7 @@ export default function Step4Beneficiarios({
                                 key={`${b.id ?? 'new'}-${index}`}
                                 className="border-t"
                             >
-                                <td className="p-2">{b.name}</td>
+                                <td className="p-2">{beneficiaryFullName(b) || '—'}</td>
                                 <td className="p-2">
                                     {relationships.find(
                                         (r: any) => r.id === b.relationship_id,
@@ -146,12 +158,42 @@ export default function Step4Beneficiarios({
                     </DialogHeader>
                     <div className="space-y-3">
                         <Input
-                            placeholder="Nombre"
-                            value={newBeneficiary.name}
+                            placeholder="Nombre(s)*"
+                            value={newBeneficiary.first_name}
                             onChange={(e) =>
                                 setNewBeneficiary({
                                     ...newBeneficiary,
-                                    name: e.target.value,
+                                    first_name: e.target.value,
+                                })
+                            }
+                        />
+                        <Input
+                            placeholder="Segundo nombre"
+                            value={newBeneficiary.middle_name}
+                            onChange={(e) =>
+                                setNewBeneficiary({
+                                    ...newBeneficiary,
+                                    middle_name: e.target.value,
+                                })
+                            }
+                        />
+                        <Input
+                            placeholder="Apellido paterno*"
+                            value={newBeneficiary.last_name}
+                            onChange={(e) =>
+                                setNewBeneficiary({
+                                    ...newBeneficiary,
+                                    last_name: e.target.value,
+                                })
+                            }
+                        />
+                        <Input
+                            placeholder="Apellido materno"
+                            value={newBeneficiary.second_last_name}
+                            onChange={(e) =>
+                                setNewBeneficiary({
+                                    ...newBeneficiary,
+                                    second_last_name: e.target.value,
                                 })
                             }
                         />

@@ -30,7 +30,7 @@ return new class extends Migration {
             $table->boolean('smokes')->default(false);
             $table->boolean('drinks')->default(false);
             $table->string('personality')->nullable();
-            $table->integer('relationship')->nullable();
+            $table->integer('relationship_id')->nullable();
             $table->decimal('benefit_percentage', 5, 2)->nullable();
 
             $table->timestamps();

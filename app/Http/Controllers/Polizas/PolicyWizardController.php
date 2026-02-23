@@ -313,7 +313,10 @@ class PolicyWizardController extends Controller
             'policy_id' => ['required', 'uuid'],
             'beneficiaries' => ['array'],
             'beneficiaries.*.id' => ['nullable', 'uuid'],
-            'beneficiaries.*.name' => ['required', 'string', 'max:255'],
+            'beneficiaries.*.first_name' => ['required', 'string', 'max:150'],
+            'beneficiaries.*.middle_name' => ['nullable', 'string', 'max:150'],
+            'beneficiaries.*.last_name' => ['required', 'string', 'max:150'],
+            'beneficiaries.*.second_last_name' => ['nullable', 'string', 'max:150'],
             'beneficiaries.*.relationship_id' => ['nullable', 'uuid'],
             'beneficiaries.*.benefit_percentage' => ['required', 'numeric', 'min:0', 'max:100'],
         ]);
@@ -337,7 +340,10 @@ class PolicyWizardController extends Controller
                 }
 
                 $beneficiary->fill([
-                    'name' => $item['name'],
+                    'first_name' => $item['first_name'],
+                    'middle_name' => $item['middle_name'] ?? null,
+                    'last_name' => $item['last_name'],
+                    'second_last_name' => $item['second_last_name'] ?? null,
                     'relationship_id' => $item['relationship_id'] ?? null,
                     'benefit_percentage' => $item['benefit_percentage'],
                 ]);
@@ -450,7 +456,7 @@ class PolicyWizardController extends Controller
 
     private function wizardProps(?Policy $policy = null, ?Client $preselectedClient = null): array
     {
-        $policy?->load(['beneficiaries:id,policy_id,name,relationship_id,benefit_percentage', 'client:id,first_name,middle_name,last_name,second_last_name,email,phone,rfc,street', 'insured:id,client_id,first_name,middle_name,last_name,second_last_name,email,phone,rfc,birthday,age_current,address,occupation,company_name,approx_income,medical_history,main_savings_goal,personal_interests,personal_likes,smokes,drinks,personality,children_count']);
+        $policy?->load(['beneficiaries:id,policy_id,first_name,middle_name,last_name,second_last_name,relationship_id,benefit_percentage', 'client:id,first_name,middle_name,last_name,second_last_name,email,phone,rfc,street', 'insured:id,client_id,first_name,middle_name,last_name,second_last_name,email,phone,rfc,birthday,age_current,address,occupation,company_name,approx_income,medical_history,main_savings_goal,personal_interests,personal_likes,smokes,drinks,personality,children_count']);
 
         $selectedClient = $preselectedClient;
 
