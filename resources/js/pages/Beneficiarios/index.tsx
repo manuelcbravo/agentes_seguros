@@ -343,7 +343,7 @@ export default function BeneficiariosIndex({
                                 placeholder="Seleccione póliza"
                                 aria-label="Póliza"
                             />
-                            <ComboboxContent>
+                            <ComboboxContent className="pointer-events-auto z-[100] overflow-visible">
                                 <ComboboxList>
                                     <ComboboxEmpty>No se encontraron pólizas.</ComboboxEmpty>
                                     <ComboboxItem value="">Selecciona póliza</ComboboxItem>

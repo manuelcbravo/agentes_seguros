@@ -242,7 +242,7 @@ export default function AgentsIndex({
                             onValueChange={(value) => form.setData('user_id', value ?? '')}
                         >
                             <ComboboxInput className="w-full" placeholder="Seleccione usuario" aria-label="Usuario" />
-                            <ComboboxContent>
+                            <ComboboxContent className="pointer-events-auto z-[100] overflow-visible">
                                 <ComboboxEmpty>No se encontraron usuarios.</ComboboxEmpty>
                                 <ComboboxList>
                                     {(value) => {

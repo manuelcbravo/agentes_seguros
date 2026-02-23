@@ -508,7 +508,7 @@ export default function LeadsIndex({
                                         aria-label="Estatus"
                                         disabled={formMode === 'view'}
                                     />
-                                    <ComboboxContent>
+                                    <ComboboxContent className="pointer-events-auto z-[100] overflow-visible">
                                         <ComboboxList>
                                             <ComboboxEmpty>No se encontraron estatus.</ComboboxEmpty>
                                             {statusOptions.map((option) => (

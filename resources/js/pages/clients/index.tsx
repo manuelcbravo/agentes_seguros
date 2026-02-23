@@ -495,7 +495,7 @@ export default function ClientsIndex({
                             placeholder="Seleccione estado"
                             aria-label="Estado"
                         />
-                        <ComboboxContent>
+                        <ComboboxContent className="pointer-events-auto z-[100] overflow-visible">
                             <ComboboxList>
                                 <ComboboxEmpty>No se encontraron estados.</ComboboxEmpty>
                                 <ComboboxItem value="1">Activo</ComboboxItem>
