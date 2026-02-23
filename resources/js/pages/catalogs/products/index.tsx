@@ -217,7 +217,7 @@ export default function ProductsIndex({
                             onValueChange={(value) => form.setData('insurance_company_id', value ?? '')}
                         >
                             <ComboboxInput className="w-full" placeholder="Seleccione aseguradora" aria-label="Aseguradora" />
-                            <ComboboxContent>
+                            <ComboboxContent className="pointer-events-auto z-[100] overflow-visible">
                                 <ComboboxEmpty>No se encontraron aseguradoras.</ComboboxEmpty>
                                 <ComboboxList>
                                     {(value) => (
@@ -240,7 +240,7 @@ export default function ProductsIndex({
                             onValueChange={(value) => form.setData('product_type_id', value ?? '')}
                         >
                             <ComboboxInput className="w-full" placeholder="Seleccione tipo de producto" aria-label="Tipo de producto" />
-                            <ComboboxContent>
+                            <ComboboxContent className="pointer-events-auto z-[100] overflow-visible">
                                 <ComboboxEmpty>No se encontraron tipos de producto.</ComboboxEmpty>
                                 <ComboboxList>
                                     {(value) => (

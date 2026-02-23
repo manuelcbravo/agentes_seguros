@@ -69,7 +69,7 @@ export function AgentLicenseForm({
                             placeholder="Seleccione aseguradora"
                             aria-label="Aseguradora"
                         />
-                        <ComboboxContent>
+                        <ComboboxContent className="pointer-events-auto z-[100] overflow-visible">
                             <ComboboxList>
                                 <ComboboxEmpty>No se encontraron aseguradoras.</ComboboxEmpty>
                                 <ComboboxItem value="">Selecciona una aseguradora</ComboboxItem>
@@ -117,7 +117,7 @@ export function AgentLicenseForm({
                             placeholder="Seleccione estatus"
                             aria-label="Estatus"
                         />
-                        <ComboboxContent>
+                        <ComboboxContent className="pointer-events-auto z-[100] overflow-visible">
                             <ComboboxList>
                                 <ComboboxEmpty>No se encontraron estatus.</ComboboxEmpty>
                                 {statusOptions.map((status) => (
