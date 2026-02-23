@@ -9,6 +9,14 @@ import { CrudFormDialog } from '@/components/crud-form-dialog';
 import { DataTable, type DataTableColumn } from '@/components/data-table';
 import { Button } from '@/components/ui/button';
 import {
+    Combobox,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxList,
+} from '@/components/ui/combobox';
+import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -227,19 +235,27 @@ export default function AgentsIndex({
                 <div className="grid gap-4 md:grid-cols-2">
                     <Field>
                         <Label htmlFor="agent-user-id">Usuario</Label>
-                        <select
-                            id="agent-user-id"
-                            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
+                        <Combobox
+                            items={['', ...users.map((user) => String(user.id))]}
+                            itemToStringLabel={(value) => !value ? 'Seleccione usuario' : (users.find((user) => String(user.id) === value) ? `${users.find((user) => String(user.id) === value)?.name} (${users.find((user) => String(user.id) === value)?.email})` : '')}
                             value={form.data.user_id}
-                            onChange={(event) => form.setData('user_id', event.target.value)}
+                            onValueChange={(value) => form.setData('user_id', value ?? '')}
                         >
-                            <option value="">Selecciona un usuario</option>
-                            {users.map((user) => (
-                                <option key={user.id} value={String(user.id)}>
-                                    {user.name} ({user.email})
-                                </option>
-                            ))}
-                        </select>
+                            <ComboboxInput className="w-full" placeholder="Seleccione usuario" aria-label="Usuario" />
+                            <ComboboxContent>
+                                <ComboboxEmpty>No se encontraron usuarios.</ComboboxEmpty>
+                                <ComboboxList>
+                                    {(value) => {
+                                        const user = users.find((item) => String(item.id) === value);
+                                        return (
+                                            <ComboboxItem key={value} value={value}>
+                                                {!value ? 'Seleccione usuario' : user ? `${user.name} (${user.email})` : ''}
+                                            </ComboboxItem>
+                                        );
+                                    }}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
                         {form.errors.user_id && <FieldError>{form.errors.user_id}</FieldError>}
                     </Field>
 

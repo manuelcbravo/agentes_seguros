@@ -8,6 +8,14 @@ import { CrudFormDialog } from '@/components/crud-form-dialog';
 import { DataTable, type DataTableColumn } from '@/components/data-table';
 import { Button } from '@/components/ui/button';
 import {
+    Combobox,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxList,
+} from '@/components/ui/combobox';
+import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -202,37 +210,47 @@ export default function ProductsIndex({
                 <div className="grid gap-4 md:grid-cols-2">
                     <Field>
                         <Label htmlFor="product-insurance-company">Aseguradora</Label>
-                        <select
-                            id="product-insurance-company"
-                            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                        <Combobox
+                            items={['', ...insuranceCompanies.map((item) => String(item.id))]}
+                            itemToStringLabel={(value) => !value ? 'Seleccione aseguradora' : (insuranceCompanies.find((item) => String(item.id) === value)?.name ?? '')}
                             value={form.data.insurance_company_id}
-                            onChange={(event) => form.setData('insurance_company_id', event.target.value)}
+                            onValueChange={(value) => form.setData('insurance_company_id', value ?? '')}
                         >
-                            <option value="">Selecciona una aseguradora</option>
-                            {insuranceCompanies.map((item) => (
-                                <option key={item.id} value={item.id}>
-                                    {item.name}
-                                </option>
-                            ))}
-                        </select>
+                            <ComboboxInput className="w-full" placeholder="Seleccione aseguradora" aria-label="Aseguradora" />
+                            <ComboboxContent>
+                                <ComboboxEmpty>No se encontraron aseguradoras.</ComboboxEmpty>
+                                <ComboboxList>
+                                    {(value) => (
+                                        <ComboboxItem key={value} value={value}>
+                                            {!value ? 'Seleccione aseguradora' : (insuranceCompanies.find((item) => String(item.id) === value)?.name ?? '')}
+                                        </ComboboxItem>
+                                    )}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
                         {form.errors.insurance_company_id && <FieldError>{form.errors.insurance_company_id}</FieldError>}
                     </Field>
 
                     <Field>
                         <Label htmlFor="product-product-type">Tipo de producto</Label>
-                        <select
-                            id="product-product-type"
-                            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                        <Combobox
+                            items={['', ...productTypes.map((item) => String(item.id))]}
+                            itemToStringLabel={(value) => !value ? 'Seleccione tipo de producto' : (productTypes.find((item) => String(item.id) === value)?.name ?? '')}
                             value={form.data.product_type_id}
-                            onChange={(event) => form.setData('product_type_id', event.target.value)}
+                            onValueChange={(value) => form.setData('product_type_id', value ?? '')}
                         >
-                            <option value="">Selecciona un tipo</option>
-                            {productTypes.map((item) => (
-                                <option key={item.id} value={item.id}>
-                                    {item.name}
-                                </option>
-                            ))}
-                        </select>
+                            <ComboboxInput className="w-full" placeholder="Seleccione tipo de producto" aria-label="Tipo de producto" />
+                            <ComboboxContent>
+                                <ComboboxEmpty>No se encontraron tipos de producto.</ComboboxEmpty>
+                                <ComboboxList>
+                                    {(value) => (
+                                        <ComboboxItem key={value} value={value}>
+                                            {!value ? 'Seleccione tipo de producto' : (productTypes.find((item) => String(item.id) === value)?.name ?? '')}
+                                        </ComboboxItem>
+                                    )}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
                         {form.errors.product_type_id && <FieldError>{form.errors.product_type_id}</FieldError>}
                     </Field>
                 </div>

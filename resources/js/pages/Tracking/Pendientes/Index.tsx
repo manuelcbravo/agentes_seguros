@@ -29,6 +29,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
+    Combobox,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxList,
+} from '@/components/ui/combobox';
+import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -283,40 +291,110 @@ export default function TrackingPendientesIndex({
 
                 <div className="space-y-3 rounded-xl border p-4">
                     <div className="grid gap-3 md:grid-cols-4">
-                        <select
-                            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                        <Combobox
+                            items={['', 'today', 'week', 'month']}
+                            itemToStringLabel={(value) =>
+                                ({
+                                    '': 'Todos los periodos',
+                                    today: 'Hoy',
+                                    week: 'Esta semana',
+                                    month: 'Este mes',
+                                })[value] ?? ''
+                            }
                             value={period}
-                            onChange={(e) => setPeriod(e.target.value)}
+                            onValueChange={(value) => setPeriod(value ?? '')}
                         >
-                            <option value="">Periodo</option>
-                            <option value="today">Hoy</option>
-                            <option value="week">Esta semana</option>
-                            <option value="month">Este mes</option>
-                        </select>
-                        <select
-                            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                            <ComboboxInput
+                                className="w-full"
+                                placeholder="Seleccione periodo"
+                                aria-label="Filtrar por periodo"
+                            />
+                            <ComboboxContent>
+                                <ComboboxEmpty>
+                                    No se encontraron periodos.
+                                </ComboboxEmpty>
+                                <ComboboxList>
+                                    {(value) => (
+                                        <ComboboxItem key={value} value={value}>
+                                            {({
+                                                '': 'Todos los periodos',
+                                                today: 'Hoy',
+                                                week: 'Esta semana',
+                                                month: 'Este mes',
+                                            })[value]}
+                                        </ComboboxItem>
+                                    )}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
+                        <Combobox
+                            items={['', ...catalogs.activityTypes.map((item) => String(item.id))]}
+                            itemToStringLabel={(value) => {
+                                if (!value) return 'Todos los tipos';
+                                return (
+                                    catalogs.activityTypes.find((item) => String(item.id) === value)
+                                        ?.name ?? ''
+                                );
+                            }}
                             value={typeId}
-                            onChange={(e) => setTypeId(e.target.value)}
+                            onValueChange={(value) => setTypeId(value ?? '')}
                         >
-                            <option value="">Tipo</option>
-                            {catalogs.activityTypes.map((item) => (
-                                <option key={item.id} value={item.id}>
-                                    {item.name}
-                                </option>
-                            ))}
-                        </select>
-                        <select
-                            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                            <ComboboxInput
+                                className="w-full"
+                                placeholder="Seleccione tipo de actividad"
+                                aria-label="Filtrar por tipo"
+                            />
+                            <ComboboxContent>
+                                <ComboboxEmpty>
+                                    No se encontraron tipos.
+                                </ComboboxEmpty>
+                                <ComboboxList>
+                                    {(value) => (
+                                        <ComboboxItem key={value} value={value}>
+                                            {!value
+                                                ? 'Todos los tipos'
+                                                : (catalogs.activityTypes.find(
+                                                      (item) => String(item.id) === value,
+                                                  )?.name ?? '')}
+                                        </ComboboxItem>
+                                    )}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
+                        <Combobox
+                            items={['', ...catalogs.priorities.map((item) => String(item.id))]}
+                            itemToStringLabel={(value) => {
+                                if (!value) return 'Todas las prioridades';
+                                return (
+                                    catalogs.priorities.find((item) => String(item.id) === value)
+                                        ?.name ?? ''
+                                );
+                            }}
                             value={priorityId}
-                            onChange={(e) => setPriorityId(e.target.value)}
+                            onValueChange={(value) => setPriorityId(value ?? '')}
                         >
-                            <option value="">Prioridad</option>
-                            {catalogs.priorities.map((item) => (
-                                <option key={item.id} value={item.id}>
-                                    {item.name}
-                                </option>
-                            ))}
-                        </select>
+                            <ComboboxInput
+                                className="w-full"
+                                placeholder="Seleccione prioridad"
+                                aria-label="Filtrar por prioridad"
+                            />
+                            <ComboboxContent>
+                                <ComboboxEmpty>
+                                    No se encontraron prioridades.
+                                </ComboboxEmpty>
+                                <ComboboxList>
+                                    {(value) => (
+                                        <ComboboxItem key={value} value={value}>
+                                            {!value
+                                                ? 'Todas las prioridades'
+                                                : (catalogs.priorities.find(
+                                                      (item) => String(item.id) === value,
+                                                  )?.name ?? '')}
+                                        </ComboboxItem>
+                                    )}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
                         <Button
                             onClick={() =>
                                 router.get(

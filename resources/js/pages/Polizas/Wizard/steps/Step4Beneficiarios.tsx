@@ -1,5 +1,14 @@
+import { useMemo, useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import {
+    Combobox,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxList,
+} from '@/components/ui/combobox';
 import {
     Dialog,
     DialogContent,
@@ -9,7 +18,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { useMemo, useState } from 'react';
 
 export default function Step4Beneficiarios({
     beneficiaries,
@@ -147,23 +155,33 @@ export default function Step4Beneficiarios({
                                 })
                             }
                         />
-                        <select
-                            className="h-10 w-full rounded-md border px-3"
+                        <Combobox
+                            itemToStringLabel={(value) => !value ? 'Seleccione parentesco' : (relationships.find((r: any) => String(r.id) === String(value))?.name ?? '')}
                             value={newBeneficiary.relationship_id}
-                            onChange={(e) =>
+                            onValueChange={(value) =>
                                 setNewBeneficiary({
                                     ...newBeneficiary,
-                                    relationship_id: e.target.value,
+                                    relationship_id: value,
                                 })
                             }
                         >
-                            <option value="">Parentesco</option>
-                            {relationships.map((r: any) => (
-                                <option key={r.id} value={r.id}>
-                                    {r.name}
-                                </option>
-                            ))}
-                        </select>
+                            <ComboboxInput
+                                className="w-full"
+                                placeholder="Seleccione parentesco"
+                                aria-label="Parentesco"
+                            />
+                            <ComboboxContent>
+                                <ComboboxList>
+                                    <ComboboxEmpty>No se encontraron parentescos.</ComboboxEmpty>
+                                    <ComboboxItem value="">Parentesco</ComboboxItem>
+                                    {relationships.map((r: any) => (
+                                        <ComboboxItem key={r.id} value={String(r.id)}>
+                                            {r.name}
+                                        </ComboboxItem>
+                                    ))}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
                         <Input
                             type="number"
                             min={0}

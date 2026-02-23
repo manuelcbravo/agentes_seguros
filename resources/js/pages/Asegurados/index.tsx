@@ -25,6 +25,14 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
+    Combobox,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxList,
+} from '@/components/ui/combobox';
+import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -245,17 +253,25 @@ export default function AseguradosIndex({
                                 }
                                 placeholder="Buscar por nombre, correo, teléfono u ocupación..."
                             />
-                            <select
+                            <Combobox
+                                itemToStringLabel={(value) => ({'': 'Todos', '1': 'Fumadores', '0': 'No fumadores'})[value] ?? ''}
                                 value={smokes}
-                                onChange={(event) =>
-                                    setSmokes(event.target.value)
-                                }
-                                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                                onValueChange={(value) => setSmokes(value ?? '')}
                             >
-                                <option value="">Todos</option>
-                                <option value="1">Fumadores</option>
-                                <option value="0">No fumadores</option>
-                            </select>
+                                <ComboboxInput
+                                    className="w-full"
+                                    placeholder="Seleccione hábito de fumar"
+                                    aria-label="Filtro de fumadores"
+                                />
+                                <ComboboxContent>
+                                    <ComboboxList>
+                                        <ComboboxEmpty>No se encontraron opciones.</ComboboxEmpty>
+                                        <ComboboxItem value="">Todos</ComboboxItem>
+                                        <ComboboxItem value="1">Fumadores</ComboboxItem>
+                                        <ComboboxItem value="0">No fumadores</ComboboxItem>
+                                    </ComboboxList>
+                                </ComboboxContent>
+                            </Combobox>
                             <Button onClick={applyFilters}>
                                 <Filter className="mr-2 size-4" /> Aplicar
                                 filtros

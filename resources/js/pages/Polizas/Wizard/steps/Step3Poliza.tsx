@@ -1,3 +1,11 @@
+import {
+    Combobox,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxList,
+} from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -72,20 +80,30 @@ export default function Step3Poliza({
                         value={data.month}
                         onChange={(e) => setData('month', e.target.value)}
                     />
-                    <select
-                        className="h-10 rounded-md border px-3"
+                    <Combobox
+                        itemToStringLabel={(value) => !value ? 'Seleccione canal de pago' : (paymentChannels.find((p: any) => String(p.code) === String(value))?.name ?? '')}
                         value={data.payment_channel}
-                        onChange={(e) =>
-                            setData('payment_channel', e.target.value)
+                        onValueChange={(value) =>
+                            setData('payment_channel', value ?? '')
                         }
                     >
-                        <option value="">Canal de pago</option>
-                        {paymentChannels.map((p: any) => (
-                            <option key={p.code} value={p.code}>
-                                {p.name}
-                            </option>
-                        ))}
-                    </select>
+                        <ComboboxInput
+                            className="w-full"
+                            placeholder="Seleccione canal de pago"
+                            aria-label="Canal de pago"
+                        />
+                        <ComboboxContent>
+                            <ComboboxList>
+                                <ComboboxEmpty>No se encontraron canales de pago.</ComboboxEmpty>
+                                <ComboboxItem value="">Canal de pago</ComboboxItem>
+                                {paymentChannels.map((p: any) => (
+                                    <ComboboxItem key={p.code} value={String(p.code)}>
+                                        {p.name}
+                                    </ComboboxItem>
+                                ))}
+                            </ComboboxList>
+                        </ComboboxContent>
+                    </Combobox>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                     <Input
@@ -94,18 +112,28 @@ export default function Step3Poliza({
                         value={data.currency}
                         onChange={(e) => setData('currency', e.target.value)}
                     />
-                    <select
-                        className="h-10 rounded-md border px-3"
+                    <Combobox
+                        itemToStringLabel={(value) => !value ? 'Seleccione moneda' : (currencies.find((c: any) => String(c.id) === String(value))?.name ?? '')}
                         value={data.currency_id}
-                        onChange={(e) => setData('currency_id', e.target.value)}
+                        onValueChange={(value) => setData('currency_id', value ?? '')}
                     >
-                        <option value="">Catálogo moneda</option>
-                        {currencies.map((c: any) => (
-                            <option key={c.id} value={c.id}>
-                                {c.name}
-                            </option>
-                        ))}
-                    </select>
+                        <ComboboxInput
+                            className="w-full"
+                            placeholder="Seleccione moneda"
+                            aria-label="Moneda catálogo"
+                        />
+                        <ComboboxContent>
+                            <ComboboxList>
+                                <ComboboxEmpty>No se encontraron monedas.</ComboboxEmpty>
+                                <ComboboxItem value="">Catálogo moneda</ComboboxItem>
+                                {currencies.map((c: any) => (
+                                    <ComboboxItem key={c.id} value={String(c.id)}>
+                                        {c.name}
+                                    </ComboboxItem>
+                                ))}
+                            </ComboboxList>
+                        </ComboboxContent>
+                    </Combobox>
                 </div>
                 <Textarea
                     placeholder="Observaciones"
