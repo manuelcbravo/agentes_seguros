@@ -1,5 +1,5 @@
 import { useForm } from '@inertiajs/react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { route } from 'ziggy-js';
 import { CrudFormDialog } from '@/components/crud-form-dialog';
 import { Field, FieldError } from '@/components/ui/field';
@@ -78,48 +78,66 @@ export function TrackingUpsertDialog({
         completed_at: '',
         meta: '',
     });
+    const lastAppliedDataRef = useRef<string>('');
+
 
     useEffect(() => {
         if (!open) return;
 
-        if (editingItem) {
-            form.setData({
-                id: editingItem.id,
-                trackable_type: trackableType,
-                trackable_id: String(trackableId),
-                activity_type_id: String(editingItem.activity_type_id),
-                channel_id: editingItem.channel_id
-                    ? String(editingItem.channel_id)
-                    : '',
-                status_id: String(editingItem.status_id),
-                priority_id: editingItem.priority_id
-                    ? String(editingItem.priority_id)
-                    : '',
-                outcome_id: editingItem.outcome_id
-                    ? String(editingItem.outcome_id)
-                    : '',
-                title: editingItem.title ?? '',
-                body: editingItem.body,
-                occurred_at: (editingItem.occurred_at ?? '').slice(0, 16),
-                next_action_at: (editingItem.next_action_at ?? '').slice(0, 16),
-                completed_at: '',
-                meta: editingItem.meta
-                    ? JSON.stringify(editingItem.meta, null, 2)
-                    : '',
-            });
+        const nextData: TrackingForm = editingItem
+            ? {
+                  id: editingItem.id,
+                  trackable_type: trackableType,
+                  trackable_id: String(trackableId),
+                  activity_type_id: String(editingItem.activity_type_id),
+                  channel_id: editingItem.channel_id
+                      ? String(editingItem.channel_id)
+                      : '',
+                  status_id: String(editingItem.status_id),
+                  priority_id: editingItem.priority_id
+                      ? String(editingItem.priority_id)
+                      : '',
+                  outcome_id: editingItem.outcome_id
+                      ? String(editingItem.outcome_id)
+                      : '',
+                  title: editingItem.title ?? '',
+                  body: editingItem.body,
+                  occurred_at: (editingItem.occurred_at ?? '').slice(0, 16),
+                  next_action_at: (editingItem.next_action_at ?? '').slice(0, 16),
+                  completed_at: '',
+                  meta: editingItem.meta
+                      ? JSON.stringify(editingItem.meta, null, 2)
+                      : '',
+              }
+            : {
+                  id: null,
+                  trackable_type: trackableType,
+                  trackable_id: String(trackableId),
+                  activity_type_id: '',
+                  channel_id: '',
+                  status_id: '',
+                  priority_id: '',
+                  outcome_id: '',
+                  title: '',
+                  body: '',
+                  occurred_at: new Date().toISOString().slice(0, 16),
+                  next_action_at: '',
+                  completed_at: '',
+                  meta: '',
+              };
 
-            return;
-        }
-
-        form.reset();
-        form.setData('trackable_type', trackableType);
-        form.setData('trackable_id', String(trackableId));
-        if (defaultValues) {
+        if (!editingItem && defaultValues) {
             Object.entries(defaultValues).forEach(([key, value]) => {
-                form.setData(key as keyof TrackingForm, String(value ?? ''));
+                nextData[key as keyof TrackingForm] = String(value ?? '');
             });
         }
-    }, [defaultValues, editingItem, open, trackableId, trackableType, form]);
+
+        const serializedData = JSON.stringify(nextData);
+        if (lastAppliedDataRef.current === serializedData) return;
+
+        lastAppliedDataRef.current = serializedData;
+        form.setData(nextData);
+    }, [defaultValues, editingItem, form, open, trackableId, trackableType]);
 
     return (
         <CrudFormDialog
