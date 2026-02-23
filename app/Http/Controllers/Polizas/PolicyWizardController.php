@@ -10,8 +10,11 @@ use App\Models\CatPaymentChannel;
 use App\Models\CatRelationship;
 use App\Models\Client;
 use App\Models\Insured;
+use App\Models\CatPeriodicity;
 use App\Models\Policy;
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,7 +29,13 @@ class PolicyWizardController extends Controller
         $clientId = $request->query('client_id');
 
         if (is_string($clientId) && $clientId !== '') {
-            $preselectedClient = $this->ownedClient($clientId);
+            $preselectedClient = Client::query()
+                ->where('agent_id', (string) auth()->user()->agent_id)
+                ->find($clientId);
+
+            if (! $preselectedClient) {
+                session()->flash('error', 'El cliente preseleccionado no existe o no pertenece a tu cuenta.');
+            }
         }
 
         return Inertia::render('Polizas/Wizard/Index', $this->wizardProps(null, $preselectedClient));
@@ -49,15 +58,108 @@ class PolicyWizardController extends Controller
                     $fail('Selecciona un cliente válido.');
                 }
             }],
+            'client' => ['nullable', 'array'],
+            'client.first_name' => ['nullable', 'string', 'max:150'],
+            'client.middle_name' => ['nullable', 'string', 'max:150'],
+            'client.last_name' => ['nullable', 'string', 'max:150'],
+            'client.second_last_name' => ['nullable', 'string', 'max:150'],
+            'client.email' => ['nullable', 'email', 'max:255'],
+            'client.phone' => ['nullable', 'string', 'max:30'],
+            'client.rfc' => ['nullable', 'string', 'max:20'],
+            'client.address' => ['nullable', 'string', 'max:255'],
         ]);
 
         $policy = $this->resolveDraftPolicy($data['policy_id'] ?? null);
+
         $policy->update([
             'client_id' => $data['client_id'],
             'status' => Policy::STATUS_DRAFT,
+            'current_step' => 1,
         ]);
 
+        if (! empty($data['client'])) {
+            $client = Client::query()
+                ->where('agent_id', $agentId)
+                ->whereKey($data['client_id'])
+                ->first();
+
+            if ($client) {
+                $client->fill([
+                    'first_name' => $data['client']['first_name'] ?? $client->first_name,
+                    'middle_name' => $data['client']['middle_name'] ?? null,
+                    'last_name' => $data['client']['last_name'] ?? $client->last_name,
+                    'second_last_name' => $data['client']['second_last_name'] ?? null,
+                    'email' => $data['client']['email'] ?? null,
+                    'phone' => $data['client']['phone'] ?? null,
+                    'rfc' => $data['client']['rfc'] ?? null,
+                    'street' => $data['client']['address'] ?? null,
+                ]);
+                $client->save();
+            }
+        }
+
         return to_route('polizas.wizard.edit', $policy->id)->with('success', 'Paso 1 guardado.');
+    }
+
+    public function storeClient(Request $request): JsonResponse
+    {
+        $agentId = (string) auth()->user()->agent_id;
+
+        $data = $request->validate([
+            'first_name' => ['required', 'string', 'max:150'],
+            'middle_name' => ['nullable', 'string', 'max:150'],
+            'last_name' => ['required', 'string', 'max:150'],
+            'second_last_name' => ['nullable', 'string', 'max:150'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'rfc' => ['nullable', 'string', 'max:20'],
+            'address' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        if (($data['email'] ?? null) || ($data['phone'] ?? null)) {
+            $exists = Client::query()
+                ->where('agent_id', $agentId)
+                ->where(function (Builder $query) use ($data) {
+                    if (! empty($data['email'])) {
+                        $query->orWhere('email', $data['email']);
+                    }
+
+                    if (! empty($data['phone'])) {
+                        $query->orWhere('phone', $data['phone']);
+                    }
+                })
+                ->exists();
+
+            if ($exists) {
+                return response()->json(['message' => 'Ya existe un cliente con ese email o teléfono.'], 422);
+            }
+        }
+
+        $client = Client::query()->create([
+            'agent_id' => $agentId,
+            'first_name' => $data['first_name'],
+            'middle_name' => $data['middle_name'] ?? null,
+            'last_name' => $data['last_name'],
+            'second_last_name' => $data['second_last_name'] ?? null,
+            'email' => $data['email'] ?? null,
+            'phone' => $data['phone'] ?? null,
+            'rfc' => $data['rfc'] ?? null,
+            'street' => $data['address'] ?? null,
+            'is_active' => true,
+        ]);
+
+        return response()->json([
+            'id' => $client->id,
+            'full_name' => $client->full_name,
+            'phone' => $client->phone,
+            'email' => $client->email,
+            'rfc' => $client->rfc,
+            'first_name' => $client->first_name,
+            'middle_name' => $client->middle_name,
+            'last_name' => $client->last_name,
+            'second_last_name' => $client->second_last_name,
+            'address' => $client->street,
+        ]);
     }
 
     public function saveStep2(Request $request): RedirectResponse
@@ -69,12 +171,27 @@ class PolicyWizardController extends Controller
             'same_as_client' => ['required', 'boolean'],
             'insured_id' => ['nullable', 'uuid'],
             'insured' => ['nullable', 'array'],
+            'insured.first_name' => ['nullable', 'string', 'max:150'],
+            'insured.middle_name' => ['nullable', 'string', 'max:150'],
+            'insured.last_name' => ['nullable', 'string', 'max:150'],
+            'insured.second_last_name' => ['nullable', 'string', 'max:150'],
             'insured.email' => ['nullable', 'email', 'max:255'],
             'insured.phone' => ['nullable', 'string', 'max:30'],
             'insured.rfc' => ['nullable', 'string', 'max:20'],
             'insured.birthday' => ['nullable', 'date'],
+            'insured.age_current' => ['nullable', 'integer', 'min:0', 'max:120'],
+            'insured.address' => ['nullable', 'string'],
             'insured.occupation' => ['nullable', 'string', 'max:150'],
             'insured.company_name' => ['nullable', 'string', 'max:150'],
+            'insured.approx_income' => ['nullable', 'numeric', 'min:0'],
+            'insured.medical_history' => ['nullable', 'string'],
+            'insured.main_savings_goal' => ['nullable', 'string', 'max:255'],
+            'insured.personal_interests' => ['nullable', 'string'],
+            'insured.personal_likes' => ['nullable', 'string'],
+            'insured.smokes' => ['nullable', 'boolean'],
+            'insured.drinks' => ['nullable', 'boolean'],
+            'insured.personality' => ['nullable', 'string', 'max:255'],
+            'insured.children_count' => ['nullable', 'integer', 'min:0', 'max:20'],
         ]);
 
         $policy = $this->ownedPolicy($data['policy_id']);
@@ -92,10 +209,15 @@ class PolicyWizardController extends Controller
                     $insured = Insured::query()->create([
                         'agent_id' => $agentId,
                         'client_id' => $client->id,
+                        'first_name' => $client->first_name,
+                        'middle_name' => $client->middle_name,
+                        'last_name' => $client->last_name,
+                        'second_last_name' => $client->second_last_name,
                         'email' => $client->email,
                         'phone' => $client->phone,
                         'rfc' => $client->rfc,
                         'birthday' => $client->birth_date?->toDateString() ?? now()->toDateString(),
+                        'address' => $client->street,
                     ]);
                 }
 
@@ -113,12 +235,27 @@ class PolicyWizardController extends Controller
             $insured = Insured::query()->create([
                 'agent_id' => $agentId,
                 'client_id' => $policy->client_id,
+                'first_name' => $insuredPayload['first_name'] ?? '-',
+                'middle_name' => $insuredPayload['middle_name'] ?? null,
+                'last_name' => $insuredPayload['last_name'] ?? '-',
+                'second_last_name' => $insuredPayload['second_last_name'] ?? null,
                 'birthday' => $insuredPayload['birthday'] ?? now()->toDateString(),
+                'age_current' => $insuredPayload['age_current'] ?? null,
                 'email' => $insuredPayload['email'] ?? null,
                 'phone' => $insuredPayload['phone'] ?? null,
                 'rfc' => $insuredPayload['rfc'] ?? null,
+                'address' => $insuredPayload['address'] ?? null,
                 'occupation' => $insuredPayload['occupation'] ?? null,
                 'company_name' => $insuredPayload['company_name'] ?? null,
+                'approx_income' => $insuredPayload['approx_income'] ?? null,
+                'medical_history' => $insuredPayload['medical_history'] ?? null,
+                'main_savings_goal' => $insuredPayload['main_savings_goal'] ?? null,
+                'personal_interests' => $insuredPayload['personal_interests'] ?? null,
+                'personal_likes' => $insuredPayload['personal_likes'] ?? null,
+                'smokes' => (bool) ($insuredPayload['smokes'] ?? false),
+                'drinks' => (bool) ($insuredPayload['drinks'] ?? false),
+                'personality' => $insuredPayload['personality'] ?? null,
+                'children_count' => $insuredPayload['children_count'] ?? 0,
             ]);
 
             return (string) $insured->id;
@@ -127,7 +264,7 @@ class PolicyWizardController extends Controller
         $policy->update([
             'insured_id' => $insuredId,
             'status' => Policy::STATUS_DRAFT,
-
+            'current_step' => max((int) ($policy->current_step ?? 1), 2),
         ]);
 
         return back()->with('success', 'Paso 2 guardado.');
@@ -138,20 +275,34 @@ class PolicyWizardController extends Controller
         $data = $request->validate([
             'policy_id' => ['required', 'uuid'],
             'payment_channel' => ['nullable', 'integer'],
-            'product' => ['nullable', 'string', 'max:160'],
             'coverage_start' => ['nullable', 'date'],
             'risk_premium' => ['nullable', 'numeric', 'min:0'],
             'fractional_premium' => ['nullable', 'numeric', 'min:0'],
-            'periodicity' => ['nullable', 'string', 'max:120'],
+            'periodicity_id' => ['required', 'integer', 'exists:cat_periodicities,id'],
             'month' => ['nullable', 'integer', 'between:1,12'],
-            'currency' => ['nullable', 'integer'],
             'currency_id' => ['nullable', 'uuid'],
+            'insurance_company_id' => ['required', 'uuid', 'exists:cat_insurance_companies,id'],
+            'product_id' => ['required', 'uuid', function ($attribute, $value, $fail) use ($request) {
+                $exists = Product::query()
+                    ->whereKey($value)
+                    ->where('insurance_company_id', $request->string('insurance_company_id'))
+                    ->exists();
+
+                if (! $exists) {
+                    $fail('Selecciona un producto válido para la marca elegida.');
+                }
+            }],
         ]);
 
         $policy = $this->ownedPolicy($data['policy_id']);
+        $product = Product::query()->findOrFail($data['product_id']);
         unset($data['policy_id']);
 
-        $policy->update(array_merge($data, ['status' => Policy::STATUS_DRAFT]));
+        $policy->update(array_merge($data, [
+            'product' => $product->name,
+            'status' => Policy::STATUS_DRAFT,
+            'current_step' => max((int) ($policy->current_step ?? 1), 3),
+        ]));
 
         return back()->with('success', 'Paso 3 guardado.');
     }
@@ -201,17 +352,25 @@ class PolicyWizardController extends Controller
                 ->delete();
         });
 
-        $policy->update(['status' => Policy::STATUS_DRAFT]);
+        $policy->update([
+            'status' => Policy::STATUS_DRAFT,
+            'current_step' => max((int) ($policy->current_step ?? 1), 4),
+        ]);
 
         return back()->with('success', 'Paso 4 guardado.');
     }
 
-    public function saveAndExit(string $policyId): RedirectResponse
+    public function saveAndExit(Request $request, ?string $policyId = null): RedirectResponse
     {
-        $policy = $this->ownedPolicy($policyId);
-        $policy->update(['status' => Policy::STATUS_DRAFT]);
+        $policy = $this->resolveDraftPolicy($policyId ?: $request->input('policy_id'));
 
-        return to_route('polizas.index')->with('success', 'Póliza guardada como borrador.');
+        $step = (int) $request->input('current_step', 1);
+        $policy->update([
+            'status' => Policy::STATUS_DRAFT,
+            'current_step' => max(1, min(4, $step)),
+        ]);
+
+        return to_route('polizas.index')->with('success', 'Borrador guardado.');
     }
 
     public function finish(string $policyId): RedirectResponse
@@ -254,6 +413,7 @@ class PolicyWizardController extends Controller
             'agent_id' => $agentId,
             'status' => Policy::STATUS_DRAFT,
             'insured_id' => $insuredId,
+            'current_step' => 1,
         ]);
     }
 
@@ -268,17 +428,6 @@ class PolicyWizardController extends Controller
         return $policy;
     }
 
-    private function ownedClient(string $clientId): Client
-    {
-        $client = Client::query()->findOrFail($clientId);
-
-        if ((string) $client->agent_id !== (string) auth()->user()->agent_id) {
-            abort(403);
-        }
-
-        return $client;
-    }
-
     private function serializeClient(?Client $client): ?array
     {
         if (! $client) {
@@ -288,15 +437,20 @@ class PolicyWizardController extends Controller
         return [
             'id' => $client->id,
             'full_name' => $client->full_name,
+            'first_name' => $client->first_name,
+            'middle_name' => $client->middle_name,
+            'last_name' => $client->last_name,
+            'second_last_name' => $client->second_last_name,
             'phone' => $client->phone,
             'email' => $client->email,
             'rfc' => $client->rfc,
+            'address' => $client->street,
         ];
     }
 
     private function wizardProps(?Policy $policy = null, ?Client $preselectedClient = null): array
     {
-        $policy?->load(['beneficiaries:id,policy_id,name,relationship_id,benefit_percentage', 'client:id,first_name,middle_name,last_name,second_last_name,email,phone,rfc', 'insured:id,client_id,email,phone,rfc,birthday,occupation,company_name']);
+        $policy?->load(['beneficiaries:id,policy_id,name,relationship_id,benefit_percentage', 'client:id,first_name,middle_name,last_name,second_last_name,email,phone,rfc,street', 'insured:id,client_id,first_name,middle_name,last_name,second_last_name,email,phone,rfc,birthday,age_current,address,occupation,company_name,approx_income,medical_history,main_savings_goal,personal_interests,personal_likes,smokes,drinks,personality,children_count']);
 
         $selectedClient = $preselectedClient;
 
@@ -306,16 +460,19 @@ class PolicyWizardController extends Controller
 
         return [
             'policy' => $policy,
+            'initialStep' => (int) ($policy?->current_step ?? 1),
             'preselectedClient' => $this->serializeClient($selectedClient),
             'insureds' => Insured::query()
                 ->where('agent_id', (string) auth()->user()->agent_id)
-                ->select(['id', 'client_id', 'email', 'phone', 'rfc', 'birthday', 'occupation', 'company_name'])
+                ->select(['id', 'client_id', 'first_name', 'middle_name', 'last_name', 'second_last_name', 'email', 'phone', 'rfc', 'birthday', 'age_current', 'address', 'occupation', 'company_name', 'approx_income', 'medical_history', 'main_savings_goal', 'personal_interests', 'personal_likes', 'smokes', 'drinks', 'personality', 'children_count'])
                 ->latest()
                 ->get(),
             'relationships' => CatRelationship::query()->select(['id', 'name'])->orderBy('name')->get(),
             'paymentChannels' => CatPaymentChannel::query()->select(['code', 'name'])->orderBy('name')->get(),
             'currencies' => CatCurrency::query()->select(['id', 'name'])->orderBy('name')->get(),
+            'periodicities' => CatPeriodicity::query()->where('is_active', true)->orderBy('sort_order')->get(['id', 'name', 'code']),
             'insuranceCompanies' => CatInsuranceCompany::query()->select(['id', 'name'])->orderBy('name')->get(),
+            'products' => Product::query()->select(['id', 'insurance_company_id', 'name'])->orderBy('name')->get(),
         ];
     }
 }
