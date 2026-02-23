@@ -1,3 +1,4 @@
+import { router} from '@inertiajs/react';
 import {
     Activity,
     Archive,
@@ -9,7 +10,9 @@ import {
     RotateCcw,
     Trash2,
     UserPlus,
+    User
 } from 'lucide-react';
+import { route } from 'ziggy-js';
 import { DataTable, type DataTableColumn } from '@/components/data-table';
 import { LeadStatusBadge } from '@/components/leads/status-badge';
 import { Button } from '@/components/ui/button';
@@ -159,13 +162,8 @@ export function LeadsTable({
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                                onSelect={(event) => {
-                                    event.preventDefault();
-                                    actions.onView();
-                                }}
-                            >
-                                <Eye className="mr-2 size-4" /> Ver
+                            <DropdownMenuItem onClick={() => router.get(route('clients.profile', row.id))} >
+                                <User className="mr-2 size-4" /> Perfil
                             </DropdownMenuItem>
                             {mode !== 'archived' && (
                                 <DropdownMenuItem

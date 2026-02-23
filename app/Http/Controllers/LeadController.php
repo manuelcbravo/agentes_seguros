@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateLeadStatusRequest;
 use App\Http\Requests\UpsertLeadRequest;
+use App\Models\Beneficiary;
 use App\Models\Client;
 use App\Models\File;
+use App\Models\Insured;
+use App\Models\Policy;
 use App\Models\Lead;
 use App\Models\User;
 use App\Models\Tracking\CatTrackingActivityType;
@@ -186,6 +189,86 @@ class LeadController extends Controller
         return back()->with('success', 'Lead convertido a cliente correctamente.');
     }
 
+
+    public function show(Request $request, Lead $lead): Response
+    {
+        $this->authorizeLead($request, $lead);
+
+        $lead->loadMissing([
+            'agent:id,name',
+            'client',
+            'trackingActivities.activityType:id,name,key',
+            'trackingActivities.createdBy:id,name',
+        ]);
+
+        $client = null;
+
+        if ($lead->client_id) {
+            $client = Client::query()
+                ->where('id', $lead->client_id)
+                ->where('agent_id', $lead->agent_id)
+                ->with([
+                    'trackingActivities.activityType:id,name,key',
+                    'trackingActivities.createdBy:id,name',
+                ])
+                ->first();
+        }
+
+        $policies = collect();
+        $insured = collect();
+        $beneficiaries = collect();
+
+        if ($client) {
+            $policies = Policy::query()
+                ->where('client_id', $client->id)
+                ->where('agent_id', $lead->agent_id)
+                ->latest()
+                ->get();
+
+            $insured = Insured::query()
+                ->where('client_id', $client->id)
+                ->where('agent_id', $lead->agent_id)
+                ->latest()
+                ->get();
+
+            $beneficiaries = Beneficiary::query()
+                ->where('agent_id', $lead->agent_id)
+                ->whereIn('policy_id', $policies->pluck('id'))
+                ->with('policy:id,client_id,product')
+                ->latest()
+                ->get();
+        }
+
+        return Inertia::render('People/Show', [
+            'lead' => $lead,
+            'client' => $client,
+            'resolvedType' => $client ? 'client' : 'lead',
+            'policies' => $policies,
+            'insured' => $insured,
+            'beneficiaries' => $beneficiaries,
+            'files' => File::query()
+                ->select(['id', 'uuid', 'disk', 'path', 'original_name', 'mime_type', 'size', 'related_table', 'related_uuid', 'created_at'])
+                ->where('related_table', $client ? 'clients' : 'leads')
+                ->where('related_uuid', $client?->id ?? $lead->id)
+                ->latest()
+                ->get()
+                ->map(function (File $file): array {
+                    return [
+                        'id' => $file->id,
+                        'uuid' => $file->uuid,
+                        'path' => $file->path,
+                        'original_name' => $file->original_name,
+                        'mime_type' => $file->mime_type,
+                        'size' => $file->size,
+                        'related_table' => $file->related_table,
+                        'related_uuid' => $file->related_uuid,
+                        'created_at' => $file->created_at,
+                        'url' => $file->url,
+                    ];
+                }),
+            'trackingCatalogs' => $this->trackingCatalogs(),
+        ]);
+    }
     public function destroy(Request $request, Lead $lead): RedirectResponse
     {
         $this->authorizeLead($request, $lead);

@@ -192,9 +192,6 @@ class GlobalSearchController extends Controller
 
                 $scoutResults = $builder->take($limit * 2)->get();
             } catch (QueryException $exception) {
-                // Cuando Scout usa el motor de base de datos, intenta consultar columnas
-                // virtuales como "full_name" o "search_text" que no existen físicamente.
-                // En ese caso hacemos fallback al query SQL seguro definido por entidad.
                 report($exception);
             }
         }

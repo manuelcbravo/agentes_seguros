@@ -11,6 +11,7 @@ import {
     Users,
     BookPlus,
     Activity,
+    User
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -241,6 +242,9 @@ export default function ClientsIndex({
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => router.get(route('clients.profile', row.id))}>
+                            <User className="mr-2 size-4" /> Perfil
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => openEditDialog(row)}>
                             <Pencil className="mr-2 size-4" /> Editar
                         </DropdownMenuItem>

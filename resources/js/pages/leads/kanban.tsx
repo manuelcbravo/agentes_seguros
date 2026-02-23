@@ -11,6 +11,7 @@ import {
     Plus,
     Trash2,
     UserPlus,
+    User
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -270,14 +271,9 @@ export default function LeadsKanban({
                                                     </article>
                                                 </ContextMenuTrigger>
                                                 <ContextMenuContent>
-                                                    <ContextMenuItem
-                                                        onSelect={(event) => {
-                                                            event.preventDefault();
-                                                            actions.onView();
-                                                        }}
-                                                    >
-                                                        <Eye className="mr-2 size-4" />{' '}
-                                                        Ver
+                                                    <ContextMenuItem onClick={() => router.get(route('clients.profile', lead.id))}>
+                                                        <User className="mr-2 size-4" />{' '}
+                                                        Perfil
                                                     </ContextMenuItem>
                                                     <ContextMenuItem
                                                         onSelect={(event) => {

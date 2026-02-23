@@ -3,8 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpsertClientRequest;
+use App\Models\Beneficiary;
 use App\Models\Client;
 use App\Models\File;
+use App\Models\Insured;
+use App\Models\Policy;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -53,6 +57,77 @@ class ClientController extends Controller
                 ->where('related_table', 'clients')
                 ->latest()
                 ->get(),
+            'trackingCatalogs' => $this->trackingCatalogs(),
+        ]);
+    }
+
+
+    public function show(Request $request, Client $client): Response
+    {
+        $user = $request->user();
+
+        if ($user instanceof User) {
+           
+            $agentId = $user->agent_id;
+dd($agentId, $client);
+            if (! $agentId || $client->agent_id !== $agentId) {
+                abort(403);
+            }
+        }
+
+        $client->loadMissing([
+            'trackingActivities.activityType:id,name,key',
+            'trackingActivities.createdBy:id,name',
+        ]);
+
+        $policies = Policy::query()
+            ->where('client_id', $client->id)
+            ->where('agent_id', $client->agent_id)
+            ->latest()
+            ->get();
+
+        $insured = Insured::query()
+            ->where('client_id', $client->id)
+            ->where('agent_id', $client->agent_id)
+            ->latest()
+            ->get();
+
+        $policyIds = $policies->pluck('id');
+
+        $beneficiaries = Beneficiary::query()
+            ->where('agent_id', $client->agent_id)
+            ->whereIn('policy_id', $policyIds)
+            ->with('policy:id,client_id,product')
+            ->latest()
+            ->get();
+
+        return Inertia::render('People/Show', [
+            'lead' => null,
+            'client' => $client,
+            'resolvedType' => 'client',
+            'policies' => $policies,
+            'insured' => $insured,
+            'beneficiaries' => $beneficiaries,
+            'files' => File::query()
+                ->select(['id', 'uuid', 'disk', 'path', 'original_name', 'mime_type', 'size', 'related_table', 'related_uuid', 'created_at'])
+                ->where('related_table', 'clients')
+                ->where('related_uuid', $client->id)
+                ->latest()
+                ->get()
+                ->map(function (File $file): array {
+                    return [
+                        'id' => $file->id,
+                        'uuid' => $file->uuid,
+                        'path' => $file->path,
+                        'original_name' => $file->original_name,
+                        'mime_type' => $file->mime_type,
+                        'size' => $file->size,
+                        'related_table' => $file->related_table,
+                        'related_uuid' => $file->related_uuid,
+                        'created_at' => $file->created_at,
+                        'url' => $file->url,
+                    ];
+                }),
             'trackingCatalogs' => $this->trackingCatalogs(),
         ]);
     }

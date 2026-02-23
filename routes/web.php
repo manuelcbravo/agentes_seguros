@@ -56,7 +56,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('audits', [AuditController::class, 'index'])->name('audits.index');
     });
     
-    Route::resource('clients', ClientController::class)->only(['index', 'store', 'destroy']);
+    Route::resource('clients', ClientController::class)->only(['index', 'show', 'store', 'destroy']);
+    Route::get('clients/profile/{id}', [ClientController::class, 'show'])->name('clients.profile');
     Route::get('clients/search', [ClientSearchController::class, 'index'])->name('clients.search');
     Route::resource('agents', AgentController::class)->only(['index', 'store', 'destroy']);
 
@@ -73,7 +74,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('leads/{lead}/convert-to-client', [LeadController::class, 'convertToClient'])->name('leads.convertToClient');
     Route::post('leads/{lead}/archive', [LeadController::class, 'archive'])->name('leads.archive');
     Route::post('leads/{lead}/unarchive', [LeadController::class, 'unarchive'])->name('leads.unarchive');
-    Route::resource('leads', LeadController::class)->only(['index', 'store', 'destroy']);
+    Route::resource('leads', LeadController::class)->only(['index', 'show', 'store', 'destroy']);
 
     Route::patch('files/{file}/rename', [FileController::class, 'rename'])->name('files.rename');
     Route::resource('files', FileController::class)->only(['index', 'store', 'destroy']);
