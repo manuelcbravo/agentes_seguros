@@ -28,6 +28,14 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import {
+    Combobox,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxList,
+} from '@/components/ui/combobox';
 import { Field, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -240,24 +248,29 @@ export default function LeadsIndex({
                                 }
                                 placeholder="Buscar por nombre, correo o telefono..."
                             />
-                            <select
+                            <Combobox
                                 value={fixedStatus ?? status}
-                                onChange={(event) =>
-                                    setStatus(event.target.value)
-                                }
+                                onValueChange={(value) => setStatus(value)}
                                 disabled={Boolean(fixedStatus)}
-                                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
                             >
-                                <option value="">Todos los estatus</option>
-                                {statusOptions.map((option) => (
-                                    <option
-                                        key={option.value}
-                                        value={option.value}
-                                    >
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </select>
+                                <ComboboxInput
+                                    className="w-full"
+                                    placeholder="selecciones nombre del catalogo"
+                                    aria-label="Estatus"
+                                    disabled={Boolean(fixedStatus)}
+                                />
+                                <ComboboxContent>
+                                    <ComboboxList>
+                                        <ComboboxEmpty>No se encontraron estatus.</ComboboxEmpty>
+                                        <ComboboxItem value="">Todos los estatus</ComboboxItem>
+                                        {statusOptions.map((option) => (
+                                            <ComboboxItem key={option.value} value={option.value}>
+                                                {option.label}
+                                            </ComboboxItem>
+                                        ))}
+                                    </ComboboxList>
+                                </ComboboxContent>
+                            </Combobox>
                             <Button onClick={() => applyFilters()}>
                                 <Filter className="mr-2 size-4" /> Aplicar
                                 filtros
@@ -438,21 +451,28 @@ export default function LeadsIndex({
                     </Field>
                     <Field>
                         <Label htmlFor="lead-source">Fuente</Label>
-                        <select
-                            id="lead-source"
+                        <Combobox
                             value={form.data.source}
+                            onValueChange={(value) => form.setData('source', value)}
                             disabled={formMode === 'view'}
-                            onChange={(event) =>
-                                form.setData('source', event.target.value)
-                            }
-                            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                         >
-                            {sourceOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                    {option.label}
-                                </option>
-                            ))}
-                        </select>
+                            <ComboboxInput
+                                className="w-full"
+                                placeholder="selecciones nombre del catalogo"
+                                aria-label="Fuente"
+                                disabled={formMode === 'view'}
+                            />
+                            <ComboboxContent>
+                                <ComboboxList>
+                                    <ComboboxEmpty>No se encontraron fuentes.</ComboboxEmpty>
+                                    {sourceOptions.map((option) => (
+                                        <ComboboxItem key={option.value} value={option.value}>
+                                            {option.label}
+                                        </ComboboxItem>
+                                    ))}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
                         {form.errors.source && (
                             <FieldError>{form.errors.source}</FieldError>
                         )}
@@ -461,27 +481,28 @@ export default function LeadsIndex({
                         <>
                             <Field>
                                 <Label htmlFor="lead-status">Estatus</Label>
-                                <select
-                                    id="lead-status"
+                                <Combobox
                                     value={form.data.status}
+                                    onValueChange={(value) => form.setData('status', value)}
                                     disabled={formMode === 'view'}
-                                    onChange={(event) =>
-                                        form.setData(
-                                            'status',
-                                            event.target.value,
-                                        )
-                                    }
-                                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                                 >
-                                    {statusOptions.map((option) => (
-                                        <option
-                                            key={option.value}
-                                            value={option.value}
-                                        >
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
+                                    <ComboboxInput
+                                        className="w-full"
+                                        placeholder="selecciones nombre del catalogo"
+                                        aria-label="Estatus"
+                                        disabled={formMode === 'view'}
+                                    />
+                                    <ComboboxContent>
+                                        <ComboboxList>
+                                            <ComboboxEmpty>No se encontraron estatus.</ComboboxEmpty>
+                                            {statusOptions.map((option) => (
+                                                <ComboboxItem key={option.value} value={option.value}>
+                                                    {option.label}
+                                                </ComboboxItem>
+                                            ))}
+                                        </ComboboxList>
+                                    </ComboboxContent>
+                                </Combobox>
                                 {form.errors.status && (
                                     <FieldError>
                                         {form.errors.status}

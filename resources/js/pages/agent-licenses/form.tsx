@@ -1,3 +1,11 @@
+import {
+    Combobox,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxList,
+} from '@/components/ui/combobox';
 import { Field, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -51,22 +59,28 @@ export function AgentLicenseForm({
             <div className="grid gap-4 md:grid-cols-2">
                 <Field>
                     <Label htmlFor="license-insurer">Aseguradora</Label>
-                    <select
-                        id="license-insurer"
+                    <Combobox
                         value={data.aseguradora_id}
-                        onChange={(event) =>
-                            setData('aseguradora_id', event.target.value)
-                        }
-                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs ring-offset-background transition-[color,box-shadow] outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        onValueChange={(value) => setData('aseguradora_id', value)}
                     >
-                        <option value="">Selecciona una aseguradora</option>
-                        {insuranceCompanies.map((company) => (
-                            <option key={company.id} value={company.id}>
-                                {company.name}
-                                {company.code ? ` (${company.code})` : ''}
-                            </option>
-                        ))}
-                    </select>
+                        <ComboboxInput
+                            className="w-full"
+                            placeholder="selecciones nombre del catalogo"
+                            aria-label="Aseguradora"
+                        />
+                        <ComboboxContent>
+                            <ComboboxList>
+                                <ComboboxEmpty>No se encontraron aseguradoras.</ComboboxEmpty>
+                                <ComboboxItem value="">Selecciona una aseguradora</ComboboxItem>
+                                {insuranceCompanies.map((company) => (
+                                    <ComboboxItem key={company.id} value={company.id}>
+                                        {company.name}
+                                        {company.code ? ` (${company.code})` : ''}
+                                    </ComboboxItem>
+                                ))}
+                            </ComboboxList>
+                        </ComboboxContent>
+                    </Combobox>
                     {errors.aseguradora_id && (
                         <FieldError>{errors.aseguradora_id}</FieldError>
                     )}
@@ -92,20 +106,26 @@ export function AgentLicenseForm({
 
                 <Field>
                     <Label htmlFor="license-status">Estatus</Label>
-                    <select
-                        id="license-status"
+                    <Combobox
                         value={data.status}
-                        onChange={(event) =>
-                            setData('status', event.target.value)
-                        }
-                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs ring-offset-background transition-[color,box-shadow] outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        onValueChange={(value) => setData('status', value)}
                     >
-                        {statusOptions.map((status) => (
-                            <option key={status.value} value={status.value}>
-                                {status.label}
-                            </option>
-                        ))}
-                    </select>
+                        <ComboboxInput
+                            className="w-full"
+                            placeholder="selecciones nombre del catalogo"
+                            aria-label="Estatus"
+                        />
+                        <ComboboxContent>
+                            <ComboboxList>
+                                <ComboboxEmpty>No se encontraron estatus.</ComboboxEmpty>
+                                {statusOptions.map((status) => (
+                                    <ComboboxItem key={status.value} value={status.value}>
+                                        {status.label}
+                                    </ComboboxItem>
+                                ))}
+                            </ComboboxList>
+                        </ComboboxContent>
+                    </Combobox>
                     {errors.status && <FieldError>{errors.status}</FieldError>}
                 </Field>
             </div>

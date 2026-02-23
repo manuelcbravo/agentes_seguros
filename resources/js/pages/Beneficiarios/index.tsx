@@ -25,6 +25,14 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
+    Combobox,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxList,
+} from '@/components/ui/combobox';
+import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -237,20 +245,27 @@ export default function BeneficiariosIndex({
                                 }
                                 placeholder="Buscar por nombre, RFC, ocupación o empresa..."
                             />
-                            <select
+                            <Combobox
                                 value={policyId}
-                                onChange={(event) =>
-                                    setPolicyId(event.target.value)
-                                }
-                                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                                onValueChange={(value) => setPolicyId(value)}
                             >
-                                <option value="">Todas las pólizas</option>
-                                {polizas.map((option) => (
-                                    <option key={option.id} value={option.id}>
-                                        {option.product || option.status}
-                                    </option>
-                                ))}
-                            </select>
+                                <ComboboxInput
+                                    className="w-full"
+                                    placeholder="selecciones nombre del catalogo"
+                                    aria-label="Filtrar por póliza"
+                                />
+                                <ComboboxContent>
+                                    <ComboboxList>
+                                        <ComboboxEmpty>No se encontraron pólizas.</ComboboxEmpty>
+                                        <ComboboxItem value="">Todas las pólizas</ComboboxItem>
+                                        {polizas.map((option) => (
+                                            <ComboboxItem key={option.id} value={option.id}>
+                                                {option.product || option.status}
+                                            </ComboboxItem>
+                                        ))}
+                                    </ComboboxList>
+                                </ComboboxContent>
+                            </Combobox>
                             <Button onClick={applyFilters}>
                                 <Filter className="mr-2 size-4" /> Aplicar
                                 filtros
@@ -317,20 +332,27 @@ export default function BeneficiariosIndex({
                 <div className="grid gap-4 md:grid-cols-2">
                     <Field>
                         <Label>Póliza</Label>
-                        <select
-                            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                        <Combobox
                             value={form.data.policy_id}
-                            onChange={(event) =>
-                                form.setData('policy_id', event.target.value)
-                            }
+                            onValueChange={(value) => form.setData('policy_id', value)}
                         >
-                            <option value="">Selecciona póliza</option>
-                            {polizas.map((item) => (
-                                <option key={item.id} value={item.id}>
-                                    {item.product || item.status}
-                                </option>
-                            ))}
-                        </select>
+                            <ComboboxInput
+                                className="w-full"
+                                placeholder="selecciones nombre del catalogo"
+                                aria-label="Póliza"
+                            />
+                            <ComboboxContent>
+                                <ComboboxList>
+                                    <ComboboxEmpty>No se encontraron pólizas.</ComboboxEmpty>
+                                    <ComboboxItem value="">Selecciona póliza</ComboboxItem>
+                                    {polizas.map((item) => (
+                                        <ComboboxItem key={item.id} value={item.id}>
+                                            {item.product || item.status}
+                                        </ComboboxItem>
+                                    ))}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
                         {form.errors.policy_id && (
                             <FieldError>{form.errors.policy_id}</FieldError>
                         )}
