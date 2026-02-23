@@ -16,7 +16,7 @@ class ClientSearchController extends Controller
 
         $clients = Client::query()
             ->where('agent_id', $agentId)
-            ->when($query !== '', function ($builder) use ($query) {
+            ->when(mb_strlen($query) >= 3, function ($builder) use ($query) {
                 $builder->where(function ($inner) use ($query) {
                     $inner->where('first_name', 'like', "%{$query}%")
                         ->orWhere('middle_name', 'like', "%{$query}%")
@@ -26,6 +26,7 @@ class ClientSearchController extends Controller
                         ->orWhere('phone', 'like', "%{$query}%");
                 });
             })
+            ->when(mb_strlen($query) < 3, fn ($builder) => $builder->whereRaw('1 = 0'))
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->limit(15)
@@ -35,11 +36,16 @@ class ClientSearchController extends Controller
 
                 return [
                     'id' => $client->id,
-                    'label' => $client->first_name . ' ' . $client->middle_name . ' ' . $client->last_name . ' ' . $client->second_last_name,
+                    'label' => $client->full_name,
                     'subtitle' => $subtitleParts !== [] ? implode(' • ', $subtitleParts) : 'Sin teléfono ni email',
                     'phone' => $client->phone,
                     'email' => $client->email,
                     'rfc' => $client->rfc,
+                    'first_name' => $client->first_name,
+                    'middle_name' => $client->middle_name,
+                    'last_name' => $client->last_name,
+                    'second_last_name' => $client->second_last_name,
+                    'address' => $client->street,
                 ];
             })
             ->values();

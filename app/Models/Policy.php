@@ -22,12 +22,16 @@ class Policy extends Model
         'client_id',
         'insured_id',
         'status',
+        'current_step',
         'payment_channel',
         'product',
+        'insurance_company_id',
+        'product_id',
         'coverage_start',
         'risk_premium',
         'fractional_premium',
         'periodicity',
+        'periodicity_id',
         'month',
         'currency',
         'currency_id',
@@ -38,6 +42,7 @@ class Policy extends Model
         'risk_premium' => 'decimal:2',
         'fractional_premium' => 'decimal:2',
         'month' => 'integer',
+        'current_step' => 'integer',
     ];
 
 
@@ -79,6 +84,21 @@ class Policy extends Model
     public function beneficiaries()
     {
         return $this->hasMany(Beneficiary::class);
+    }
+
+    public function periodicityCatalog(): BelongsTo
+    {
+        return $this->belongsTo(CatPeriodicity::class, 'periodicity_id');
+    }
+
+    public function insuranceCompany(): BelongsTo
+    {
+        return $this->belongsTo(CatInsuranceCompany::class, 'insurance_company_id');
+    }
+
+    public function productCatalog(): BelongsTo
+    {
+        return $this->belongsTo(Product::class, 'product_id');
     }
 
     public function toSearchableArray(): array
