@@ -1,16 +1,15 @@
-import { router} from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import {
     Activity,
     Archive,
     ArrowRightLeft,
-    Eye,
     FolderKanban,
     MoreHorizontal,
     Pencil,
     RotateCcw,
     Trash2,
+    User,
     UserPlus,
-    User
 } from 'lucide-react';
 import { route } from 'ziggy-js';
 import { DataTable, type DataTableColumn } from '@/components/data-table';
@@ -136,12 +135,6 @@ export function LeadsTable({
             header: 'Estatus',
             accessor: (row) => row.status,
             cell: (row) => <LeadStatusBadge status={row.status} />,
-        },
-        {
-            key: 'agent',
-            header: 'Agente',
-            accessor: (row) => row.agent?.name ?? '',
-            cell: (row) => row.agent?.name ?? '—',
         },
         {
             key: 'actions',

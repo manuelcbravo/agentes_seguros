@@ -18,15 +18,13 @@ import { LeadsTable, type LeadRow } from '@/components/leads/leads-table';
 import { LeadStatusBadge } from '@/components/leads/status-badge';
 import { TrackingDrawer } from '@/components/tracking/TrackingDrawer';
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import {
     Combobox,
@@ -39,6 +37,7 @@ import {
 import { Field, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, SharedData } from '@/types';
 
@@ -115,6 +114,7 @@ export default function LeadsIndex({
         null,
     );
     const [isArchiving, setIsArchiving] = useState(false);
+    const [isConverting, setIsConverting] = useState(false);
     const [formMode, setFormMode] = useState<'create' | 'edit' | 'view' | null>(
         null,
     );
@@ -327,8 +327,8 @@ export default function LeadsIndex({
                     formMode === 'edit'
                         ? 'Editar lead'
                         : formMode === 'view'
-                          ? 'Detalle de lead'
-                          : 'Nuevo lead'
+                            ? 'Detalle de lead'
+                            : 'Nuevo lead'
                 }
                 description="Manten actualizado el pipeline con informacion precisa y accionable."
                 submitLabel={
@@ -453,9 +453,7 @@ export default function LeadsIndex({
                     <Field>
                         <Label htmlFor="lead-source">Fuente</Label>
                         <Combobox
-                            itemToStringLabel={(value) => sourceOptions.find((option) => option.value === value)?.label ?? ''}
-                            value={form.data.source}
-                            onValueChange={(value) => form.setData('source', value ?? '')}
+                            items={sourceOptions}
                             disabled={formMode === 'view'}
                         >
                             <ComboboxInput
@@ -465,13 +463,13 @@ export default function LeadsIndex({
                                 disabled={formMode === 'view'}
                             />
                             <ComboboxContent>
+                                <ComboboxEmpty>No se encontraron fuentes.</ComboboxEmpty>
                                 <ComboboxList>
-                                    <ComboboxEmpty>No se encontraron fuentes.</ComboboxEmpty>
-                                    {sourceOptions.map((option) => (
-                                        <ComboboxItem key={option.value} value={option.value}>
-                                            {option.label}
+                                    {(item) => (
+                                        <ComboboxItem key={item.value} value={item.value}>
+                                        {item.label}
                                         </ComboboxItem>
-                                    ))}
+                                    )}
                                 </ComboboxList>
                             </ComboboxContent>
                         </Combobox>
@@ -550,99 +548,97 @@ export default function LeadsIndex({
                 maxSizeHint="Cualquier formato · máximo 10MB"
             />
 
-            <AlertDialog
+            <Dialog
                 open={leadToArchive !== null}
                 onOpenChange={(open) => !open && setLeadToArchive(null)}
             >
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Archivar lead</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            ¿Archivar este lead? Ya no aparecerá en Leads ni en
-                            Kanban.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Archivar lead</DialogTitle>
+                        <DialogDescription>
+                            ¿Archivar este lead? Ya no aparecerá en Leads ni en Kanban.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setLeadToArchive(null)}
                             disabled={isArchiving}
+                        >
+                            Cancelar
+                        </Button>
+
+                        <Button
+                            type="button"
                             onClick={() => {
                                 if (!leadToArchive || isArchiving) return;
 
                                 setIsArchiving(true);
-                                router.post(
-                                    route('leads.archive', leadToArchive.id),
-                                    undefined,
-                                    {
-                                        preserveScroll: true,
-                                        onSuccess: () => {
-                                            setLeadToArchive(null);
-                                            router.reload({
-                                                only: ['leads', 'flash'],
-                                            });
-                                        },
-                                        onError: () =>
-                                            toast.error(
-                                                'No se pudo archivar el lead.',
-                                            ),
-                                        onFinish: () => setIsArchiving(false),
+                                router.post(route('leads.archive', leadToArchive.id), undefined, {
+                                    preserveScroll: true,
+                                    onSuccess: () => {
+                                        setLeadToArchive(null);
+                                        router.reload({ only: ['leads', 'flash'] });
                                     },
-                                );
+                                    onError: () => toast.error('No se pudo archivar el lead.'),
+                                    onFinish: () => setIsArchiving(false),
+                                });
                             }}
+                            disabled={isArchiving}
                         >
-                            {isArchiving ? 'Archivando...' : 'Archivar'}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                            {isArchiving ? 'Archivando' : 'Archivar'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
-            <AlertDialog
+            <Dialog
                 open={leadToConvert !== null}
-                onOpenChange={(open) => !open && setLeadToConvert(null)}
+                onOpenChange={(open) => {
+                    if (!open && !isConverting) setLeadToConvert(null);
+                }}
             >
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>
-                            Convertir lead a cliente
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Esto creará un cliente y marcará el lead como
-                            Ganado.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={() => {
-                                if (!leadToConvert) return;
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Convertir lead a cliente</DialogTitle>
+                        <DialogDescription>
+                            Esto creará un cliente y marcará el lead como Ganado.
+                        </DialogDescription>
+                    </DialogHeader>
 
-                                router.post(
-                                    route(
-                                        'leads.convertToClient',
-                                        leadToConvert.id,
-                                    ),
-                                    undefined,
-                                    {
-                                        preserveScroll: true,
-                                        onSuccess: () => {
-                                            toast.success(
-                                                'Lead convertido a cliente.',
-                                            );
-                                            setLeadToConvert(null);
-                                        },
-                                        onError: () =>
-                                            toast.error(
-                                                'No se pudo convertir el lead.',
-                                            ),
-                                    },
-                                );
-                            }}
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setLeadToConvert(null)}
+                            disabled={isConverting}
                         >
-                            Confirmar
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                            Cancelar
+                        </Button>
+
+                        <Button
+                            type="button"
+                            onClick={() => {
+                                if (!leadToConvert || isConverting) return;
+
+                                setIsConverting(true);
+                                router.post(route('leads.convertToClient', leadToConvert.id), undefined, {
+                                    preserveScroll: true,
+                                    onSuccess: () => setLeadToConvert(null),
+                                    onError: () => toast.error('No se pudo convertir el lead.'),
+                                    onFinish: () => setIsConverting(false),
+                                });
+                            }}
+                            disabled={isConverting}
+                        >
+                            {isConverting && <Spinner className="mr-2" />}
+                            {isConverting ? 'Convirtiendo' : 'Confirmar'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <ConfirmDeleteDialog
                 open={formMode === null && activeLead !== null}

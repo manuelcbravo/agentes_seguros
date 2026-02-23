@@ -56,7 +56,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('audits', [AuditController::class, 'index'])->name('audits.index');
     });
     
-    Route::resource('clients', ClientController::class)->only(['index', 'show', 'store', 'destroy']);
+    Route::resource('clients', ClientController::class)->only(['index', 'store', 'destroy']);
     Route::get('clients/profile/{id}', [ClientController::class, 'show'])->name('clients.profile');
     Route::get('clients/search', [ClientSearchController::class, 'index'])->name('clients.search');
     Route::resource('agents', AgentController::class)->only(['index', 'store', 'destroy']);

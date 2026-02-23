@@ -13,30 +13,51 @@ class ClientSearchController extends Controller
     {
         $agentId = (string) auth()->user()->agent_id;
         $query = trim((string) $request->string('query'));
+        $queryLower = mb_strtolower($query);
 
         $clients = Client::query()
             ->where('agent_id', $agentId)
-            ->when($query !== '', function ($builder) use ($query) {
-                $builder->where(function ($inner) use ($query) {
-                    $inner->where('first_name', 'like', "%{$query}%")
-                        ->orWhere('middle_name', 'like', "%{$query}%")
-                        ->orWhere('last_name', 'like', "%{$query}%")
-                        ->orWhere('second_last_name', 'like', "%{$query}%")
-                        ->orWhere('email', 'like', "%{$query}%")
-                        ->orWhere('phone', 'like', "%{$query}%");
+            ->when($queryLower !== '', function ($builder) use ($queryLower) {
+                $builder->where(function ($inner) use ($queryLower) {
+                    $inner->whereRaw('LOWER(first_name) LIKE ?', ["%{$queryLower}%"])
+                        ->orWhereRaw('LOWER(middle_name) LIKE ?', ["%{$queryLower}%"])
+                        ->orWhereRaw('LOWER(last_name) LIKE ?', ["%{$queryLower}%"])
+                        ->orWhereRaw('LOWER(second_last_name) LIKE ?', ["%{$queryLower}%"])
+                        ->orWhereRaw('LOWER(email) LIKE ?', ["%{$queryLower}%"])
+                        ->orWhereRaw('LOWER(phone) LIKE ?', ["%{$queryLower}%"]);
                 });
             })
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->limit(15)
-            ->get(['id', 'first_name', 'middle_name', 'last_name', 'second_last_name', 'phone', 'email', 'rfc'])
+            ->get([
+                'id',
+                'first_name',
+                'middle_name',
+                'last_name',
+                'second_last_name',
+                'phone',
+                'email',
+                'rfc'
+            ])
             ->map(function (Client $client) {
-                $subtitleParts = array_filter([$client->phone, $client->email]);
+
+                $subtitleParts = array_filter([
+                    $client->phone,
+                    $client->email
+                ]);
 
                 return [
                     'id' => $client->id,
-                    'label' => $client->first_name . ' ' . $client->middle_name . ' ' . $client->last_name . ' ' . $client->second_last_name,
-                    'subtitle' => $subtitleParts !== [] ? implode(' • ', $subtitleParts) : 'Sin teléfono ni email',
+                    'label' => trim(implode(' ', array_filter([
+                        $client->first_name,
+                        $client->middle_name,
+                        $client->last_name,
+                        $client->second_last_name
+                    ]))),
+                    'subtitle' => $subtitleParts
+                        ? implode(' • ', $subtitleParts)
+                        : 'Sin teléfono ni email',
                     'phone' => $client->phone,
                     'email' => $client->email,
                     'rfc' => $client->rfc,
