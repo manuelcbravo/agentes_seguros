@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
         $this->call(CatRelationshipsSeeder::class);
         $this->call(CatInsuranceCompaniesSeeder::class);
         $this->call(CatProductTypesSeeder::class);
+        $this->call(CatPeriodicitiesSeeder::class);
         $this->call(CatPaymentChannelsSeeder::class);
         $this->call(CatTrackingActivityTypeSeeder::class);
         $this->call(CatTrackingChannelSeeder::class);

@@ -85,11 +85,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('polizas/wizard', [PolicyWizardController::class, 'create'])->name('polizas.wizard.create');
     Route::get('polizas/{policy}/wizard', [PolicyWizardController::class, 'edit'])->name('polizas.wizard.edit');
     Route::post('polizas/wizard/step1', [PolicyWizardController::class, 'saveStep1'])->name('polizas.wizard.step1');
+    Route::post('polizas/wizard/client', [PolicyWizardController::class, 'storeClient'])->name('polizas.wizard.client.store');
     Route::post('polizas/wizard/step2', [PolicyWizardController::class, 'saveStep2'])->name('polizas.wizard.step2');
     Route::post('polizas/wizard/step3', [PolicyWizardController::class, 'saveStep3'])->name('polizas.wizard.step3');
     Route::post('polizas/wizard/step4', [PolicyWizardController::class, 'saveStep4'])->name('polizas.wizard.step4');
     Route::post('polizas/{policy}/finalizar', [PolicyWizardController::class, 'finish'])->name('polizas.wizard.finish');
-    Route::post('polizas/{policy}/guardar-salir', [PolicyWizardController::class, 'saveAndExit'])->name('polizas.wizard.save-exit');
+    Route::post('polizas/wizard/guardar-salir', [PolicyWizardController::class, 'saveAndExit'])->name('polizas.wizard.save-exit');
+    Route::post('polizas/{policy}/guardar-salir', [PolicyWizardController::class, 'saveAndExit'])->name('polizas.wizard.save-exit-policy');
     Route::delete('polizas/{id}', [PolizaController::class, 'destroy'])->name('polizas.destroy');
 
     Route::get('asegurados', [AseguradoController::class, 'index'])->name('asegurados.index');

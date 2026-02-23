@@ -19,14 +19,6 @@ import Step2Asegurado from './steps/Step2Asegurado';
 import Step3Poliza from './steps/Step3Poliza';
 import Step4Beneficiarios from './steps/Step4Beneficiarios';
 
-type SelectedClient = {
-    id: string;
-    full_name: string;
-    phone?: string;
-    email?: string;
-    rfc?: string;
-};
-
 const steps = [
     { key: 1, title: 'Contratante', description: 'Selecciona cliente' },
     { key: 2, title: 'Asegurado', description: 'Define asegurado' },
@@ -36,43 +28,73 @@ const steps = [
 
 export default function PolicyWizardPage({
     policy,
+    initialStep = 1,
     preselectedClient,
     insureds,
     relationships,
     paymentChannels,
     currencies,
+    periodicities,
+    insuranceCompanies,
+    products,
 }: any) {
-    const [step, setStep] = useState(1);
+    const [step, setStep] = useState(initialStep);
     const [sameAsClient, setSameAsClient] = useState(true);
     const [beneficiaries, setBeneficiaries] = useState(
         policy?.beneficiaries ?? [],
     );
-    const [selectedClient, setSelectedClient] = useState<SelectedClient | null>(
+    const [selectedClient, setSelectedClient] = useState<any>(
         preselectedClient ?? null,
     );
+    const [clientForm, setClientForm] = useState({
+        first_name: preselectedClient?.first_name ?? '',
+        middle_name: preselectedClient?.middle_name ?? '',
+        last_name: preselectedClient?.last_name ?? '',
+        second_last_name: preselectedClient?.second_last_name ?? '',
+        email: preselectedClient?.email ?? '',
+        phone: preselectedClient?.phone ?? '',
+        rfc: preselectedClient?.rfc ?? '',
+        address: preselectedClient?.address ?? '',
+    });
     const { flash } = usePage<SharedData>().props;
 
     const form = useForm({
         policy_id: policy?.id ?? '',
-        client_id: policy?.client_id ?? '',
+        client_id: policy?.client_id ?? preselectedClient?.id ?? '',
         insured_id: policy?.insured_id ?? '',
         payment_channel: policy?.payment_channel ?? '',
-        product: policy?.product ?? '',
+        insurance_company_id: policy?.insurance_company_id ?? '',
+        product_id: policy?.product_id ?? '',
         coverage_start: policy?.coverage_start ?? '',
         risk_premium: policy?.risk_premium ?? '',
         fractional_premium: policy?.fractional_premium ?? '',
-        periodicity: policy?.periodicity ?? '',
+        periodicity_id: policy?.periodicity_id ?? '',
         month: policy?.month ?? '',
-        currency: policy?.currency ?? '',
         currency_id: policy?.currency_id ?? '',
         same_as_client: true,
+        client: clientForm,
         insured: {
+            first_name: policy?.insured?.first_name ?? '',
+            middle_name: policy?.insured?.middle_name ?? '',
+            last_name: policy?.insured?.last_name ?? '',
+            second_last_name: policy?.insured?.second_last_name ?? '',
             email: policy?.insured?.email ?? '',
             phone: policy?.insured?.phone ?? '',
             rfc: policy?.insured?.rfc ?? '',
             birthday: policy?.insured?.birthday ?? '',
+            age_current: policy?.insured?.age_current ?? '',
+            address: policy?.insured?.address ?? '',
             occupation: policy?.insured?.occupation ?? '',
             company_name: policy?.insured?.company_name ?? '',
+            approx_income: policy?.insured?.approx_income ?? '',
+            medical_history: policy?.insured?.medical_history ?? '',
+            main_savings_goal: policy?.insured?.main_savings_goal ?? '',
+            personal_interests: policy?.insured?.personal_interests ?? '',
+            personal_likes: policy?.insured?.personal_likes ?? '',
+            smokes: Boolean(policy?.insured?.smokes),
+            drinks: Boolean(policy?.insured?.drinks),
+            personality: policy?.insured?.personality ?? '',
+            children_count: policy?.insured?.children_count ?? '',
         },
     });
 
@@ -81,32 +103,27 @@ export default function PolicyWizardPage({
         if (flash?.error) toast.error(flash.error);
     }, [flash?.error, flash?.success]);
 
-    const contratante = selectedClient;
+    useEffect(() => {
+        form.setData('client', clientForm as any);
+    }, [clientForm]);
+
     const totalPercent = beneficiaries.reduce(
         (sum: number, b: any) => sum + Number(b.benefit_percentage || 0),
         0,
     );
 
-    const saveCurrentStep = () => {
-        if (step === 1)
-            return form.post(route('polizas.wizard.step1'), {
-                preserveScroll: true,
-            });
+    const saveCurrentStep = (onSuccess?: () => void) => {
+        if (step === 1) {
+            return form.post(route('polizas.wizard.step1'), { preserveScroll: true, onSuccess });
+        }
         if (step === 2) {
             form.setData('same_as_client', sameAsClient as any);
-            return form.post(route('polizas.wizard.step2'), {
-                preserveScroll: true,
-            });
+            return form.post(route('polizas.wizard.step2'), { preserveScroll: true, onSuccess });
         }
-        if (step === 3)
-            return form.post(route('polizas.wizard.step3'), {
-                preserveScroll: true,
-            });
-        return router.post(
-            route('polizas.wizard.step4'),
-            { policy_id: form.data.policy_id, beneficiaries },
-            { preserveScroll: true },
-        );
+        if (step === 3) {
+            return form.post(route('polizas.wizard.step3'), { preserveScroll: true, onSuccess });
+        }
+        return router.post(route('polizas.wizard.step4'), { policy_id: form.data.policy_id, beneficiaries }, { preserveScroll: true, onSuccess });
     };
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -139,21 +156,19 @@ export default function PolicyWizardPage({
                             <Step1Contratante
                                 preselectedClient={preselectedClient}
                                 selectedId={form.data.client_id}
-                                setSelectedId={(v) =>
-                                    form.setData('client_id', v)
-                                }
+                                setSelectedId={(v: string) => form.setData('client_id', v)}
+                                clientForm={clientForm}
+                                setClientForm={setClientForm}
                                 onClientSelected={setSelectedClient}
                             />
                         )}
                         {step === 2 && (
                             <Step2Asegurado
-                                contratante={contratante}
+                                contratante={selectedClient}
                                 sameAsClient={sameAsClient}
                                 setSameAsClient={setSameAsClient}
                                 insured={form.data.insured}
-                                setInsured={(insured: any) =>
-                                    form.setData('insured', insured)
-                                }
+                                setInsured={(insured: any) => form.setData('insured', insured)}
                                 insureds={insureds}
                             />
                         )}
@@ -163,6 +178,9 @@ export default function PolicyWizardPage({
                                 setData={form.setData}
                                 paymentChannels={paymentChannels}
                                 currencies={currencies}
+                                periodicities={periodicities}
+                                insuranceCompanies={insuranceCompanies}
+                                products={products}
                             />
                         )}
                         {step === 4 && (
@@ -176,53 +194,30 @@ export default function PolicyWizardPage({
                     <CardFooter className="sticky bottom-0 col-span-full flex justify-between border-t bg-background py-4">
                         <Button
                             variant="outline"
-                            disabled={!form.data.policy_id}
                             onClick={() =>
-                                form.data.policy_id &&
-                                router.post(
-                                    route(
-                                        'polizas.wizard.save-exit',
-                                        form.data.policy_id,
-                                    ),
-                                )
+                                router.post(route('polizas.wizard.save-exit'), {
+                                    policy_id: form.data.policy_id,
+                                    current_step: step,
+                                })
                             }
                         >
                             Guardar y salir
                         </Button>
                         <div className="flex gap-2">
-                            <Button
-                                variant="secondary"
-                                disabled={step === 1}
-                                onClick={() => setStep((s) => s - 1)}
-                            >
+                            <Button variant="secondary" disabled={step === 1} onClick={() => setStep((s: number) => s - 1)}>
                                 Atrás
                             </Button>
                             {step < 4 ? (
                                 <Button
-                                    disabled={
-                                        step === 1 && !form.data.client_id
-                                    }
-                                    onClick={() => {
-                                        saveCurrentStep();
-                                        setStep((s) => Math.min(4, s + 1));
-                                    }}
+                                    disabled={step === 1 && !form.data.client_id}
+                                    onClick={() => saveCurrentStep(() => setStep((s: number) => Math.min(4, s + 1)))}
                                 >
                                     Siguiente
                                 </Button>
                             ) : (
                                 <Button
-                                    disabled={
-                                        totalPercent !== 100 ||
-                                        !form.data.policy_id
-                                    }
-                                    onClick={() =>
-                                        router.post(
-                                            route(
-                                                'polizas.wizard.finish',
-                                                form.data.policy_id,
-                                            ),
-                                        )
-                                    }
+                                    disabled={totalPercent !== 100 || !form.data.policy_id}
+                                    onClick={() => router.post(route('polizas.wizard.finish', form.data.policy_id))}
                                 >
                                     Terminar
                                 </Button>

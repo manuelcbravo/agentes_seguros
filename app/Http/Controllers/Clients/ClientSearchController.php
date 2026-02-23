@@ -17,16 +17,17 @@ class ClientSearchController extends Controller
 
         $clients = Client::query()
             ->where('agent_id', $agentId)
-            ->when($queryLower !== '', function ($builder) use ($queryLower) {
-                $builder->where(function ($inner) use ($queryLower) {
-                    $inner->whereRaw('LOWER(first_name) LIKE ?', ["%{$queryLower}%"])
-                        ->orWhereRaw('LOWER(middle_name) LIKE ?', ["%{$queryLower}%"])
-                        ->orWhereRaw('LOWER(last_name) LIKE ?', ["%{$queryLower}%"])
-                        ->orWhereRaw('LOWER(second_last_name) LIKE ?', ["%{$queryLower}%"])
-                        ->orWhereRaw('LOWER(email) LIKE ?', ["%{$queryLower}%"])
-                        ->orWhereRaw('LOWER(phone) LIKE ?', ["%{$queryLower}%"]);
+            ->when(mb_strlen($query) >= 3, function ($builder) use ($query) {
+                $builder->where(function ($inner) use ($query) {
+                   $inner->whereRaw('LOWER(first_name) LIKE ?', ["%{$query}%"])
+                        ->orWhereRaw('LOWER(middle_name) LIKE ?', ["%{$query}%"])
+                        ->orWhereRaw('LOWER(last_name) LIKE ?', ["%{$query}%"])
+                        ->orWhereRaw('LOWER(second_last_name) LIKE ?', ["%{$query}%"])
+                        ->orWhereRaw('LOWER(email) LIKE ?', ["%{$query}%"])
+                        ->orWhereRaw('LOWER(phone) LIKE ?', ["%{$query}%"]);
                 });
             })
+            ->when(mb_strlen($query) < 3, fn ($builder) => $builder->whereRaw('1 = 0'))
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->limit(15)
@@ -49,18 +50,18 @@ class ClientSearchController extends Controller
 
                 return [
                     'id' => $client->id,
-                    'label' => trim(implode(' ', array_filter([
-                        $client->first_name,
-                        $client->middle_name,
-                        $client->last_name,
-                        $client->second_last_name
-                    ]))),
-                    'subtitle' => $subtitleParts
+                    'label' => $client->full_name,
+                     'subtitle' => $subtitleParts
                         ? implode(' • ', $subtitleParts)
                         : 'Sin teléfono ni email',
                     'phone' => $client->phone,
                     'email' => $client->email,
                     'rfc' => $client->rfc,
+                    'first_name' => $client->first_name,
+                    'middle_name' => $client->middle_name,
+                    'last_name' => $client->last_name,
+                    'second_last_name' => $client->second_last_name,
+                    'address' => $client->street,
                 ];
             })
             ->values();

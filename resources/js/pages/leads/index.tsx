@@ -452,30 +452,45 @@ export default function LeadsIndex({
                     </Field>
                     <Field>
                         <Label htmlFor="lead-source">Fuente</Label>
-                        <Combobox
-                            items={sourceOptions}
-                            disabled={formMode === 'view'}
-                        >
-                            <ComboboxInput
-                                className="w-full"
-                                placeholder="Seleccione fuente"
-                                aria-label="Fuente"
-                                disabled={formMode === 'view'}
-                            />
-                            <ComboboxContent>
-                                <ComboboxEmpty>No se encontraron fuentes.</ComboboxEmpty>
-                                <ComboboxList>
-                                    {(item) => (
-                                        <ComboboxItem key={item.value} value={item.value}>
-                                        {item.label}
-                                        </ComboboxItem>
-                                    )}
-                                </ComboboxList>
-                            </ComboboxContent>
-                        </Combobox>
-                        {form.errors.source && (
-                            <FieldError>{form.errors.source}</FieldError>
-                        )}
+
+                        {(() => {
+                            const selected =
+                                sourceOptions.find((o) => o.value === form.data.source) ?? null;
+
+                            return (
+                                <Combobox
+                                    items={sourceOptions}
+                                    value={selected}
+                                    onValueChange={(item) => form.setData("source", item?.value ?? "")}
+                                    itemToStringValue={(item) => item?.label ?? ""}
+                                    disabled={formMode === "view"}
+                                >
+                                    <ComboboxInput
+                                        placeholder="Seleccione fuente"
+                                        disabled={formMode === "view"}
+                                    />
+
+                                    {/* 👇 clave en Dialog: fuerza captura de clicks y evita clipping */}
+                                    <ComboboxContent className="pointer-events-auto z-[100] overflow-visible">
+                                        <ComboboxEmpty>No se encontraron fuentes.</ComboboxEmpty>
+
+                                        <ComboboxList>
+                                            {(item) => (
+                                                <ComboboxItem
+                                                    key={item.value}
+                                                    value={item}
+                                                    className="pointer-events-auto"
+                                                >
+                                                    {item.label}
+                                                </ComboboxItem>
+                                            )}
+                                        </ComboboxList>
+                                    </ComboboxContent>
+                                </Combobox>
+                            );
+                        })()}
+
+                        {form.errors.source && <FieldError>{form.errors.source}</FieldError>}
                     </Field>
                     {formMode !== 'create' && (
                         <>
