@@ -67,9 +67,8 @@ class ClientController extends Controller
         $user = $request->user();
 
         if ($user instanceof User) {
-           
             $agentId = $user->agent_id;
-dd($agentId, $client);
+
             if (! $agentId || $client->agent_id !== $agentId) {
                 abort(403);
             }

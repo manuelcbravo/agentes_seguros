@@ -190,7 +190,7 @@ class LeadController extends Controller
     }
 
 
-    public function show(Request $request, Lead $lead): Response
+    public function profileShow(Request $request, Lead $lead): Response
     {
         $this->authorizeLead($request, $lead);
 
@@ -268,6 +268,13 @@ class LeadController extends Controller
                 }),
             'trackingCatalogs' => $this->trackingCatalogs(),
         ]);
+    }
+
+    public function show(Request $request, Lead $lead): RedirectResponse
+    {
+        $this->authorizeLead($request, $lead);
+
+        return redirect()->route('leads.profile.show', $lead);
     }
     public function destroy(Request $request, Lead $lead): RedirectResponse
     {

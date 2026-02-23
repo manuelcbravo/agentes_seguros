@@ -274,7 +274,7 @@ export default function LeadsIndex({
                         setLeadForTracking(lead);
                     }}
                     onView={(lead) => {
-                        router.get(route('leads.show', lead.id));
+                        router.get(route('leads.profile.show', lead.id));
                     }}
                     onFiles={setLeadForFiles}
                     onConvert={setLeadToConvert}

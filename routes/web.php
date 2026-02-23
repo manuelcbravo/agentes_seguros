@@ -70,6 +70,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('leads/archived', [LeadController::class, 'archived'])->name('leads.archived.index');
     Route::get('leads/ganados', [LeadController::class, 'ganados'])->name('leads.ganados');
     Route::get('leads/no-interesados', [LeadController::class, 'noInteresados'])->name('leads.no-interesados');
+    Route::get('leads/profile/{lead}', [LeadController::class, 'profileShow'])->name('leads.profile.show');
     Route::patch('leads/{lead}/status', [LeadController::class, 'updateStatus'])->name('leads.update-status');
     Route::post('leads/{lead}/convert-to-client', [LeadController::class, 'convertToClient'])->name('leads.convertToClient');
     Route::post('leads/{lead}/archive', [LeadController::class, 'archive'])->name('leads.archive');

@@ -162,7 +162,7 @@ export function LeadsTable({
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => router.get(route('clients.profile', row.id))} >
+                            <DropdownMenuItem onClick={() => router.get(route('leads.profile.show', row.id))} >
                                 <User className="mr-2 size-4" /> Perfil
                             </DropdownMenuItem>
                             {mode !== 'archived' && (

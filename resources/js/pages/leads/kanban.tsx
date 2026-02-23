@@ -271,7 +271,7 @@ export default function LeadsKanban({
                                                     </article>
                                                 </ContextMenuTrigger>
                                                 <ContextMenuContent>
-                                                    <ContextMenuItem onClick={() => router.get(route('clients.profile', lead.id))}>
+                                                    <ContextMenuItem onClick={() => router.get(route('leads.profile.show', lead.id))}>
                                                         <User className="mr-2 size-4" />{' '}
                                                         Perfil
                                                     </ContextMenuItem>
