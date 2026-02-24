@@ -1,5 +1,6 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { route } from 'ziggy-js';
 import { Button } from '@/components/ui/button';
@@ -40,11 +41,14 @@ export default function PolicyWizardPage({
 }: any) {
     const [step, setStep] = useState(initialStep);
     const [sameAsClient, setSameAsClient] = useState(true);
+    const [isNewClient, setIsNewClient] = useState(
+        !Boolean(preselectedClient ?? policy?.client_id),
+    );
     const [beneficiaries, setBeneficiaries] = useState(
         policy?.beneficiaries ?? [],
     );
     const [selectedClient, setSelectedClient] = useState<any>(
-        preselectedClient ?? null,
+        preselectedClient ?? policy?.client ?? null,
     );
     const [clientForm, setClientForm] = useState({
         first_name: preselectedClient?.first_name ?? '',
@@ -56,6 +60,10 @@ export default function PolicyWizardPage({
         rfc: preselectedClient?.rfc ?? '',
         address: preselectedClient?.address ?? '',
     });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [activeAction, setActiveAction] = useState<
+        'next' | 'finish' | 'save-exit' | null
+    >(null);
     const { flash } = usePage<SharedData>().props;
 
     const form = useForm({
@@ -118,18 +126,81 @@ export default function PolicyWizardPage({
         0,
     );
 
+    const hasExistingInsured = insureds.some(
+        (item: any) => String(item.client_id) === String(form.data.client_id),
+    );
+
     const saveCurrentStep = (onSuccess?: () => void) => {
+        setIsSubmitting(true);
+        setActiveAction('next');
+
+        const visitOptions = {
+            preserveScroll: true,
+            onSuccess,
+            onFinish: () => {
+                setIsSubmitting(false);
+                setActiveAction(null);
+            },
+        };
+
         if (step === 1) {
-            return form.post(route('polizas.wizard.step1'), { preserveScroll: true, onSuccess });
+            if (isNewClient) {
+                form.setData('client_id', '');
+            }
+
+            return form.post(route('polizas.wizard.step1'), visitOptions);
         }
         if (step === 2) {
-            form.setData('same_as_client', sameAsClient as any);
-            return form.post(route('polizas.wizard.step2'), { preserveScroll: true, onSuccess });
+            form.setData(
+                'same_as_client',
+                (hasExistingInsured ? sameAsClient : false) as any,
+            );
+            return form.post(route('polizas.wizard.step2'), visitOptions);
         }
         if (step === 3) {
-            return form.post(route('polizas.wizard.step3'), { preserveScroll: true, onSuccess });
+            return form.post(route('polizas.wizard.step3'), visitOptions);
         }
-        return router.post(route('polizas.wizard.step4'), { policy_id: form.data.policy_id, beneficiaries }, { preserveScroll: true, onSuccess });
+
+        return router.post(
+            route('polizas.wizard.step4'),
+            { policy_id: form.data.policy_id, beneficiaries },
+            visitOptions,
+        );
+    };
+
+    const handleSaveAndExit = () => {
+        setIsSubmitting(true);
+        setActiveAction('save-exit');
+
+        router.post(
+            route('polizas.wizard.save-exit'),
+            {
+                policy_id: form.data.policy_id,
+                current_step: step,
+            },
+            {
+                onFinish: () => {
+                    setIsSubmitting(false);
+                    setActiveAction(null);
+                },
+            },
+        );
+    };
+
+    const handleFinish = () => {
+        setIsSubmitting(true);
+        setActiveAction('finish');
+
+        router.post(
+            route('polizas.wizard.finish', form.data.policy_id),
+            {},
+            {
+                onFinish: () => {
+                    setIsSubmitting(false);
+                    setActiveAction(null);
+                },
+            },
+        );
     };
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -162,10 +233,14 @@ export default function PolicyWizardPage({
                             <Step1Contratante
                                 preselectedClient={preselectedClient}
                                 selectedId={form.data.client_id}
-                                setSelectedId={(v: string) => form.setData('client_id', v)}
+                                setSelectedId={(v: string) =>
+                                    form.setData('client_id', v)
+                                }
                                 clientForm={clientForm}
                                 setClientForm={setClientForm}
                                 onClientSelected={setSelectedClient}
+                                isNewClient={isNewClient}
+                                setIsNewClient={setIsNewClient}
                             />
                         )}
                         {step === 2 && (
@@ -174,8 +249,11 @@ export default function PolicyWizardPage({
                                 sameAsClient={sameAsClient}
                                 setSameAsClient={setSameAsClient}
                                 insured={form.data.insured}
-                                setInsured={(insured: any) => form.setData('insured', insured)}
+                                setInsured={(insured: any) =>
+                                    form.setData('insured', insured)
+                                }
                                 insureds={insureds}
+                                hasExistingInsured={hasExistingInsured}
                             />
                         )}
                         {step === 3 && (
@@ -200,32 +278,64 @@ export default function PolicyWizardPage({
                     <CardFooter className="sticky bottom-0 col-span-full flex justify-between border-t bg-background py-4">
                         <Button
                             variant="outline"
-                            onClick={() =>
-                                router.post(route('polizas.wizard.save-exit'), {
-                                    policy_id: form.data.policy_id,
-                                    current_step: step,
-                                })
-                            }
+                            disabled={isSubmitting}
+                            onClick={handleSaveAndExit}
                         >
-                            Guardar y salir
+                            {isSubmitting && activeAction === 'save-exit' ? (
+                                <>
+                                    <Loader2 className="size-4 animate-spin" />{' '}
+                                    Guardando...
+                                </>
+                            ) : (
+                                'Guardar y salir'
+                            )}
                         </Button>
                         <div className="flex gap-2">
-                            <Button variant="secondary" disabled={step === 1} onClick={() => setStep((s: number) => s - 1)}>
+                            <Button
+                                variant="secondary"
+                                disabled={step === 1 || isSubmitting}
+                                onClick={() => setStep((s: number) => s - 1)}
+                            >
                                 Atrás
                             </Button>
                             {step < 4 ? (
                                 <Button
-                                    disabled={step === 1 && !form.data.client_id}
-                                    onClick={() => saveCurrentStep(() => setStep((s: number) => Math.min(4, s + 1)))}
+                                    disabled={isSubmitting}
+                                    onClick={() =>
+                                        saveCurrentStep(() =>
+                                            setStep((s: number) =>
+                                                Math.min(4, s + 1),
+                                            ),
+                                        )
+                                    }
                                 >
-                                    Siguiente
+                                    {isSubmitting && activeAction === 'next' ? (
+                                        <>
+                                            <Loader2 className="size-4 animate-spin" />{' '}
+                                            Guardando...
+                                        </>
+                                    ) : (
+                                        'Siguiente'
+                                    )}
                                 </Button>
                             ) : (
                                 <Button
-                                    disabled={totalPercent !== 100 || !form.data.policy_id}
-                                    onClick={() => router.post(route('polizas.wizard.finish', form.data.policy_id))}
+                                    disabled={
+                                        totalPercent !== 100 ||
+                                        !form.data.policy_id ||
+                                        isSubmitting
+                                    }
+                                    onClick={handleFinish}
                                 >
-                                    Terminar
+                                    {isSubmitting &&
+                                    activeAction === 'finish' ? (
+                                        <>
+                                            <Loader2 className="size-4 animate-spin" />{' '}
+                                            Finalizando...
+                                        </>
+                                    ) : (
+                                        'Terminar'
+                                    )}
                                 </Button>
                             )}
                         </div>
