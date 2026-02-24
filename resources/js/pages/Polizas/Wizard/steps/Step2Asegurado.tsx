@@ -1,4 +1,5 @@
 import { Checkbox } from '@/components/ui/checkbox';
+import { FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,6 +11,7 @@ export default function Step2Asegurado({
     insured,
     setInsured,
     hasExistingInsured,
+    errors,
 }: any) {
     const showSamePersonOption = Boolean(hasExistingInsured);
 
@@ -37,6 +39,7 @@ export default function Step2Asegurado({
                 <>
                     <section className="space-y-3 rounded-lg border p-4">
                         <h3 className="font-semibold">Identidad</h3>
+                        <FieldError>{errors?.insured}</FieldError>
                         <div className="grid gap-3 md:grid-cols-2">
                             <div>
                                 <Label htmlFor="insured_first_name">
@@ -53,6 +56,9 @@ export default function Step2Asegurado({
                                         })
                                     }
                                 />
+                                <FieldError>
+                                    {errors?.['insured.first_name']}
+                                </FieldError>
                             </div>
                             <div>
                                 <Label htmlFor="insured_middle_name">
@@ -85,6 +91,9 @@ export default function Step2Asegurado({
                                         })
                                     }
                                 />
+                                <FieldError>
+                                    {errors?.['insured.last_name']}
+                                </FieldError>
                             </div>
                             <div>
                                 <Label htmlFor="insured_second_last_name">
@@ -131,6 +140,9 @@ export default function Step2Asegurado({
                                         })
                                     }
                                 />
+                                <FieldError>
+                                    {errors?.['insured.birthday']}
+                                </FieldError>
                             </div>
                             <div>
                                 <Label htmlFor="insured_age_current">

@@ -27,13 +27,34 @@ class PolizaController extends Controller
 
         $polizas = Policy::query()
             ->where('agent_id', $agentId)
-            ->with('insured:id,email,phone')
+            ->with([
+                'client:id,first_name,middle_name,last_name,second_last_name',
+                'insured:id,first_name,middle_name,last_name,second_last_name,email,phone',
+                'insuranceCompany:id,name',
+                'productCatalog:id,name',
+            ])
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $nestedQuery) use ($search): void {
                     $nestedQuery->where('status', 'like', "%{$search}%")
                         ->orWhere('product', 'like', "%{$search}%")
                         ->orWhere('payment_channel', 'like', "%{$search}%")
-                        ->orWhere('periodicity', 'like', "%{$search}%");
+                        ->orWhere('periodicity', 'like', "%{$search}%")
+                        ->orWhereHas('client', function (Builder $clientQuery) use ($search): void {
+                            $clientQuery
+                                ->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('middle_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('second_last_name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('insured', function (Builder $insuredQuery) use ($search): void {
+                            $insuredQuery
+                                ->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('middle_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('second_last_name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('insuranceCompany', fn (Builder $insuranceQuery) => $insuranceQuery->where('name', 'like', "%{$search}%"))
+                        ->orWhereHas('productCatalog', fn (Builder $productQuery) => $productQuery->where('name', 'like', "%{$search}%"));
                 });
             })
             ->when($paymentChannel, fn (Builder $query) => $query->where('payment_channel', $paymentChannel))
@@ -46,7 +67,16 @@ class PolizaController extends Controller
             ->get();
 
         return Inertia::render('Polizas/index', [
-            'polizas' => $polizas,
+            'polizas' => $polizas->map(fn (Policy $policy) => [
+                'id' => $policy->id,
+                'status' => $policy->status,
+                'payment_channel' => $policy->payment_channel,
+                'risk_premium' => $policy->risk_premium,
+                'client_name' => $policy->client?->full_name,
+                'insured_name' => $policy->insured?->full_name,
+                'insurance_company_name' => $policy->insuranceCompany?->name,
+                'product_name' => $policy->productCatalog?->name ?? $policy->product,
+            ]),
             'paymentChannels' => $paymentChannels,
             'filters' => ['search' => $search, 'payment_channel' => $paymentChannel],
             'trackingCatalogs' => $this->trackingCatalogs(),
