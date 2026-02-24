@@ -1,11 +1,8 @@
+import { Loader2, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Loader2, PlusCircle, Search } from 'lucide-react';
-import { toast } from 'sonner';
 import { route } from 'ziggy-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Combobox,
     ComboboxContent,
@@ -14,6 +11,8 @@ import {
     ComboboxItem,
     ComboboxList,
 } from '@/components/ui/combobox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 type Client = {
     id: string;
@@ -27,17 +26,6 @@ type Client = {
     phone?: string;
     rfc?: string;
     address?: string;
-};
-
-const emptyQuickClient = {
-    first_name: '',
-    middle_name: '',
-    last_name: '',
-    second_last_name: '',
-    email: '',
-    phone: '',
-    rfc: '',
-    address: '',
 };
 
 export default function Step1Contratante({
@@ -55,8 +43,6 @@ export default function Step1Contratante({
     const [results, setResults] = useState<Client[]>(
         preselectedClient ? [preselectedClient] : [],
     );
-    const [showCreatePanel, setShowCreatePanel] = useState(false);
-    const [quickClient, setQuickClient] = useState(emptyQuickClient);
 
     useEffect(() => {
         const timer = window.setTimeout(() => {
@@ -165,70 +151,11 @@ export default function Step1Contratante({
         onClientSelected(client);
     };
 
-    const createClient = async () => {
-        try {
-            const response = await fetch(route('polizas.wizard.client.store'), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': (document
-                        .querySelector('meta[name="csrf-token"]')
-                        ?.getAttribute('content') ?? '') as string,
-                },
-                body: JSON.stringify(quickClient),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                toast.error(data.message ?? 'No se pudo crear el cliente.');
-                return;
-            }
-
-            const client: Client = data;
-            persistSelected(client);
-            setShowCreatePanel(false);
-            setQuickClient(emptyQuickClient);
-            toast.success('Cliente creado y seleccionado.');
-        } catch {
-            toast.error('No se pudo crear el cliente.');
-        }
-    };
-
     return (
         <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm font-medium">Cliente / Contratante</p>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowCreatePanel((value) => !value)}
-                    className="gap-2"
-                >
-                    <PlusCircle className="size-4" /> Agregar cliente
-                </Button>
             </div>
-
-            {showCreatePanel && (
-                <Card>
-                    <CardContent className="grid gap-3 pt-5 md:grid-cols-2">
-                        <Input placeholder="Nombre(s)*" value={quickClient.first_name} onChange={(e) => setQuickClient({ ...quickClient, first_name: e.target.value })} />
-                        <Input placeholder="Segundo nombre" value={quickClient.middle_name} onChange={(e) => setQuickClient({ ...quickClient, middle_name: e.target.value })} />
-                        <Input placeholder="Apellido paterno*" value={quickClient.last_name} onChange={(e) => setQuickClient({ ...quickClient, last_name: e.target.value })} />
-                        <Input placeholder="Apellido materno" value={quickClient.second_last_name} onChange={(e) => setQuickClient({ ...quickClient, second_last_name: e.target.value })} />
-                        <Input placeholder="Email" value={quickClient.email} onChange={(e) => setQuickClient({ ...quickClient, email: e.target.value })} />
-                        <Input placeholder="Teléfono" value={quickClient.phone} onChange={(e) => setQuickClient({ ...quickClient, phone: e.target.value })} />
-                        <Input placeholder="RFC" value={quickClient.rfc} onChange={(e) => setQuickClient({ ...quickClient, rfc: e.target.value })} />
-                        <Input placeholder="Dirección básica" value={quickClient.address} onChange={(e) => setQuickClient({ ...quickClient, address: e.target.value })} />
-                        <div className="md:col-span-2">
-                            <Button type="button" onClick={createClient} disabled={!quickClient.first_name || !quickClient.last_name}>Guardar cliente</Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
 
             {!selected ? (
                 <Combobox
@@ -263,7 +190,9 @@ export default function Step1Contratante({
                                         Buscando clientes...
                                     </div>
                                 )}
-                                {!loading && <ComboboxEmpty>Sin resultados.</ComboboxEmpty>}
+                                {!loading && results.length === 0 && (
+                                    <ComboboxEmpty>Sin resultados.</ComboboxEmpty>
+                                )}
                                 {results.map((client) => (
                                     <ComboboxItem
                                         key={client.id}
@@ -273,6 +202,11 @@ export default function Step1Contratante({
                                             <p className="font-medium">
                                                 {client.full_name}
                                             </p>
+                                            {client.rfc && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    RFC: {client.rfc}
+                                                </p>
+                                            )}
                                             <p className="text-xs text-muted-foreground">
                                                 {client.subtitle ??
                                                     'Sin teléfono ni email'}
@@ -305,14 +239,14 @@ export default function Step1Contratante({
                     <CardContent className="space-y-3 pt-6 text-sm">
                         <p className="font-semibold">Datos rápidos del contratante</p>
                         <div className="grid gap-3 md:grid-cols-2">
-                            <div><Label>Nombre(s)</Label><Input value={clientForm.first_name} onChange={(e) => setClientForm({ ...clientForm, first_name: e.target.value })} /></div>
-                            <div><Label>Segundo nombre</Label><Input value={clientForm.middle_name} onChange={(e) => setClientForm({ ...clientForm, middle_name: e.target.value })} /></div>
-                            <div><Label>Apellido paterno</Label><Input value={clientForm.last_name} onChange={(e) => setClientForm({ ...clientForm, last_name: e.target.value })} /></div>
-                            <div><Label>Apellido materno</Label><Input value={clientForm.second_last_name} onChange={(e) => setClientForm({ ...clientForm, second_last_name: e.target.value })} /></div>
-                            <div><Label>Email</Label><Input value={clientForm.email} onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })} /></div>
-                            <div><Label>Teléfono</Label><Input value={clientForm.phone} onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })} /></div>
-                            <div><Label>RFC</Label><Input value={clientForm.rfc} onChange={(e) => setClientForm({ ...clientForm, rfc: e.target.value })} /></div>
-                            <div><Label>Dirección básica</Label><Input value={clientForm.address} onChange={(e) => setClientForm({ ...clientForm, address: e.target.value })} /></div>
+                            <div><Label htmlFor="client_first_name">Nombre(s)</Label><Input id="client_first_name" value={clientForm.first_name} onChange={(e) => setClientForm({ ...clientForm, first_name: e.target.value })} /></div>
+                            <div><Label htmlFor="client_middle_name">Segundo nombre</Label><Input id="client_middle_name" value={clientForm.middle_name} onChange={(e) => setClientForm({ ...clientForm, middle_name: e.target.value })} /></div>
+                            <div><Label htmlFor="client_last_name">Apellido paterno</Label><Input id="client_last_name" value={clientForm.last_name} onChange={(e) => setClientForm({ ...clientForm, last_name: e.target.value })} /></div>
+                            <div><Label htmlFor="client_second_last_name">Apellido materno</Label><Input id="client_second_last_name" value={clientForm.second_last_name} onChange={(e) => setClientForm({ ...clientForm, second_last_name: e.target.value })} /></div>
+                            <div><Label htmlFor="client_email">Email</Label><Input id="client_email" value={clientForm.email} onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })} /></div>
+                            <div><Label htmlFor="client_phone">Teléfono</Label><Input id="client_phone" value={clientForm.phone} onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })} /></div>
+                            <div><Label htmlFor="client_rfc">RFC</Label><Input id="client_rfc" value={clientForm.rfc} onChange={(e) => setClientForm({ ...clientForm, rfc: e.target.value })} /></div>
+                            <div><Label htmlFor="client_address">Dirección básica</Label><Input id="client_address" value={clientForm.address} onChange={(e) => setClientForm({ ...clientForm, address: e.target.value })} /></div>
                         </div>
                     </CardContent>
                 </Card>
