@@ -107,6 +107,12 @@ export default function PolicyWizardPage({
         form.setData('client', clientForm as any);
     }, [clientForm]);
 
+    useEffect(() => {
+        if (policy?.id && form.data.policy_id !== policy.id) {
+            form.setData('policy_id', policy.id as any);
+        }
+    }, [form, policy?.id]);
+
     const totalPercent = beneficiaries.reduce(
         (sum: number, b: any) => sum + Number(b.benefit_percentage || 0),
         0,
