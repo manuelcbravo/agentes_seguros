@@ -25,7 +25,12 @@ export default function Step4Beneficiarios({
     relationships,
 }: any) {
     const beneficiaryFullName = (beneficiary: any) =>
-        [beneficiary.first_name, beneficiary.middle_name, beneficiary.last_name, beneficiary.second_last_name]
+        [
+            beneficiary.first_name,
+            beneficiary.middle_name,
+            beneficiary.last_name,
+            beneficiary.second_last_name,
+        ]
             .filter(Boolean)
             .join(' ')
             .trim();
@@ -36,7 +41,7 @@ export default function Step4Beneficiarios({
         middle_name: '',
         last_name: '',
         second_last_name: '',
-        relationship_id: 0,
+        relationship_id: '',
         benefit_percentage: 0,
     });
     const total = useMemo(
@@ -50,14 +55,20 @@ export default function Step4Beneficiarios({
     );
 
     const addBeneficiary = () => {
-        if (!newBeneficiary.first_name || !newBeneficiary.last_name) return;
+        if (
+            !newBeneficiary.first_name ||
+            !newBeneficiary.last_name ||
+            !newBeneficiary.relationship_id ||
+            Number(newBeneficiary.benefit_percentage) <= 0
+        )
+            return;
         setBeneficiaries([...beneficiaries, { ...newBeneficiary }]);
         setNewBeneficiary({
             first_name: '',
             middle_name: '',
             last_name: '',
             second_last_name: '',
-            relationship_id: 0,
+            relationship_id: '',
             benefit_percentage: 0,
         });
         setOpen(false);
@@ -99,7 +110,9 @@ export default function Step4Beneficiarios({
                                 key={`${b.id ?? 'new'}-${index}`}
                                 className="border-t"
                             >
-                                <td className="p-2">{beneficiaryFullName(b) || '—'}</td>
+                                <td className="p-2">
+                                    {beneficiaryFullName(b) || '—'}
+                                </td>
                                 <td className="p-2">
                                     {relationships.find(
                                         (r: any) => r.id === b.relationship_id,
@@ -119,8 +132,11 @@ export default function Step4Beneficiarios({
                                                             ? {
                                                                   ...row,
                                                                   benefit_percentage:
-                                                                      e.target
-                                                                          .value,
+                                                                      Number(
+                                                                          e
+                                                                              .target
+                                                                              .value,
+                                                                      ),
                                                               }
                                                             : row,
                                                 ),
@@ -198,12 +214,19 @@ export default function Step4Beneficiarios({
                             }
                         />
                         <Combobox
-                            itemToStringLabel={(value) => !value ? 'Seleccione parentesco' : (relationships.find((r: any) => String(r.id) === String(value))?.name ?? '')}
+                            itemToStringLabel={(value) =>
+                                !value
+                                    ? 'Seleccione parentesco'
+                                    : (relationships.find(
+                                          (r: any) =>
+                                              String(r.id) === String(value),
+                                      )?.name ?? '')
+                            }
                             value={newBeneficiary.relationship_id}
                             onValueChange={(value) =>
                                 setNewBeneficiary({
                                     ...newBeneficiary,
-                                    relationship_id: value,
+                                    relationship_id: value ?? '',
                                 })
                             }
                         >
@@ -214,10 +237,17 @@ export default function Step4Beneficiarios({
                             />
                             <ComboboxContent className="pointer-events-auto z-[100] overflow-visible">
                                 <ComboboxList>
-                                    <ComboboxEmpty>No se encontraron parentescos.</ComboboxEmpty>
-                                    <ComboboxItem value="">Parentesco</ComboboxItem>
+                                    <ComboboxEmpty>
+                                        No se encontraron parentescos.
+                                    </ComboboxEmpty>
+                                    <ComboboxItem value="">
+                                        Parentesco
+                                    </ComboboxItem>
                                     {relationships.map((r: any) => (
-                                        <ComboboxItem key={r.id} value={String(r.id)}>
+                                        <ComboboxItem
+                                            key={r.id}
+                                            value={String(r.id)}
+                                        >
                                             {r.name}
                                         </ComboboxItem>
                                     ))}

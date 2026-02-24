@@ -40,11 +40,14 @@ export default function PolicyWizardPage({
 }: any) {
     const [step, setStep] = useState(initialStep);
     const [sameAsClient, setSameAsClient] = useState(true);
+    const [isNewClient, setIsNewClient] = useState(
+        !Boolean(preselectedClient ?? policy?.client_id),
+    );
     const [beneficiaries, setBeneficiaries] = useState(
         policy?.beneficiaries ?? [],
     );
     const [selectedClient, setSelectedClient] = useState<any>(
-        preselectedClient ?? null,
+        preselectedClient ?? policy?.client ?? null,
     );
     const [clientForm, setClientForm] = useState({
         first_name: preselectedClient?.first_name ?? '',
@@ -118,18 +121,42 @@ export default function PolicyWizardPage({
         0,
     );
 
+    const hasExistingInsured = insureds.some(
+        (item: any) => String(item.client_id) === String(form.data.client_id),
+    );
+
     const saveCurrentStep = (onSuccess?: () => void) => {
         if (step === 1) {
-            return form.post(route('polizas.wizard.step1'), { preserveScroll: true, onSuccess });
+            if (isNewClient) {
+                form.setData('client_id', '');
+            }
+
+            return form.post(route('polizas.wizard.step1'), {
+                preserveScroll: true,
+                onSuccess,
+            });
         }
         if (step === 2) {
-            form.setData('same_as_client', sameAsClient as any);
-            return form.post(route('polizas.wizard.step2'), { preserveScroll: true, onSuccess });
+            form.setData(
+                'same_as_client',
+                (hasExistingInsured ? sameAsClient : false) as any,
+            );
+            return form.post(route('polizas.wizard.step2'), {
+                preserveScroll: true,
+                onSuccess,
+            });
         }
         if (step === 3) {
-            return form.post(route('polizas.wizard.step3'), { preserveScroll: true, onSuccess });
+            return form.post(route('polizas.wizard.step3'), {
+                preserveScroll: true,
+                onSuccess,
+            });
         }
-        return router.post(route('polizas.wizard.step4'), { policy_id: form.data.policy_id, beneficiaries }, { preserveScroll: true, onSuccess });
+        return router.post(
+            route('polizas.wizard.step4'),
+            { policy_id: form.data.policy_id, beneficiaries },
+            { preserveScroll: true, onSuccess },
+        );
     };
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -162,10 +189,14 @@ export default function PolicyWizardPage({
                             <Step1Contratante
                                 preselectedClient={preselectedClient}
                                 selectedId={form.data.client_id}
-                                setSelectedId={(v: string) => form.setData('client_id', v)}
+                                setSelectedId={(v: string) =>
+                                    form.setData('client_id', v)
+                                }
                                 clientForm={clientForm}
                                 setClientForm={setClientForm}
                                 onClientSelected={setSelectedClient}
+                                isNewClient={isNewClient}
+                                setIsNewClient={setIsNewClient}
                             />
                         )}
                         {step === 2 && (
@@ -174,8 +205,11 @@ export default function PolicyWizardPage({
                                 sameAsClient={sameAsClient}
                                 setSameAsClient={setSameAsClient}
                                 insured={form.data.insured}
-                                setInsured={(insured: any) => form.setData('insured', insured)}
+                                setInsured={(insured: any) =>
+                                    form.setData('insured', insured)
+                                }
                                 insureds={insureds}
+                                hasExistingInsured={hasExistingInsured}
                             />
                         )}
                         {step === 3 && (
@@ -210,20 +244,54 @@ export default function PolicyWizardPage({
                             Guardar y salir
                         </Button>
                         <div className="flex gap-2">
-                            <Button variant="secondary" disabled={step === 1} onClick={() => setStep((s: number) => s - 1)}>
+                            <Button
+                                variant="secondary"
+                                disabled={step === 1}
+                                onClick={() => setStep((s: number) => s - 1)}
+                            >
                                 Atrás
                             </Button>
                             {step < 4 ? (
                                 <Button
-                                    disabled={step === 1 && !form.data.client_id}
-                                    onClick={() => saveCurrentStep(() => setStep((s: number) => Math.min(4, s + 1)))}
+                                    disabled={
+                                        (step === 1 &&
+                                            !isNewClient &&
+                                            !form.data.client_id) ||
+                                        (step === 1 &&
+                                            isNewClient &&
+                                            (!clientForm.first_name ||
+                                                !clientForm.last_name)) ||
+                                        (step === 2 &&
+                                            (!hasExistingInsured ||
+                                                !sameAsClient) &&
+                                            (!form.data.insured.first_name ||
+                                                !form.data.insured.last_name ||
+                                                !form.data.insured.birthday))
+                                    }
+                                    onClick={() =>
+                                        saveCurrentStep(() =>
+                                            setStep((s: number) =>
+                                                Math.min(4, s + 1),
+                                            ),
+                                        )
+                                    }
                                 >
                                     Siguiente
                                 </Button>
                             ) : (
                                 <Button
-                                    disabled={totalPercent !== 100 || !form.data.policy_id}
-                                    onClick={() => router.post(route('polizas.wizard.finish', form.data.policy_id))}
+                                    disabled={
+                                        totalPercent !== 100 ||
+                                        !form.data.policy_id
+                                    }
+                                    onClick={() =>
+                                        router.post(
+                                            route(
+                                                'polizas.wizard.finish',
+                                                form.data.policy_id,
+                                            ),
+                                        )
+                                    }
                                 >
                                     Terminar
                                 </Button>
