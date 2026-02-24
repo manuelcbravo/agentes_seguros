@@ -1,6 +1,6 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { route } from 'ziggy-js';
 import { Button } from '@/components/ui/button';
@@ -42,7 +42,7 @@ export default function PolicyWizardPage({
     const [step, setStep] = useState(initialStep);
     const [sameAsClient, setSameAsClient] = useState(true);
     const [isNewClient, setIsNewClient] = useState(
-        !Boolean(preselectedClient ?? policy?.client_id),
+        !(preselectedClient ?? policy?.client_id),
     );
     const [beneficiaries, setBeneficiaries] = useState(
         policy?.beneficiaries ?? [],
@@ -241,6 +241,8 @@ export default function PolicyWizardPage({
                                 onClientSelected={setSelectedClient}
                                 isNewClient={isNewClient}
                                 setIsNewClient={setIsNewClient}
+                                errors={form.errors}
+                                clearErrors={form.clearErrors}
                             />
                         )}
                         {step === 2 && (
@@ -254,6 +256,7 @@ export default function PolicyWizardPage({
                                 }
                                 insureds={insureds}
                                 hasExistingInsured={hasExistingInsured}
+                                errors={form.errors}
                             />
                         )}
                         {step === 3 && (
@@ -265,6 +268,7 @@ export default function PolicyWizardPage({
                                 periodicities={periodicities}
                                 insuranceCompanies={insuranceCompanies}
                                 products={products}
+                                errors={form.errors}
                             />
                         )}
                         {step === 4 && (
@@ -272,6 +276,7 @@ export default function PolicyWizardPage({
                                 beneficiaries={beneficiaries}
                                 setBeneficiaries={setBeneficiaries}
                                 relationships={relationships}
+                                errors={form.errors}
                             />
                         )}
                     </CardContent>

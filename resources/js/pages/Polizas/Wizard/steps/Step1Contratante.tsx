@@ -12,6 +12,7 @@ import {
     ComboboxItem,
     ComboboxList,
 } from '@/components/ui/combobox';
+import { FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -38,6 +39,8 @@ export default function Step1Contratante({
     onClientSelected,
     isNewClient,
     setIsNewClient,
+    errors,
+    clearErrors,
 }: any) {
     const [query, setQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -165,67 +168,74 @@ export default function Step1Contratante({
             </div>
 
             {!isNewClient && !selected ? (
-                <Combobox
-                    value={selectedId}
-                    open={open && debouncedQuery.length >= 3}
-                    onOpenChange={setOpen}
-                    onValueChange={(value) => {
-                        if (!value) return;
+                <div className="space-y-1">
+                    <Combobox
+                        value={selectedId}
+                        open={open && debouncedQuery.length >= 3}
+                        onOpenChange={setOpen}
+                        onValueChange={(value) => {
+                            if (!value) return;
 
-                        const client =
-                            results.find((item) => item.id === value) ?? null;
-                        if (!client) return;
+                            const client =
+                                results.find((item) => item.id === value) ??
+                                null;
+                            if (!client) return;
 
-                        persistSelected(client);
-                        setOpen(false);
-                    }}
-                >
-                    <ComboboxInput
-                        placeholder="Buscar cliente (mínimo 3 caracteres)..."
-                        value={query}
-                        onChange={(event) => setQuery(event.target.value)}
-                        aria-label="Buscar cliente"
-                        className="w-full"
-                    />
-                    {debouncedQuery.length >= 3 && (
-                        <ComboboxContent>
-                            <ComboboxList>
-                                {loading && (
-                                    <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
-                                        <Loader2 className="size-4 animate-spin" />
-                                        Buscando clientes...
-                                    </div>
-                                )}
-                                {!loading && results.length === 0 && (
-                                    <ComboboxEmpty>
-                                        Sin resultados.
-                                    </ComboboxEmpty>
-                                )}
-                                {results.map((client) => (
-                                    <ComboboxItem
-                                        key={client.id}
-                                        value={client.id}
-                                    >
-                                        <div>
-                                            <p className="font-medium">
-                                                {client.full_name}
-                                            </p>
-                                            {client.rfc && (
-                                                <p className="text-xs text-muted-foreground">
-                                                    RFC: {client.rfc}
-                                                </p>
-                                            )}
-                                            <p className="text-xs text-muted-foreground">
-                                                {client.subtitle ??
-                                                    'Sin teléfono ni email'}
-                                            </p>
+                            persistSelected(client);
+                            clearErrors?.('client_id', 'client');
+                            setOpen(false);
+                        }}
+                    >
+                        <ComboboxInput
+                            placeholder="Buscar cliente (mínimo 3 caracteres)..."
+                            value={query}
+                            onChange={(event) => setQuery(event.target.value)}
+                            aria-label="Buscar cliente"
+                            className="w-full"
+                        />
+                        {debouncedQuery.length >= 3 && (
+                            <ComboboxContent>
+                                <ComboboxList>
+                                    {loading && (
+                                        <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
+                                            <Loader2 className="size-4 animate-spin" />
+                                            Buscando clientes...
                                         </div>
-                                    </ComboboxItem>
-                                ))}
-                            </ComboboxList>
-                        </ComboboxContent>
-                    )}
-                </Combobox>
+                                    )}
+                                    {!loading && results.length === 0 && (
+                                        <ComboboxEmpty>
+                                            Sin resultados.
+                                        </ComboboxEmpty>
+                                    )}
+                                    {results.map((client) => (
+                                        <ComboboxItem
+                                            key={client.id}
+                                            value={client.id}
+                                        >
+                                            <div>
+                                                <p className="font-medium">
+                                                    {client.full_name}
+                                                </p>
+                                                {client.rfc && (
+                                                    <p className="text-xs text-muted-foreground">
+                                                        RFC: {client.rfc}
+                                                    </p>
+                                                )}
+                                                <p className="text-xs text-muted-foreground">
+                                                    {client.subtitle ??
+                                                        'Sin teléfono ni email'}
+                                                </p>
+                                            </div>
+                                        </ComboboxItem>
+                                    ))}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        )}
+                    </Combobox>
+                    <FieldError>
+                        {errors?.client_id ?? errors?.client}
+                    </FieldError>
+                </div>
             ) : null}
 
             {!isNewClient && selected ? (
@@ -263,6 +273,9 @@ export default function Step1Contratante({
                                         })
                                     }
                                 />
+                                <FieldError>
+                                    {errors?.['client.first_name']}
+                                </FieldError>
                             </div>
                             <div>
                                 <Label htmlFor="client_middle_name">
@@ -293,6 +306,9 @@ export default function Step1Contratante({
                                         })
                                     }
                                 />
+                                <FieldError>
+                                    {errors?.['client.last_name']}
+                                </FieldError>
                             </div>
                             <div>
                                 <Label htmlFor="client_second_last_name">

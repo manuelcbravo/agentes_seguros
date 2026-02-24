@@ -16,6 +16,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 
@@ -23,6 +24,7 @@ export default function Step4Beneficiarios({
     beneficiaries,
     setBeneficiaries,
     relationships,
+    errors,
 }: any) {
     const beneficiaryFullName = (beneficiary: any) =>
         [
@@ -76,6 +78,9 @@ export default function Step4Beneficiarios({
 
     return (
         <div className="space-y-4">
+            {errors?.beneficiaries && (
+                <FieldError>{errors.beneficiaries}</FieldError>
+            )}
             {total !== 100 && (
                 <Alert variant="destructive">
                     <AlertTitle>Validación pendiente</AlertTitle>

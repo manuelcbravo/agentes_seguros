@@ -7,6 +7,7 @@ import {
     ComboboxItem,
     ComboboxList,
 } from '@/components/ui/combobox';
+import { FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -33,6 +34,7 @@ export default function Step3Poliza({
     periodicities,
     insuranceCompanies,
     products,
+    errors,
 }: any) {
     const filteredProducts = useMemo(
         () =>
@@ -48,6 +50,9 @@ export default function Step3Poliza({
         <div className="space-y-5">
             <section className="space-y-3 rounded-lg border p-4">
                 <h3 className="font-semibold">Datos generales</h3>
+                <FieldError>
+                    {errors?.insurance_company_id ?? errors?.product_id}
+                </FieldError>
                 <div className="grid gap-3 md:grid-cols-2">
                     <Combobox
                         itemToStringLabel={(value) =>
@@ -69,6 +74,7 @@ export default function Step3Poliza({
                             placeholder="Marca"
                             aria-label="Marca"
                         />
+                        <FieldError>{errors?.insurance_company_id}</FieldError>
                         <ComboboxContent>
                             <ComboboxList>
                                 <ComboboxEmpty>
@@ -106,6 +112,7 @@ export default function Step3Poliza({
                             placeholder="Producto"
                             aria-label="Producto"
                         />
+                        <FieldError>{errors?.product_id}</FieldError>
                         <ComboboxContent>
                             <ComboboxList>
                                 <ComboboxEmpty>
@@ -136,6 +143,7 @@ export default function Step3Poliza({
                                 setData('coverage_start', e.target.value)
                             }
                         />
+                        <FieldError>{errors?.coverage_start}</FieldError>
                     </div>
                     <div>
                         <Label>Prima riesgo</Label>
@@ -145,6 +153,7 @@ export default function Step3Poliza({
                                 setData('risk_premium', e.target.value)
                             }
                         />
+                        <FieldError>{errors?.risk_premium}</FieldError>
                     </div>
                     <div>
                         <Label>Prima fraccionada</Label>
@@ -154,6 +163,7 @@ export default function Step3Poliza({
                                 setData('fractional_premium', e.target.value)
                             }
                         />
+                        <FieldError>{errors?.fractional_premium}</FieldError>
                     </div>
                 </div>
                 <div className="grid gap-3 md:grid-cols-3">
@@ -176,6 +186,7 @@ export default function Step3Poliza({
                             placeholder="Periodicidad"
                             aria-label="Periodicidad"
                         />
+                        <FieldError>{errors?.periodicity_id}</FieldError>
                         <ComboboxContent>
                             <ComboboxList>
                                 <ComboboxEmpty>
@@ -208,6 +219,7 @@ export default function Step3Poliza({
                             placeholder="Mes"
                             aria-label="Mes"
                         />
+                        <FieldError>{errors?.month}</FieldError>
                         <ComboboxContent>
                             <ComboboxList>
                                 <ComboboxEmpty>
@@ -243,6 +255,7 @@ export default function Step3Poliza({
                             placeholder="Canal de pago"
                             aria-label="Canal de pago"
                         />
+                        <FieldError>{errors?.payment_channel}</FieldError>
                         <ComboboxContent>
                             <ComboboxList>
                                 <ComboboxEmpty>
@@ -278,6 +291,7 @@ export default function Step3Poliza({
                         placeholder="Moneda"
                         aria-label="Moneda catálogo"
                     />
+                    <FieldError>{errors?.currency_id}</FieldError>
                     <ComboboxContent>
                         <ComboboxList>
                             <ComboboxEmpty>

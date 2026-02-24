@@ -47,9 +47,11 @@ type PolizaRow = {
     id: string;
     status: string;
     payment_channel: string | null;
-    product: string | null;
     risk_premium: string | null;
-    insured?: { email: string | null; phone: string | null } | null;
+    client_name: string | null;
+    insured_name: string | null;
+    insurance_company_name: string | null;
+    product_name: string | null;
 };
 
 export default function PolizasIndex({
@@ -111,14 +113,33 @@ export default function PolizasIndex({
             cell: (row) => statusBadge(row.status),
         },
         {
-            key: 'product',
-            header: 'Producto',
-            cell: (row) => row.product ?? '—',
+            key: 'policy_number',
+            header: 'Núm. póliza',
+            cell: (row) => (
+                <span className="font-mono text-xs text-muted-foreground">
+                    {row.id.slice(0, 8).toUpperCase()}
+                </span>
+            ),
         },
         {
-            key: 'insured',
+            key: 'client_name',
+            header: 'Contratante',
+            cell: (row) => row.client_name ?? '—',
+        },
+        {
+            key: 'insured_name',
             header: 'Asegurado',
-            cell: (row) => row.insured?.email ?? row.insured?.phone ?? '—',
+            cell: (row) => row.insured_name ?? '—',
+        },
+        {
+            key: 'insurance_company_name',
+            header: 'Marca',
+            cell: (row) => row.insurance_company_name ?? '—',
+        },
+        {
+            key: 'product_name',
+            header: 'Producto',
+            cell: (row) => row.product_name ?? '—',
         },
         {
             key: 'payment_channel',
@@ -199,12 +220,22 @@ export default function PolizasIndex({
                         <Input
                             value={search}
                             onChange={(event) => setSearch(event.target.value)}
-                            placeholder="Buscar por estatus o producto..."
+                            placeholder="Buscar por contratante, asegurado, marca o producto..."
                         />
                         <Combobox
-                            itemToStringLabel={(value) => !value ? 'Todos los métodos de pago' : (paymentChannels.find((option: any) => String(option.code) === String(value))?.name ?? '')}
+                            itemToStringLabel={(value) =>
+                                !value
+                                    ? 'Todos los métodos de pago'
+                                    : (paymentChannels.find(
+                                          (option: any) =>
+                                              String(option.code) ===
+                                              String(value),
+                                      )?.name ?? '')
+                            }
                             value={paymentChannel}
-                            onValueChange={(value) => setPaymentChannel(value ?? '')}
+                            onValueChange={(value) =>
+                                setPaymentChannel(value ?? '')
+                            }
                         >
                             <ComboboxInput
                                 className="w-full"
@@ -213,10 +244,17 @@ export default function PolizasIndex({
                             />
                             <ComboboxContent>
                                 <ComboboxList>
-                                    <ComboboxEmpty>No se encontraron métodos de pago.</ComboboxEmpty>
-                                    <ComboboxItem value="">Todos los métodos de pago</ComboboxItem>
+                                    <ComboboxEmpty>
+                                        No se encontraron métodos de pago.
+                                    </ComboboxEmpty>
+                                    <ComboboxItem value="">
+                                        Todos los métodos de pago
+                                    </ComboboxItem>
                                     {paymentChannels.map((option: any) => (
-                                        <ComboboxItem key={option.code} value={String(option.code)}>
+                                        <ComboboxItem
+                                            key={option.code}
+                                            value={String(option.code)}
+                                        >
                                             {option.name}
                                         </ComboboxItem>
                                     ))}
@@ -243,7 +281,7 @@ export default function PolizasIndex({
                 trackableId={trackingRow?.id ?? ''}
                 trackableLabel={
                     trackingRow
-                        ? (trackingRow.product ?? trackingRow.id)
+                        ? (trackingRow.product_name ?? trackingRow.id)
                         : 'Registro'
                 }
                 catalogs={trackingCatalogs}
