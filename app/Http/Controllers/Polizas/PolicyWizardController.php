@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\Polizas;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Polizas\SaveStep3PolicyWizardRequest;
+use App\Http\Requests\Polizas\SaveStep4PolicyWizardRequest;
+use App\Http\Requests\UpsertAseguradoRequest;
+use App\Http\Requests\UpsertClientRequest;
 use App\Models\Beneficiary;
 use App\Models\CatCurrency;
 use App\Models\CatInsuranceCompany;
@@ -51,54 +55,58 @@ class PolicyWizardController extends Controller
     public function saveStep1(Request $request): RedirectResponse
     {
         $agentId = (string) auth()->user()->agent_id;
+
         $data = $request->validate([
             'policy_id' => ['nullable', 'uuid'],
-            'client_id' => ['required', 'uuid', function ($attribute, $value, $fail) use ($agentId) {
+            'client_id' => ['nullable', 'uuid', function ($attribute, $value, $fail) use ($agentId) {
                 if (! Client::query()->where('agent_id', $agentId)->whereKey($value)->exists()) {
                     $fail('Selecciona un cliente válido.');
                 }
             }],
             'client' => ['nullable', 'array'],
-            'client.first_name' => ['nullable', 'string', 'max:150'],
-            'client.middle_name' => ['nullable', 'string', 'max:150'],
-            'client.last_name' => ['nullable', 'string', 'max:150'],
-            'client.second_last_name' => ['nullable', 'string', 'max:150'],
-            'client.email' => ['nullable', 'email', 'max:255'],
-            'client.phone' => ['nullable', 'string', 'max:30'],
-            'client.rfc' => ['nullable', 'string', 'max:20'],
-            'client.address' => ['nullable', 'string', 'max:255'],
+            ...collect(UpsertClientRequest::wizardRules())
+                ->mapWithKeys(fn ($rules, $key) => ["client.{$key}" => $rules])
+                ->all(),
         ]);
 
         $policy = $this->resolveDraftPolicy($data['policy_id'] ?? null);
 
+        if (! empty($data['client_id'])) {
+            $policy->update([
+                'client_id' => $data['client_id'],
+                'status' => Policy::STATUS_DRAFT,
+                'current_step' => 1,
+            ]);
+
+            return to_route('polizas.wizard.edit', $policy->id)->with('success', 'Paso 1 guardado.');
+        }
+
+        if (empty($data['client'])) {
+            return back()->withErrors(['client' => 'Completa la información del contratante.']);
+        }
+
+        $clientPayload = $data['client'];
+
+        $client = Client::query()->create([
+            'agent_id' => $agentId,
+            'first_name' => $clientPayload['first_name'],
+            'middle_name' => $clientPayload['middle_name'] ?? null,
+            'last_name' => $clientPayload['last_name'],
+            'second_last_name' => $clientPayload['second_last_name'] ?? null,
+            'email' => $clientPayload['email'] ?? null,
+            'phone' => $clientPayload['phone'] ?? null,
+            'rfc' => $clientPayload['rfc'] ?? null,
+            'street' => $clientPayload['address'] ?? null,
+            'is_active' => true,
+        ]);
+
         $policy->update([
-            'client_id' => $data['client_id'],
+            'client_id' => $client->id,
             'status' => Policy::STATUS_DRAFT,
             'current_step' => 1,
         ]);
 
-        if (! empty($data['client'])) {
-            $client = Client::query()
-                ->where('agent_id', $agentId)
-                ->whereKey($data['client_id'])
-                ->first();
-
-            if ($client) {
-                $client->fill([
-                    'first_name' => $data['client']['first_name'] ?? $client->first_name,
-                    'middle_name' => $data['client']['middle_name'] ?? null,
-                    'last_name' => $data['client']['last_name'] ?? $client->last_name,
-                    'second_last_name' => $data['client']['second_last_name'] ?? null,
-                    'email' => $data['client']['email'] ?? null,
-                    'phone' => $data['client']['phone'] ?? null,
-                    'rfc' => $data['client']['rfc'] ?? null,
-                    'street' => $data['client']['address'] ?? null,
-                ]);
-                $client->save();
-            }
-        }
-
-        return to_route('polizas.wizard.edit', $policy->id)->with('success', 'Paso 1 guardado.');
+        return to_route('polizas.wizard.edit', $policy->id)->with('success', 'Paso 1 guardado y contratante creado correctamente');
     }
 
     public function storeClient(Request $request): JsonResponse
@@ -171,30 +179,17 @@ class PolicyWizardController extends Controller
             'same_as_client' => ['required', 'boolean'],
             'insured_id' => ['nullable', 'uuid'],
             'insured' => ['nullable', 'array'],
-            'insured.first_name' => ['nullable', 'string', 'max:150'],
-            'insured.middle_name' => ['nullable', 'string', 'max:150'],
-            'insured.last_name' => ['nullable', 'string', 'max:150'],
-            'insured.second_last_name' => ['nullable', 'string', 'max:150'],
-            'insured.email' => ['nullable', 'email', 'max:255'],
-            'insured.phone' => ['nullable', 'string', 'max:30'],
-            'insured.rfc' => ['nullable', 'string', 'max:20'],
-            'insured.birthday' => ['nullable', 'date'],
-            'insured.age_current' => ['nullable', 'integer', 'min:0', 'max:120'],
-            'insured.address' => ['nullable', 'string'],
-            'insured.occupation' => ['nullable', 'string', 'max:150'],
-            'insured.company_name' => ['nullable', 'string', 'max:150'],
-            'insured.approx_income' => ['nullable', 'numeric', 'min:0'],
-            'insured.medical_history' => ['nullable', 'string'],
-            'insured.main_savings_goal' => ['nullable', 'string', 'max:255'],
-            'insured.personal_interests' => ['nullable', 'string'],
-            'insured.personal_likes' => ['nullable', 'string'],
-            'insured.smokes' => ['nullable', 'boolean'],
-            'insured.drinks' => ['nullable', 'boolean'],
-            'insured.personality' => ['nullable', 'string', 'max:255'],
-            'insured.children_count' => ['nullable', 'integer', 'min:0', 'max:20'],
+            ...collect((new UpsertAseguradoRequest())->rules())
+                ->except(['id', 'client_id'])
+                ->mapWithKeys(fn ($rules, $key) => ["insured.{$key}" => $rules])
+                ->all(),
         ]);
 
         $policy = $this->ownedPolicy($data['policy_id']);
+
+        if (($data['same_as_client'] ?? false) === false && empty($data['insured_id']) && empty($data['insured'])) {
+            return back()->withErrors(['insured' => 'Completa la información del asegurado.']);
+        }
 
         $insuredId = DB::transaction(function () use ($data, $policy, $agentId) {
             if (($data['same_as_client'] ?? false) === true) {
@@ -235,11 +230,11 @@ class PolicyWizardController extends Controller
             $insured = Insured::query()->create([
                 'agent_id' => $agentId,
                 'client_id' => $policy->client_id,
-                'first_name' => $insuredPayload['first_name'] ?? '-',
+                'first_name' => $insuredPayload['first_name'],
                 'middle_name' => $insuredPayload['middle_name'] ?? null,
-                'last_name' => $insuredPayload['last_name'] ?? '-',
+                'last_name' => $insuredPayload['last_name'],
                 'second_last_name' => $insuredPayload['second_last_name'] ?? null,
-                'birthday' => $insuredPayload['birthday'] ?? now()->toDateString(),
+                'birthday' => $insuredPayload['birthday'],
                 'age_current' => $insuredPayload['age_current'] ?? null,
                 'email' => $insuredPayload['email'] ?? null,
                 'phone' => $insuredPayload['phone'] ?? null,
@@ -267,32 +262,12 @@ class PolicyWizardController extends Controller
             'current_step' => max((int) ($policy->current_step ?? 1), 2),
         ]);
 
-        return back()->with('success', 'Paso 2 guardado.');
+        return back()->with('success', (($data['same_as_client'] ?? false) === false && empty($data['insured_id'])) ? 'Paso 2 guardado y asegurado creado correctamente' : 'Paso 2 guardado.');
     }
 
-    public function saveStep3(Request $request): RedirectResponse
+    public function saveStep3(SaveStep3PolicyWizardRequest $request): RedirectResponse
     {
-        $data = $request->validate([
-            'policy_id' => ['required', 'uuid'],
-            'payment_channel' => ['nullable', 'integer'],
-            'coverage_start' => ['nullable', 'date'],
-            'risk_premium' => ['nullable', 'numeric', 'min:0'],
-            'fractional_premium' => ['nullable', 'numeric', 'min:0'],
-            'periodicity_id' => ['required', 'integer', 'exists:cat_periodicities,id'],
-            'month' => ['nullable', 'integer', 'between:1,12'],
-            'currency_id' => ['nullable', 'uuid'],
-            'insurance_company_id' => ['required', 'uuid', 'exists:cat_insurance_companies,id'],
-            'product_id' => ['required', 'uuid', function ($attribute, $value, $fail) use ($request) {
-                $exists = Product::query()
-                    ->whereKey($value)
-                    ->where('insurance_company_id', $request->string('insurance_company_id'))
-                    ->exists();
-
-                if (! $exists) {
-                    $fail('Selecciona un producto válido para la marca elegida.');
-                }
-            }],
-        ]);
+        $data = $request->validated();
 
         $policy = $this->ownedPolicy($data['policy_id']);
         $product = Product::query()->findOrFail($data['product_id']);
@@ -302,24 +277,15 @@ class PolicyWizardController extends Controller
             'product' => $product->name,
             'status' => Policy::STATUS_DRAFT,
             'current_step' => max((int) ($policy->current_step ?? 1), 3),
+            'month' => (int) $data['month'],
         ]));
 
         return back()->with('success', 'Paso 3 guardado.');
     }
 
-    public function saveStep4(Request $request): RedirectResponse
+    public function saveStep4(SaveStep4PolicyWizardRequest $request): RedirectResponse
     {
-        $data = $request->validate([
-            'policy_id' => ['required', 'uuid'],
-            'beneficiaries' => ['array'],
-            'beneficiaries.*.id' => ['nullable', 'uuid'],
-            'beneficiaries.*.first_name' => ['required', 'string', 'max:150'],
-            'beneficiaries.*.middle_name' => ['nullable', 'string', 'max:150'],
-            'beneficiaries.*.last_name' => ['required', 'string', 'max:150'],
-            'beneficiaries.*.second_last_name' => ['nullable', 'string', 'max:150'],
-            'beneficiaries.*.relationship_id' => ['nullable', 'uuid'],
-            'beneficiaries.*.benefit_percentage' => ['required', 'numeric', 'min:0', 'max:100'],
-        ]);
+        $data = $request->validated();
 
         $policy = $this->ownedPolicy($data['policy_id']);
         $agentId = (string) auth()->user()->agent_id;

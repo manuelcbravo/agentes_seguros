@@ -10,6 +10,21 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+const MONTHS = [
+    { value: '01', label: 'Enero' },
+    { value: '02', label: 'Febrero' },
+    { value: '03', label: 'Marzo' },
+    { value: '04', label: 'Abril' },
+    { value: '05', label: 'Mayo' },
+    { value: '06', label: 'Junio' },
+    { value: '07', label: 'Julio' },
+    { value: '08', label: 'Agosto' },
+    { value: '09', label: 'Septiembre' },
+    { value: '10', label: 'Octubre' },
+    { value: '11', label: 'Noviembre' },
+    { value: '12', label: 'Diciembre' },
+];
+
 export default function Step3Poliza({
     data,
     setData,
@@ -39,7 +54,8 @@ export default function Step3Poliza({
                             !value
                                 ? 'Seleccione marca'
                                 : (insuranceCompanies.find(
-                                      (p: any) => String(p.id) === String(value),
+                                      (p: any) =>
+                                          String(p.id) === String(value),
                                   )?.name ?? '')
                         }
                         value={data.insurance_company_id}
@@ -48,8 +64,26 @@ export default function Step3Poliza({
                             setData('product_id', '');
                         }}
                     >
-                        <ComboboxInput className="w-full" placeholder="Marca" aria-label="Marca" />
-                        <ComboboxContent><ComboboxList><ComboboxEmpty>No se encontraron marcas.</ComboboxEmpty>{insuranceCompanies.map((p: any) => <ComboboxItem key={p.id} value={String(p.id)}>{p.name}</ComboboxItem>)}</ComboboxList></ComboboxContent>
+                        <ComboboxInput
+                            className="w-full"
+                            placeholder="Marca"
+                            aria-label="Marca"
+                        />
+                        <ComboboxContent>
+                            <ComboboxList>
+                                <ComboboxEmpty>
+                                    No se encontraron marcas.
+                                </ComboboxEmpty>
+                                {insuranceCompanies.map((p: any) => (
+                                    <ComboboxItem
+                                        key={p.id}
+                                        value={String(p.id)}
+                                    >
+                                        {p.name}
+                                    </ComboboxItem>
+                                ))}
+                            </ComboboxList>
+                        </ComboboxContent>
                     </Combobox>
 
                     <Combobox
@@ -57,15 +91,36 @@ export default function Step3Poliza({
                             !value
                                 ? 'Seleccione producto'
                                 : (products.find(
-                                      (p: any) => String(p.id) === String(value),
+                                      (p: any) =>
+                                          String(p.id) === String(value),
                                   )?.name ?? '')
                         }
                         value={data.product_id}
-                        onValueChange={(value) => setData('product_id', value ?? '')}
+                        onValueChange={(value) =>
+                            setData('product_id', value ?? '')
+                        }
                         disabled={!data.insurance_company_id}
                     >
-                        <ComboboxInput className="w-full" placeholder="Producto" aria-label="Producto" />
-                        <ComboboxContent><ComboboxList><ComboboxEmpty>No se encontraron productos.</ComboboxEmpty>{filteredProducts.map((p: any) => <ComboboxItem key={p.id} value={String(p.id)}>{p.name}</ComboboxItem>)}</ComboboxList></ComboboxContent>
+                        <ComboboxInput
+                            className="w-full"
+                            placeholder="Producto"
+                            aria-label="Producto"
+                        />
+                        <ComboboxContent>
+                            <ComboboxList>
+                                <ComboboxEmpty>
+                                    No se encontraron productos.
+                                </ComboboxEmpty>
+                                {filteredProducts.map((p: any) => (
+                                    <ComboboxItem
+                                        key={p.id}
+                                        value={String(p.id)}
+                                    >
+                                        {p.name}
+                                    </ComboboxItem>
+                                ))}
+                            </ComboboxList>
+                        </ComboboxContent>
                     </Combobox>
                 </div>
             </section>
@@ -74,31 +129,167 @@ export default function Step3Poliza({
                 <div className="grid gap-3 md:grid-cols-3">
                     <div>
                         <Label>Inicio cobertura</Label>
-                        <Input type="date" value={data.coverage_start} onChange={(e) => setData('coverage_start', e.target.value)} />
+                        <Input
+                            type="date"
+                            value={data.coverage_start}
+                            onChange={(e) =>
+                                setData('coverage_start', e.target.value)
+                            }
+                        />
                     </div>
                     <div>
                         <Label>Prima riesgo</Label>
-                        <Input value={data.risk_premium} onChange={(e) => setData('risk_premium', e.target.value)} />
+                        <Input
+                            value={data.risk_premium}
+                            onChange={(e) =>
+                                setData('risk_premium', e.target.value)
+                            }
+                        />
                     </div>
                     <div>
                         <Label>Prima fraccionada</Label>
-                        <Input value={data.fractional_premium} onChange={(e) => setData('fractional_premium', e.target.value)} />
+                        <Input
+                            value={data.fractional_premium}
+                            onChange={(e) =>
+                                setData('fractional_premium', e.target.value)
+                            }
+                        />
                     </div>
                 </div>
                 <div className="grid gap-3 md:grid-cols-3">
-                    <Combobox itemToStringLabel={(value) => !value ? 'Seleccione periodicidad' : (periodicities.find((p: any) => String(p.id) === String(value))?.name ?? '')} value={data.periodicity_id} onValueChange={(value) => setData('periodicity_id', value ?? '')}>
-                        <ComboboxInput className="w-full" placeholder="Periodicidad" aria-label="Periodicidad" />
-                        <ComboboxContent><ComboboxList><ComboboxEmpty>No se encontraron periodicidades.</ComboboxEmpty>{periodicities.map((p: any) => <ComboboxItem key={p.id} value={String(p.id)}>{p.name}</ComboboxItem>)}</ComboboxList></ComboboxContent>
+                    <Combobox
+                        itemToStringLabel={(value) =>
+                            !value
+                                ? 'Seleccione periodicidad'
+                                : (periodicities.find(
+                                      (p: any) =>
+                                          String(p.id) === String(value),
+                                  )?.name ?? '')
+                        }
+                        value={data.periodicity_id}
+                        onValueChange={(value) =>
+                            setData('periodicity_id', value ?? '')
+                        }
+                    >
+                        <ComboboxInput
+                            className="w-full"
+                            placeholder="Periodicidad"
+                            aria-label="Periodicidad"
+                        />
+                        <ComboboxContent>
+                            <ComboboxList>
+                                <ComboboxEmpty>
+                                    No se encontraron periodicidades.
+                                </ComboboxEmpty>
+                                {periodicities.map((p: any) => (
+                                    <ComboboxItem
+                                        key={p.id}
+                                        value={String(p.id)}
+                                    >
+                                        {p.name}
+                                    </ComboboxItem>
+                                ))}
+                            </ComboboxList>
+                        </ComboboxContent>
                     </Combobox>
-                    <Input type="number" placeholder="Mes" value={data.month} onChange={(e) => setData('month', e.target.value)} />
-                    <Combobox itemToStringLabel={(value) => !value ? 'Seleccione canal de pago' : (paymentChannels.find((p: any) => String(p.code) === String(value))?.name ?? '')} value={data.payment_channel} onValueChange={(value) => setData('payment_channel', value ?? '')}>
-                        <ComboboxInput className="w-full" placeholder="Canal de pago" aria-label="Canal de pago" />
-                        <ComboboxContent><ComboboxList><ComboboxEmpty>No se encontraron canales de pago.</ComboboxEmpty>{paymentChannels.map((p: any) => <ComboboxItem key={p.code} value={String(p.code)}>{p.name}</ComboboxItem>)}</ComboboxList></ComboboxContent>
+                    <Combobox
+                        itemToStringLabel={(value) =>
+                            !value
+                                ? 'Seleccione mes'
+                                : (MONTHS.find(
+                                      (month) => month.value === String(value),
+                                  )?.label ?? '')
+                        }
+                        value={String(data.month).padStart(2, '0')}
+                        onValueChange={(value) => setData('month', value ?? '')}
+                    >
+                        <ComboboxInput
+                            className="w-full"
+                            placeholder="Mes"
+                            aria-label="Mes"
+                        />
+                        <ComboboxContent>
+                            <ComboboxList>
+                                <ComboboxEmpty>
+                                    No se encontraron meses.
+                                </ComboboxEmpty>
+                                {MONTHS.map((month) => (
+                                    <ComboboxItem
+                                        key={month.value}
+                                        value={month.value}
+                                    >
+                                        {month.label}
+                                    </ComboboxItem>
+                                ))}
+                            </ComboboxList>
+                        </ComboboxContent>
+                    </Combobox>
+                    <Combobox
+                        itemToStringLabel={(value) =>
+                            !value
+                                ? 'Seleccione canal de pago'
+                                : (paymentChannels.find(
+                                      (p: any) =>
+                                          String(p.code) === String(value),
+                                  )?.name ?? '')
+                        }
+                        value={data.payment_channel}
+                        onValueChange={(value) =>
+                            setData('payment_channel', value ?? '')
+                        }
+                    >
+                        <ComboboxInput
+                            className="w-full"
+                            placeholder="Canal de pago"
+                            aria-label="Canal de pago"
+                        />
+                        <ComboboxContent>
+                            <ComboboxList>
+                                <ComboboxEmpty>
+                                    No se encontraron canales de pago.
+                                </ComboboxEmpty>
+                                {paymentChannels.map((p: any) => (
+                                    <ComboboxItem
+                                        key={p.code}
+                                        value={String(p.code)}
+                                    >
+                                        {p.name}
+                                    </ComboboxItem>
+                                ))}
+                            </ComboboxList>
+                        </ComboboxContent>
                     </Combobox>
                 </div>
-                <Combobox itemToStringLabel={(value) => !value ? 'Seleccione moneda' : (currencies.find((c: any) => String(c.id) === String(value))?.name ?? '')} value={data.currency_id} onValueChange={(value) => setData('currency_id', value ?? '')}>
-                    <ComboboxInput className="w-full" placeholder="Moneda" aria-label="Moneda catálogo" />
-                    <ComboboxContent><ComboboxList><ComboboxEmpty>No se encontraron monedas.</ComboboxEmpty>{currencies.map((c: any) => <ComboboxItem key={c.id} value={String(c.id)}>{c.name}</ComboboxItem>)}</ComboboxList></ComboboxContent>
+                <Combobox
+                    itemToStringLabel={(value) =>
+                        !value
+                            ? 'Seleccione moneda'
+                            : (currencies.find(
+                                  (c: any) => String(c.id) === String(value),
+                              )?.name ?? '')
+                    }
+                    value={data.currency_id}
+                    onValueChange={(value) =>
+                        setData('currency_id', value ?? '')
+                    }
+                >
+                    <ComboboxInput
+                        className="w-full"
+                        placeholder="Moneda"
+                        aria-label="Moneda catálogo"
+                    />
+                    <ComboboxContent>
+                        <ComboboxList>
+                            <ComboboxEmpty>
+                                No se encontraron monedas.
+                            </ComboboxEmpty>
+                            {currencies.map((c: any) => (
+                                <ComboboxItem key={c.id} value={String(c.id)}>
+                                    {c.name}
+                                </ComboboxItem>
+                            ))}
+                        </ComboboxList>
+                    </ComboboxContent>
                 </Combobox>
             </section>
         </div>

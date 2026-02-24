@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { route } from 'ziggy-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Combobox,
     ComboboxContent,
@@ -35,6 +36,8 @@ export default function Step1Contratante({
     clientForm,
     setClientForm,
     onClientSelected,
+    isNewClient,
+    setIsNewClient,
 }: any) {
     const [query, setQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -45,9 +48,10 @@ export default function Step1Contratante({
     );
 
     useEffect(() => {
-        const timer = window.setTimeout(() => {
-            setDebouncedQuery(query.trim());
-        }, 300);
+        const timer = window.setTimeout(
+            () => setDebouncedQuery(query.trim()),
+            300,
+        );
 
         return () => window.clearTimeout(timer);
     }, [query]);
@@ -57,29 +61,18 @@ export default function Step1Contratante({
             !selectedId ||
             !preselectedClient ||
             selectedId !== preselectedClient.id
-        ) {
+        )
             return;
-        }
 
         onClientSelected(preselectedClient);
-        setClientForm({
-            first_name: preselectedClient.first_name ?? '',
-            middle_name: preselectedClient.middle_name ?? '',
-            last_name: preselectedClient.last_name ?? '',
-            second_last_name: preselectedClient.second_last_name ?? '',
-            email: preselectedClient.email ?? '',
-            phone: preselectedClient.phone ?? '',
-            rfc: preselectedClient.rfc ?? '',
-            address: preselectedClient.address ?? '',
-        });
-    }, [onClientSelected, preselectedClient, selectedId, setClientForm]);
+    }, [onClientSelected, preselectedClient, selectedId]);
 
     useEffect(() => {
         let cancelled = false;
 
-        if (debouncedQuery.length < 3) {
+        if (debouncedQuery.length < 3 || isNewClient) {
             setLoading(false);
-            setResults([]);
+            setResults(preselectedClient ? [preselectedClient] : []);
             setOpen(false);
             return;
         }
@@ -127,7 +120,7 @@ export default function Step1Contratante({
         return () => {
             cancelled = true;
         };
-    }, [debouncedQuery]);
+    }, [debouncedQuery, isNewClient, preselectedClient]);
 
     const selected = useMemo(
         () =>
@@ -153,11 +146,25 @@ export default function Step1Contratante({
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-medium">Cliente / Contratante</p>
+            <div className="flex items-center gap-2">
+                <Checkbox
+                    id="is_new_client"
+                    checked={isNewClient}
+                    onCheckedChange={(value) => {
+                        const checked = Boolean(value);
+                        setIsNewClient(checked);
+                        if (checked) {
+                            setSelectedId('');
+                            onClientSelected(null);
+                        }
+                    }}
+                />
+                <Label htmlFor="is_new_client">
+                    No existe contratante, crear uno nuevo
+                </Label>
             </div>
 
-            {!selected ? (
+            {!isNewClient && !selected ? (
                 <Combobox
                     value={selectedId}
                     open={open && debouncedQuery.length >= 3}
@@ -167,7 +174,6 @@ export default function Step1Contratante({
 
                         const client =
                             results.find((item) => item.id === value) ?? null;
-
                         if (!client) return;
 
                         persistSelected(client);
@@ -191,7 +197,9 @@ export default function Step1Contratante({
                                     </div>
                                 )}
                                 {!loading && results.length === 0 && (
-                                    <ComboboxEmpty>Sin resultados.</ComboboxEmpty>
+                                    <ComboboxEmpty>
+                                        Sin resultados.
+                                    </ComboboxEmpty>
                                 )}
                                 {results.map((client) => (
                                     <ComboboxItem
@@ -218,7 +226,9 @@ export default function Step1Contratante({
                         </ComboboxContent>
                     )}
                 </Combobox>
-            ) : (
+            ) : null}
+
+            {!isNewClient && selected ? (
                 <Button
                     type="button"
                     variant="outline"
@@ -232,21 +242,127 @@ export default function Step1Contratante({
                 >
                     <Search className="size-4" /> Cambiar cliente
                 </Button>
-            )}
+            ) : null}
 
-            {selectedId && (
+            {(isNewClient || selectedId) && (
                 <Card className="border-primary/20 bg-primary/5">
                     <CardContent className="space-y-3 pt-6 text-sm">
-                        <p className="font-semibold">Datos rápidos del contratante</p>
+                        <p className="font-semibold">Datos del contratante</p>
                         <div className="grid gap-3 md:grid-cols-2">
-                            <div><Label htmlFor="client_first_name">Nombre(s)</Label><Input id="client_first_name" value={clientForm.first_name} onChange={(e) => setClientForm({ ...clientForm, first_name: e.target.value })} /></div>
-                            <div><Label htmlFor="client_middle_name">Segundo nombre</Label><Input id="client_middle_name" value={clientForm.middle_name} onChange={(e) => setClientForm({ ...clientForm, middle_name: e.target.value })} /></div>
-                            <div><Label htmlFor="client_last_name">Apellido paterno</Label><Input id="client_last_name" value={clientForm.last_name} onChange={(e) => setClientForm({ ...clientForm, last_name: e.target.value })} /></div>
-                            <div><Label htmlFor="client_second_last_name">Apellido materno</Label><Input id="client_second_last_name" value={clientForm.second_last_name} onChange={(e) => setClientForm({ ...clientForm, second_last_name: e.target.value })} /></div>
-                            <div><Label htmlFor="client_email">Email</Label><Input id="client_email" value={clientForm.email} onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })} /></div>
-                            <div><Label htmlFor="client_phone">Teléfono</Label><Input id="client_phone" value={clientForm.phone} onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })} /></div>
-                            <div><Label htmlFor="client_rfc">RFC</Label><Input id="client_rfc" value={clientForm.rfc} onChange={(e) => setClientForm({ ...clientForm, rfc: e.target.value })} /></div>
-                            <div><Label htmlFor="client_address">Dirección básica</Label><Input id="client_address" value={clientForm.address} onChange={(e) => setClientForm({ ...clientForm, address: e.target.value })} /></div>
+                            <div>
+                                <Label htmlFor="client_first_name">
+                                    Nombre(s)
+                                </Label>
+                                <Input
+                                    id="client_first_name"
+                                    value={clientForm.first_name}
+                                    onChange={(e) =>
+                                        setClientForm({
+                                            ...clientForm,
+                                            first_name: e.target.value,
+                                        })
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="client_middle_name">
+                                    Segundo nombre
+                                </Label>
+                                <Input
+                                    id="client_middle_name"
+                                    value={clientForm.middle_name}
+                                    onChange={(e) =>
+                                        setClientForm({
+                                            ...clientForm,
+                                            middle_name: e.target.value,
+                                        })
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="client_last_name">
+                                    Apellido paterno
+                                </Label>
+                                <Input
+                                    id="client_last_name"
+                                    value={clientForm.last_name}
+                                    onChange={(e) =>
+                                        setClientForm({
+                                            ...clientForm,
+                                            last_name: e.target.value,
+                                        })
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="client_second_last_name">
+                                    Apellido materno
+                                </Label>
+                                <Input
+                                    id="client_second_last_name"
+                                    value={clientForm.second_last_name}
+                                    onChange={(e) =>
+                                        setClientForm({
+                                            ...clientForm,
+                                            second_last_name: e.target.value,
+                                        })
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="client_email">Email</Label>
+                                <Input
+                                    id="client_email"
+                                    value={clientForm.email}
+                                    onChange={(e) =>
+                                        setClientForm({
+                                            ...clientForm,
+                                            email: e.target.value,
+                                        })
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="client_phone">Teléfono</Label>
+                                <Input
+                                    id="client_phone"
+                                    value={clientForm.phone}
+                                    onChange={(e) =>
+                                        setClientForm({
+                                            ...clientForm,
+                                            phone: e.target.value,
+                                        })
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="client_rfc">RFC</Label>
+                                <Input
+                                    id="client_rfc"
+                                    value={clientForm.rfc}
+                                    onChange={(e) =>
+                                        setClientForm({
+                                            ...clientForm,
+                                            rfc: e.target.value,
+                                        })
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="client_address">
+                                    Dirección básica
+                                </Label>
+                                <Input
+                                    id="client_address"
+                                    value={clientForm.address}
+                                    onChange={(e) =>
+                                        setClientForm({
+                                            ...clientForm,
+                                            address: e.target.value,
+                                        })
+                                    }
+                                />
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
