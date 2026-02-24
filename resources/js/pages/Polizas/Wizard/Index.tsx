@@ -1,5 +1,6 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { route } from 'ziggy-js';
 import { Button } from '@/components/ui/button';
@@ -59,6 +60,10 @@ export default function PolicyWizardPage({
         rfc: preselectedClient?.rfc ?? '',
         address: preselectedClient?.address ?? '',
     });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [activeAction, setActiveAction] = useState<
+        'next' | 'finish' | 'save-exit' | null
+    >(null);
     const { flash } = usePage<SharedData>().props;
 
     const form = useForm({
@@ -126,36 +131,75 @@ export default function PolicyWizardPage({
     );
 
     const saveCurrentStep = (onSuccess?: () => void) => {
+        setIsSubmitting(true);
+        setActiveAction('next');
+
+        const visitOptions = {
+            preserveScroll: true,
+            onSuccess,
+            onFinish: () => {
+                setIsSubmitting(false);
+                setActiveAction(null);
+            },
+        };
+
         if (step === 1) {
             if (isNewClient) {
                 form.setData('client_id', '');
             }
 
-            return form.post(route('polizas.wizard.step1'), {
-                preserveScroll: true,
-                onSuccess,
-            });
+            return form.post(route('polizas.wizard.step1'), visitOptions);
         }
         if (step === 2) {
             form.setData(
                 'same_as_client',
                 (hasExistingInsured ? sameAsClient : false) as any,
             );
-            return form.post(route('polizas.wizard.step2'), {
-                preserveScroll: true,
-                onSuccess,
-            });
+            return form.post(route('polizas.wizard.step2'), visitOptions);
         }
         if (step === 3) {
-            return form.post(route('polizas.wizard.step3'), {
-                preserveScroll: true,
-                onSuccess,
-            });
+            return form.post(route('polizas.wizard.step3'), visitOptions);
         }
+
         return router.post(
             route('polizas.wizard.step4'),
             { policy_id: form.data.policy_id, beneficiaries },
-            { preserveScroll: true, onSuccess },
+            visitOptions,
+        );
+    };
+
+    const handleSaveAndExit = () => {
+        setIsSubmitting(true);
+        setActiveAction('save-exit');
+
+        router.post(
+            route('polizas.wizard.save-exit'),
+            {
+                policy_id: form.data.policy_id,
+                current_step: step,
+            },
+            {
+                onFinish: () => {
+                    setIsSubmitting(false);
+                    setActiveAction(null);
+                },
+            },
+        );
+    };
+
+    const handleFinish = () => {
+        setIsSubmitting(true);
+        setActiveAction('finish');
+
+        router.post(
+            route('polizas.wizard.finish', form.data.policy_id),
+            {},
+            {
+                onFinish: () => {
+                    setIsSubmitting(false);
+                    setActiveAction(null);
+                },
+            },
         );
     };
 
@@ -234,40 +278,29 @@ export default function PolicyWizardPage({
                     <CardFooter className="sticky bottom-0 col-span-full flex justify-between border-t bg-background py-4">
                         <Button
                             variant="outline"
-                            onClick={() =>
-                                router.post(route('polizas.wizard.save-exit'), {
-                                    policy_id: form.data.policy_id,
-                                    current_step: step,
-                                })
-                            }
+                            disabled={isSubmitting}
+                            onClick={handleSaveAndExit}
                         >
-                            Guardar y salir
+                            {isSubmitting && activeAction === 'save-exit' ? (
+                                <>
+                                    <Loader2 className="size-4 animate-spin" />{' '}
+                                    Guardando...
+                                </>
+                            ) : (
+                                'Guardar y salir'
+                            )}
                         </Button>
                         <div className="flex gap-2">
                             <Button
                                 variant="secondary"
-                                disabled={step === 1}
+                                disabled={step === 1 || isSubmitting}
                                 onClick={() => setStep((s: number) => s - 1)}
                             >
                                 Atrás
                             </Button>
                             {step < 4 ? (
                                 <Button
-                                    disabled={
-                                        (step === 1 &&
-                                            !isNewClient &&
-                                            !form.data.client_id) ||
-                                        (step === 1 &&
-                                            isNewClient &&
-                                            (!clientForm.first_name ||
-                                                !clientForm.last_name)) ||
-                                        (step === 2 &&
-                                            (!hasExistingInsured ||
-                                                !sameAsClient) &&
-                                            (!form.data.insured.first_name ||
-                                                !form.data.insured.last_name ||
-                                                !form.data.insured.birthday))
-                                    }
+                                    disabled={isSubmitting}
                                     onClick={() =>
                                         saveCurrentStep(() =>
                                             setStep((s: number) =>
@@ -276,24 +309,33 @@ export default function PolicyWizardPage({
                                         )
                                     }
                                 >
-                                    Siguiente
+                                    {isSubmitting && activeAction === 'next' ? (
+                                        <>
+                                            <Loader2 className="size-4 animate-spin" />{' '}
+                                            Guardando...
+                                        </>
+                                    ) : (
+                                        'Siguiente'
+                                    )}
                                 </Button>
                             ) : (
                                 <Button
                                     disabled={
                                         totalPercent !== 100 ||
-                                        !form.data.policy_id
+                                        !form.data.policy_id ||
+                                        isSubmitting
                                     }
-                                    onClick={() =>
-                                        router.post(
-                                            route(
-                                                'polizas.wizard.finish',
-                                                form.data.policy_id,
-                                            ),
-                                        )
-                                    }
+                                    onClick={handleFinish}
                                 >
-                                    Terminar
+                                    {isSubmitting &&
+                                    activeAction === 'finish' ? (
+                                        <>
+                                            <Loader2 className="size-4 animate-spin" />{' '}
+                                            Finalizando...
+                                        </>
+                                    ) : (
+                                        'Terminar'
+                                    )}
                                 </Button>
                             )}
                         </div>
