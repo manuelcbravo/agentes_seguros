@@ -9,6 +9,7 @@ import {
     Users,
     Contact,
     ShieldCheck,
+    Wallet,
 } from 'lucide-react';
 import { route } from 'ziggy-js';
 import { NavConfig } from '@/components/nav-config';
@@ -91,6 +92,19 @@ const mainNavItems: NavItem[] = [
             {
                 title: 'Beneficiarios',
                 href: route('beneficiarios.index'),
+            },
+        ],
+    },
+
+
+    {
+        title: 'Contabilidad',
+        href: route('accounting.commissions.index'),
+        icon: Wallet,
+        children: [
+            {
+                title: 'Comisiones',
+                href: route('accounting.commissions.index'),
             },
         ],
     },

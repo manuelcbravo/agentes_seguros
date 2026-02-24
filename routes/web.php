@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\Config\AuditController;
+use App\Http\Controllers\Accounting\AgentCommissionController;
+use App\Http\Controllers\Accounting\AgentCommissionPaymentController;
+use App\Http\Controllers\Accounting\AgentCommissionReconcileController;
 use App\Http\Controllers\Catalog\CurrencyController;
 use App\Http\Controllers\Catalog\InsuranceCompanyController;
 use App\Http\Controllers\Catalog\MaritalStatusController;
@@ -101,6 +104,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('beneficiarios', [BeneficiarioController::class, 'index'])->name('beneficiarios.index');
     Route::post('beneficiarios', [BeneficiarioController::class, 'store'])->name('beneficiarios.store');
     Route::delete('beneficiarios/{id}', [BeneficiarioController::class, 'destroy'])->name('beneficiarios.destroy');
+
+    Route::prefix('accounting')->name('accounting.')->group(function () {
+        Route::get('commissions', [AgentCommissionController::class, 'index'])->name('commissions.index');
+        Route::post('commissions', [AgentCommissionController::class, 'store'])->name('commissions.store');
+        Route::put('commissions/{commission}', [AgentCommissionController::class, 'update'])->name('commissions.update');
+        Route::patch('commissions/{commission}/cancel', [AgentCommissionController::class, 'cancel'])->name('commissions.cancel');
+
+        Route::get('commission-payments', [AgentCommissionPaymentController::class, 'index'])->name('commission_payments.index');
+        Route::post('commission-payments', [AgentCommissionPaymentController::class, 'store'])->name('commission_payments.store');
+        Route::put('commission-payments/{payment}', [AgentCommissionPaymentController::class, 'update'])->name('commission_payments.update');
+        Route::delete('commission-payments/{payment}', [AgentCommissionPaymentController::class, 'destroy'])->name('commission_payments.destroy');
+
+        Route::post('commission-reconcile', [AgentCommissionReconcileController::class, 'store'])->name('commissions.reconcile.store');
+        Route::delete('commission-reconcile', [AgentCommissionReconcileController::class, 'destroy'])->name('commissions.reconcile.destroy');
+    });
+
     Route::prefix('catalogs')->name('catalogs.')->group(function () {
         Route::resource('currencies', CurrencyController::class)->only(['index', 'store', 'destroy']);
         Route::resource('marital-statuses', MaritalStatusController::class)
