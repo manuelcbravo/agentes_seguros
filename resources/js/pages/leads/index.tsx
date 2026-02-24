@@ -255,14 +255,10 @@ export default function LeadsIndex({
                                 disabled={Boolean(fixedStatus)}
                             >
                                 <ComboboxInput
-                                    className="w-full"
                                     placeholder="Seleccione estatus"
-                                    aria-label="Estatus"
-                                    disabled={Boolean(fixedStatus)}
                                 />
                                 <ComboboxContent>
                                     <ComboboxList>
-                                        <ComboboxEmpty>No se encontraron estatus.</ComboboxEmpty>
                                         <ComboboxItem value="">Todos los estatus</ComboboxItem>
                                         {statusOptions.map((option) => (
                                             <ComboboxItem key={option.value} value={option.value}>
@@ -470,7 +466,6 @@ export default function LeadsIndex({
                                         disabled={formMode === "view"}
                                     />
 
-                                    {/* 👇 clave en Dialog: fuerza captura de clicks y evita clipping */}
                                     <ComboboxContent className="pointer-events-auto z-[100] overflow-visible">
                                         <ComboboxEmpty>No se encontraron fuentes.</ComboboxEmpty>
 

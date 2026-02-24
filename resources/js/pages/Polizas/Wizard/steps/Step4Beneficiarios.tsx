@@ -36,7 +36,7 @@ export default function Step4Beneficiarios({
         middle_name: '',
         last_name: '',
         second_last_name: '',
-        relationship_id: '',
+        relationship_id: 0,
         benefit_percentage: 0,
     });
     const total = useMemo(
@@ -57,7 +57,7 @@ export default function Step4Beneficiarios({
             middle_name: '',
             last_name: '',
             second_last_name: '',
-            relationship_id: '',
+            relationship_id: 0,
             benefit_percentage: 0,
         });
         setOpen(false);

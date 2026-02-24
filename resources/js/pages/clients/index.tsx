@@ -339,88 +339,89 @@ export default function ClientsIndex({
                         form.clearErrors();
                     }
                 }}
-                title={formMode === 'edit' ? 'Editar cliente' : 'Nuevo cliente'}
+                title={formMode === "edit" ? "Editar cliente" : "Nuevo cliente"}
                 description="Captura datos esenciales y guarda el cliente directamente desde este modal."
-                submitLabel={
-                    formMode === 'edit' ? 'Guardar cambios' : 'Guardar cliente'
-                }
+                submitLabel={formMode === "edit" ? "Guardar cambios" : "Guardar cliente"}
                 processing={form.processing}
                 onSubmit={submitForm}
             >
-                <div className="grid gap-4 md:grid-cols-2">
-                    <Field>
-                        <Label>Imagen</Label>
-                        <div className="flex items-center gap-3">
+                <div className="rounded-xl border bg-muted/20 p-4">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-4">
                             <Avatar className="size-16 border">
                                 <AvatarImage
-                                    src={
-                                        localAvatarPreview ??
-                                        activeClient?.avatar_url
-                                    }
+                                    src={localAvatarPreview ?? activeClient?.avatar_url}
                                     alt="Preview"
                                 />
                                 <AvatarFallback>
                                     <ImagePlus className="size-4" />
                                 </AvatarFallback>
                             </Avatar>
-                            <div className="space-x-2">
-                                <input
-                                    id="client-avatar-input"
-                                    ref={avatarInputRef}
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={(event) => {
-                                        form.setData(
-                                            'avatar',
-                                            event.target.files?.[0] ?? null,
-                                        );
-                                        form.setData('avatar_path', null);
-                                    }}
-                                />
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() =>
-                                        avatarInputRef.current?.click()
-                                    }
-                                >
-                                    Seleccionar imagen
-                                </Button>
-                                {(form.data.avatar ||
-                                    form.data.avatar_path) && (
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        onClick={() => {
-                                            form.setData('avatar', null);
-                                            form.setData('avatar_path', null);
-                                        }}
-                                    >
-                                        Quitar
-                                    </Button>
+
+                            <div className="space-y-1">
+                                <p className="text-sm font-medium">Imagen</p>
+                                <p className="text-xs text-muted-foreground">
+                                    Se guarda al guardar el cliente.
+                                </p>
+
+                                {(form.errors.avatar || form.errors.avatar_path) && (
+                                    <div className="space-y-1">
+                                        {form.errors.avatar && (
+                                            <FieldError>{form.errors.avatar}</FieldError>
+                                        )}
+                                        {form.errors.avatar_path && (
+                                            <FieldError>{form.errors.avatar_path}</FieldError>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         </div>
-                        <p className="mt-2 text-xs text-muted-foreground">
-                            La imagen se guarda directamente al guardar el
-                            cliente.
-                        </p>
-                        {form.errors.avatar && (
-                            <FieldError>{form.errors.avatar}</FieldError>
-                        )}
-                        {form.errors.avatar_path && (
-                            <FieldError>{form.errors.avatar_path}</FieldError>
-                        )}
-                    </Field>
+
+                        <div className="flex items-center gap-2">
+                            <input
+                                id="client-avatar-input"
+                                ref={avatarInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(event) => {
+                                    form.setData("avatar", event.target.files?.[0] ?? null);
+                                    form.setData("avatar_path", null);
+                                }}
+                            />
+
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => avatarInputRef.current?.click()}
+                            >
+                                Seleccionar
+                            </Button>
+
+                            {(form.data.avatar || form.data.avatar_path) && (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={() => {
+                                        form.setData("avatar", null);
+                                        form.setData("avatar_path", null);
+                                    }}
+                                >
+                                    Quitar
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Identidad */}
+                <div className="grid gap-4 md:grid-cols-2">
                     <Field>
-                        <Label htmlFor="client-first-name">Nombre</Label>
+                        <Label htmlFor="client-first-name">Nombre(s)</Label>
                         <Input
                             id="client-first-name"
                             value={form.data.first_name}
-                            onChange={(event) =>
-                                form.setData('first_name', event.target.value)
-                            }
+                            onChange={(e) => form.setData("first_name", e.target.value)}
                             placeholder="Ej. Camila"
                             aria-invalid={Boolean(form.errors.first_name)}
                         />
@@ -430,13 +431,11 @@ export default function ClientsIndex({
                     </Field>
 
                     <Field>
-                        <Label htmlFor="client-last-name">Apellido</Label>
+                        <Label htmlFor="client-last-name">Apellido(s)</Label>
                         <Input
                             id="client-last-name"
                             value={form.data.last_name}
-                            onChange={(event) =>
-                                form.setData('last_name', event.target.value)
-                            }
+                            onChange={(e) => form.setData("last_name", e.target.value)}
                             placeholder="Ej. Salinas"
                             aria-invalid={Boolean(form.errors.last_name)}
                         />
@@ -446,6 +445,7 @@ export default function ClientsIndex({
                     </Field>
                 </div>
 
+                {/* Contacto */}
                 <div className="grid gap-4 md:grid-cols-2">
                     <Field>
                         <Label htmlFor="client-email">Correo</Label>
@@ -453,15 +453,11 @@ export default function ClientsIndex({
                             id="client-email"
                             type="email"
                             value={form.data.email}
-                            onChange={(event) =>
-                                form.setData('email', event.target.value)
-                            }
+                            onChange={(e) => form.setData("email", e.target.value)}
                             placeholder="cliente@email.com"
                             aria-invalid={Boolean(form.errors.email)}
                         />
-                        {form.errors.email && (
-                            <FieldError>{form.errors.email}</FieldError>
-                        )}
+                        {form.errors.email && <FieldError>{form.errors.email}</FieldError>}
                     </Field>
 
                     <Field>
@@ -469,26 +465,21 @@ export default function ClientsIndex({
                         <Input
                             id="client-phone"
                             value={form.data.phone}
-                            onChange={(event) =>
-                                form.setData('phone', event.target.value)
-                            }
+                            onChange={(e) => form.setData("phone", e.target.value)}
                             placeholder="55 1234 5678"
                             aria-invalid={Boolean(form.errors.phone)}
                         />
-                        {form.errors.phone && (
-                            <FieldError>{form.errors.phone}</FieldError>
-                        )}
+                        {form.errors.phone && <FieldError>{form.errors.phone}</FieldError>}
                     </Field>
                 </div>
 
+                {/* Estado */}
                 <Field>
-                    <Label htmlFor="client-active">Estado</Label>
+                    <Label>Estado</Label>
                     <Combobox
-                        itemToStringLabel={(value) => (value === '1' ? 'Activo' : 'Inactivo')}
-                        value={form.data.is_active ? '1' : '0'}
-                        onValueChange={(value) =>
-                            form.setData('is_active', value === '1')
-                        }
+                        itemToStringLabel={(value) => (value === "1" ? "Activo" : "Inactivo")}
+                        value={form.data.is_active ? "1" : "0"}
+                        onValueChange={(value) => form.setData("is_active", value === "1")}
                     >
                         <ComboboxInput
                             className="w-full"
@@ -497,12 +488,12 @@ export default function ClientsIndex({
                         />
                         <ComboboxContent className="pointer-events-auto z-[100] overflow-visible">
                             <ComboboxList>
-                                <ComboboxEmpty>No se encontraron estados.</ComboboxEmpty>
                                 <ComboboxItem value="1">Activo</ComboboxItem>
                                 <ComboboxItem value="0">Inactivo</ComboboxItem>
                             </ComboboxList>
                         </ComboboxContent>
                     </Combobox>
+
                     {form.errors.is_active && (
                         <FieldError>{form.errors.is_active}</FieldError>
                     )}
