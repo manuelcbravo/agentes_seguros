@@ -76,7 +76,8 @@ class Beneficiary extends Model
     public function policies(): BelongsToMany
     {
         return $this->belongsToMany(Policy::class)
-            ->withPivot(['percentage'])
+            ->using(BeneficiaryPolicy::class)
+            ->withPivot(['id', 'percentage'])
             ->withTimestamps();
     }
 
