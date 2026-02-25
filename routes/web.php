@@ -102,6 +102,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('asegurados/{id}', [AseguradoController::class, 'destroy'])->name('asegurados.destroy');
 
     Route::get('beneficiarios', [BeneficiarioController::class, 'index'])->name('beneficiarios.index');
+    Route::get('beneficiarios/search', [BeneficiarioController::class, 'search'])->name('beneficiarios.search');
     Route::post('beneficiarios', [BeneficiarioController::class, 'store'])->name('beneficiarios.store');
     Route::delete('beneficiarios/{id}', [BeneficiarioController::class, 'destroy'])->name('beneficiarios.destroy');
 

@@ -7,6 +7,7 @@ use App\Http\Requests\UpsertBeneficiarioRequest;
 use App\Models\Beneficiary;
 use App\Models\Policy;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use App\Models\Tracking\CatTrackingActivityType;
@@ -19,6 +20,38 @@ use Inertia\Response;
 
 class BeneficiarioController extends Controller
 {
+    public function search(Request $request): JsonResponse
+    {
+        $agentId = (string) auth()->user()->agent_id;
+        $query = trim((string) $request->string('q'));
+
+        if (mb_strlen($query) < 3) {
+            return response()->json([]);
+        }
+
+        $beneficiaries = Beneficiary::query()
+            ->where('agent_id', $agentId)
+            ->where(function (Builder $builder) use ($query): void {
+                $builder->whereRaw('LOWER(first_name) LIKE ?', ['%'.mb_strtolower($query).'%'])
+                    ->orWhereRaw('LOWER(middle_name) LIKE ?', ['%'.mb_strtolower($query).'%'])
+                    ->orWhereRaw('LOWER(last_name) LIKE ?', ['%'.mb_strtolower($query).'%'])
+                    ->orWhereRaw('LOWER(second_last_name) LIKE ?', ['%'.mb_strtolower($query).'%'])
+                    ->orWhereRaw('LOWER(rfc) LIKE ?', ['%'.mb_strtolower($query).'%']);
+            })
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->limit(10)
+            ->get(['id', 'first_name', 'middle_name', 'last_name', 'second_last_name', 'rfc'])
+            ->map(fn (Beneficiary $beneficiary) => [
+                'id' => $beneficiary->id,
+                'full_name' => $beneficiary->full_name,
+                'rfc' => $beneficiary->rfc,
+            ])
+            ->values();
+
+        return response()->json($beneficiaries);
+    }
+
     public function index(Request $request): Response
     {
         $agentId = (string) auth()->user()->agent_id;

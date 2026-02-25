@@ -48,11 +48,16 @@ export default function PolicyWizardPage({
     const [beneficiaries, setBeneficiaries] = useState(
         (policy?.beneficiaries ?? []).map((item: any) => ({
             beneficiary_id: item.id,
+            full_name: [
+                item.first_name,
+                item.middle_name,
+                item.last_name,
+                item.second_last_name,
+            ]
+                .filter(Boolean)
+                .join(' ')
+                .trim(),
             percentage: Number(item.pivot?.percentage ?? 0),
-            first_name: item.first_name,
-            middle_name: item.middle_name,
-            last_name: item.last_name,
-            second_last_name: item.second_last_name,
             rfc: item.rfc,
             relationship_id: item.relationship_id,
         })),
@@ -175,7 +180,13 @@ export default function PolicyWizardPage({
 
         return router.post(
             route('polizas.wizard.step4'),
-            { policy_id: form.data.policy_id, beneficiaries },
+            {
+                policy_id: form.data.policy_id,
+                beneficiaries: beneficiaries.map((item: any) => ({
+                    beneficiary_id: item.beneficiary_id,
+                    percentage: Number(item.percentage ?? 0),
+                })),
+            },
             visitOptions,
         );
     };
@@ -205,7 +216,13 @@ export default function PolicyWizardPage({
 
         router.post(
             route('polizas.wizard.step4'),
-            { policy_id: form.data.policy_id, beneficiaries },
+            {
+                policy_id: form.data.policy_id,
+                beneficiaries: beneficiaries.map((item: any) => ({
+                    beneficiary_id: item.beneficiary_id,
+                    percentage: Number(item.percentage ?? 0),
+                })),
+            },
             {
                 preserveScroll: true,
                 onSuccess: () => {

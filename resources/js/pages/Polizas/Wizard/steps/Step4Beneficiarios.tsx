@@ -1,5 +1,6 @@
-import { Plus, Search, UserPlus } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Loader2, Plus } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { route } from 'ziggy-js';
 import { CrudFormDialog } from '@/components/crud-form-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -29,38 +30,24 @@ type BeneficiaryCatalog = {
 
 type SelectedBeneficiary = {
     beneficiary_id: string;
-    percentage: number;
-    first_name?: string;
-    middle_name?: string | null;
-    last_name?: string;
-    second_last_name?: string | null;
+    full_name: string;
     rfc?: string | null;
+    percentage: number | null;
     relationship_id?: string | null;
 };
 
-const TOTAL_TOLERANCE = 0.01;
+type SearchBeneficiary = {
+    id: string;
+    full_name: string;
+    rfc?: string | null;
+};
 
-const formatFullName = (beneficiary: {
-    first_name?: string | null;
-    middle_name?: string | null;
-    last_name?: string | null;
-    second_last_name?: string | null;
-}) =>
-    [
-        beneficiary.first_name,
-        beneficiary.middle_name,
-        beneficiary.last_name,
-        beneficiary.second_last_name,
-    ]
-        .filter(Boolean)
-        .join(' ')
-        .trim();
+const TOTAL_TOLERANCE = 0.01;
 
 export default function Step4Beneficiarios({
     beneficiaries,
     setBeneficiaries,
     relationships,
-    beneficiaryCatalog,
     errors,
 }: {
     beneficiaries: SelectedBeneficiary[];
@@ -70,9 +57,6 @@ export default function Step4Beneficiarios({
     errors: Record<string, string>;
 }) {
     const [openDialog, setOpenDialog] = useState(false);
-    const [mode, setMode] = useState<'existing' | 'new'>('existing');
-    const [selectedBeneficiaryId, setSelectedBeneficiaryId] = useState('');
-    const [percentage, setPercentage] = useState('');
     const [saving, setSaving] = useState(false);
     const [createErrors, setCreateErrors] = useState<Record<string, string>>(
         {},
@@ -88,6 +72,71 @@ export default function Step4Beneficiarios({
         relationship_id: '',
     });
 
+    const [query, setQuery] = useState('');
+    const [debouncedQuery, setDebouncedQuery] = useState('');
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [searchResults, setSearchResults] = useState<SearchBeneficiary[]>([]);
+
+    const tableRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        const timer = window.setTimeout(
+            () => setDebouncedQuery(query.trim()),
+            300,
+        );
+
+        return () => window.clearTimeout(timer);
+    }, [query]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        if (debouncedQuery.length < 3) {
+            setSearchLoading(false);
+            setSearchResults([]);
+            setSearchOpen(false);
+            return;
+        }
+
+        const searchBeneficiaries = async () => {
+            setSearchLoading(true);
+            setSearchOpen(true);
+
+            try {
+                const response = await fetch(
+                    `${route('beneficiarios.search')}?q=${encodeURIComponent(debouncedQuery)}`,
+                    {
+                        headers: {
+                            Accept: 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    },
+                );
+
+                if (!response.ok || cancelled) {
+                    return;
+                }
+
+                const data = (await response.json()) as SearchBeneficiary[];
+
+                if (!cancelled) {
+                    setSearchResults(data);
+                }
+            } finally {
+                if (!cancelled) {
+                    setSearchLoading(false);
+                }
+            }
+        };
+
+        void searchBeneficiaries();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [debouncedQuery]);
+
     const total = useMemo(
         () =>
             Number(
@@ -99,14 +148,6 @@ export default function Step4Beneficiarios({
                     .toFixed(2),
             ),
         [beneficiaries],
-    );
-
-    const selectedFromCatalog = useMemo(
-        () =>
-            beneficiaryCatalog.find(
-                (item) => String(item.id) === String(selectedBeneficiaryId),
-            ),
-        [beneficiaryCatalog, selectedBeneficiaryId],
     );
 
     const status =
@@ -127,9 +168,6 @@ export default function Step4Beneficiarios({
             ?.name ?? '—';
 
     const resetDialog = () => {
-        setMode('existing');
-        setSelectedBeneficiaryId('');
-        setPercentage('');
         setCreateErrors({});
         setNewBeneficiary({
             first_name: '',
@@ -143,55 +181,38 @@ export default function Step4Beneficiarios({
         });
     };
 
-    const upsertListEntry = (item: SelectedBeneficiary) => {
-        const nextPercentage = Number.parseFloat(String(item.percentage || 0));
-
-        if (!Number.isFinite(nextPercentage) || nextPercentage <= 0) {
-            return;
-        }
-
-        const existingIndex = beneficiaries.findIndex(
-            (row) => String(row.beneficiary_id) === String(item.beneficiary_id),
+    const addBeneficiaryToSelection = (beneficiary: {
+        id: string;
+        full_name: string;
+        rfc?: string | null;
+        relationship_id?: string | null;
+    }) => {
+        const alreadyAdded = beneficiaries.some(
+            (item) => String(item.beneficiary_id) === String(beneficiary.id),
         );
 
-        if (existingIndex >= 0) {
-            const updated = [...beneficiaries];
-            updated[existingIndex] = {
-                ...updated[existingIndex],
-                ...item,
-                percentage: Number(nextPercentage.toFixed(2)),
-            };
-            setBeneficiaries(updated);
+        if (alreadyAdded) {
+            toast.warning('Ya fue agregado');
             return;
         }
 
         setBeneficiaries([
             ...beneficiaries,
             {
-                ...item,
-                percentage: Number(nextPercentage.toFixed(2)),
+                beneficiary_id: beneficiary.id,
+                full_name: beneficiary.full_name,
+                rfc: beneficiary.rfc ?? null,
+                relationship_id: beneficiary.relationship_id ?? null,
+                percentage: null,
             },
         ]);
-    };
 
-    const addExistingBeneficiary = () => {
-        if (!selectedFromCatalog) {
-            return;
-        }
-
-        upsertListEntry({
-            beneficiary_id: selectedFromCatalog.id,
-            percentage: Number(percentage),
-            first_name: selectedFromCatalog.first_name,
-            middle_name: selectedFromCatalog.middle_name,
-            last_name: selectedFromCatalog.last_name,
-            second_last_name: selectedFromCatalog.second_last_name,
-            rfc: selectedFromCatalog.rfc,
-            relationship_id: selectedFromCatalog.relationship_id,
-        });
-
-        setOpenDialog(false);
-        resetDialog();
+        window.setTimeout(() => {
+            tableRef.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            });
+        }, 100);
     };
 
     const createAndAddBeneficiary = async () => {
@@ -233,19 +254,18 @@ export default function Step4Beneficiarios({
             return;
         }
 
-        const created = (await response.json()) as BeneficiaryCatalog;
+        const created = (await response.json()) as BeneficiaryCatalog & {
+            full_name: string;
+        };
 
-        upsertListEntry({
-            beneficiary_id: created.id,
-            percentage: Number(percentage),
-            first_name: created.first_name,
-            middle_name: created.middle_name,
-            last_name: created.last_name,
-            second_last_name: created.second_last_name,
+        addBeneficiaryToSelection({
+            id: created.id,
+            full_name: created.full_name,
             rfc: created.rfc,
             relationship_id: created.relationship_id,
         });
 
+        toast.success('Beneficiario creado y agregado');
         setOpenDialog(false);
         resetDialog();
         setSaving(false);
@@ -253,28 +273,106 @@ export default function Step4Beneficiarios({
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
-                <div>
-                    <h3 className="text-sm font-semibold">
-                        Beneficiarios seleccionados
-                    </h3>
+            <div className="space-y-3 rounded-lg border p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h3 className="text-sm font-semibold">
+                            Beneficiarios seleccionados
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                            Busca y agrega beneficiarios. Asigna porcentajes por
+                            póliza hasta sumar 100%.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Badge variant="secondary">
+                            Total: {total.toFixed(2)}%
+                        </Badge>
+                        <Badge className={status.className}>
+                            {status.label}
+                        </Badge>
+                    </div>
+                </div>
+
+                <div className="space-y-1">
+                    <Combobox
+                        value=""
+                        open={searchOpen && debouncedQuery.length >= 3}
+                        onOpenChange={setSearchOpen}
+                        onValueChange={(value) => {
+                            if (!value) return;
+
+                            const beneficiary =
+                                searchResults.find(
+                                    (item) => item.id === value,
+                                ) ?? null;
+
+                            if (!beneficiary) return;
+
+                            addBeneficiaryToSelection(beneficiary);
+                            setQuery('');
+                            setSearchResults([]);
+                            setSearchOpen(false);
+                        }}
+                    >
+                        <ComboboxInput
+                            placeholder="Buscar beneficiario (mínimo 3 caracteres)..."
+                            value={query}
+                            onChange={(event) => setQuery(event.target.value)}
+                            aria-label="Buscar beneficiario"
+                            className="w-full"
+                        />
+                        {debouncedQuery.length >= 3 && (
+                            <ComboboxContent>
+                                <ComboboxList>
+                                    {searchLoading && (
+                                        <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
+                                            <Loader2 className="size-4 animate-spin" />
+                                            Buscando beneficiarios...
+                                        </div>
+                                    )}
+                                    {!searchLoading &&
+                                        searchResults.length === 0 && (
+                                            <ComboboxEmpty>
+                                                Sin resultados.
+                                            </ComboboxEmpty>
+                                        )}
+                                    {searchResults.map((beneficiary) => (
+                                        <ComboboxItem
+                                            key={beneficiary.id}
+                                            value={beneficiary.id}
+                                        >
+                                            <div>
+                                                <p className="font-medium">
+                                                    {beneficiary.full_name}
+                                                </p>
+                                                {beneficiary.rfc && (
+                                                    <p className="text-xs text-muted-foreground">
+                                                        RFC: {beneficiary.rfc}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </ComboboxItem>
+                                    ))}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        )}
+                    </Combobox>
                     <p className="text-xs text-muted-foreground">
-                        Asigna porcentajes por póliza. Deben sumar 100%.
+                        También puedes crear un beneficiario nuevo si no existe.
                     </p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Badge variant="secondary">
-                        Total: {total.toFixed(2)}%
-                    </Badge>
-                    <Badge className={status.className}>{status.label}</Badge>
-                </div>
+
+                <Button type="button" onClick={() => setOpenDialog(true)}>
+                    <Plus className="mr-2 size-4" /> Crear beneficiario nuevo
+                </Button>
             </div>
 
             {errors?.beneficiaries && (
                 <FieldError>{errors.beneficiaries}</FieldError>
             )}
 
-            <div className="rounded-lg border">
+            <div ref={tableRef} className="rounded-lg border">
                 <table className="w-full text-sm">
                     <thead className="bg-muted/30">
                         <tr>
@@ -286,15 +384,22 @@ export default function Step4Beneficiarios({
                         </tr>
                     </thead>
                     <tbody>
-                        {beneficiaries.map((item, index) => (
+                        {beneficiaries.length === 0 && (
+                            <tr className="border-t">
+                                <td
+                                    colSpan={5}
+                                    className="p-4 text-center text-sm text-muted-foreground"
+                                >
+                                    Aún no has agregado beneficiarios.
+                                </td>
+                            </tr>
+                        )}
+                        {beneficiaries.map((item) => (
                             <tr
-                                key={`${item.beneficiary_id}-${index}`}
+                                key={item.beneficiary_id}
                                 className="border-t align-top"
                             >
-                                <td className="p-2">
-                                    {formatFullName(item) ||
-                                        item.beneficiary_id}
-                                </td>
+                                <td className="p-2">{item.full_name}</td>
                                 <td className="p-2">{item.rfc || '—'}</td>
                                 <td className="p-2">
                                     {relationshipName(item.relationship_id)}
@@ -302,28 +407,37 @@ export default function Step4Beneficiarios({
                                 <td className="p-2">
                                     <Input
                                         type="number"
-                                        min={0.01}
+                                        min={0}
                                         max={100}
                                         step="0.01"
-                                        value={item.percentage}
+                                        value={item.percentage ?? ''}
                                         onChange={(event) => {
-                                            const value = Number(
-                                                event.target.value || 0,
-                                            );
+                                            const rawValue = event.target.value;
+                                            const parsedValue =
+                                                rawValue === ''
+                                                    ? null
+                                                    : Number(rawValue);
+
                                             setBeneficiaries(
-                                                beneficiaries.map(
-                                                    (row, itemIndex) =>
-                                                        itemIndex === index
-                                                            ? {
-                                                                  ...row,
-                                                                  percentage:
-                                                                      Number(
-                                                                          value.toFixed(
-                                                                              2,
-                                                                          ),
-                                                                      ),
-                                                              }
-                                                            : row,
+                                                beneficiaries.map((row) =>
+                                                    row.beneficiary_id ===
+                                                    item.beneficiary_id
+                                                        ? {
+                                                              ...row,
+                                                              percentage:
+                                                                  parsedValue ===
+                                                                      null ||
+                                                                  Number.isNaN(
+                                                                      parsedValue,
+                                                                  )
+                                                                      ? null
+                                                                      : Number(
+                                                                            parsedValue.toFixed(
+                                                                                2,
+                                                                            ),
+                                                                        ),
+                                                          }
+                                                        : row,
                                                 ),
                                             );
                                         }}
@@ -331,11 +445,14 @@ export default function Step4Beneficiarios({
                                 </td>
                                 <td className="p-2 text-right">
                                     <Button
+                                        type="button"
                                         variant="ghost"
                                         onClick={() =>
                                             setBeneficiaries(
                                                 beneficiaries.filter(
-                                                    (_, i) => i !== index,
+                                                    (row) =>
+                                                        row.beneficiary_id !==
+                                                        item.beneficiary_id,
                                                 ),
                                             )
                                         }
@@ -349,10 +466,6 @@ export default function Step4Beneficiarios({
                 </table>
             </div>
 
-            <Button onClick={() => setOpenDialog(true)}>
-                <Plus className="mr-2 size-4" /> Agregar beneficiario
-            </Button>
-
             <CrudFormDialog
                 open={openDialog}
                 onOpenChange={(open) => {
@@ -361,251 +474,147 @@ export default function Step4Beneficiarios({
                         resetDialog();
                     }
                 }}
-                title="Agregar beneficiario"
-                description="Busca uno existente o crea uno nuevo con el formulario estándar."
-                submitLabel={
-                    mode === 'existing' ? 'Agregar a póliza' : 'Crear y agregar'
-                }
+                title="Crear beneficiario"
+                description="Registra un beneficiario nuevo y se agregará automáticamente a la tabla."
+                submitLabel="Crear y agregar"
                 processing={saving}
                 onSubmit={(event) => {
                     event.preventDefault();
-                    if (mode === 'existing') {
-                        addExistingBeneficiary();
-                        return;
-                    }
                     void createAndAddBeneficiary();
                 }}
             >
-                <div className="flex gap-2">
-                    <Button
-                        type="button"
-                        variant={mode === 'existing' ? 'default' : 'outline'}
-                        onClick={() => setMode('existing')}
-                    >
-                        <Search className="mr-2 size-4" /> Buscar existente
-                    </Button>
-                    <Button
-                        type="button"
-                        variant={mode === 'new' ? 'default' : 'outline'}
-                        onClick={() => setMode('new')}
-                    >
-                        <UserPlus className="mr-2 size-4" /> Crear nuevo
-                    </Button>
+                <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-1.5">
+                        <Label>Nombre(s)</Label>
+                        <Input
+                            value={newBeneficiary.first_name}
+                            onChange={(event) =>
+                                setNewBeneficiary({
+                                    ...newBeneficiary,
+                                    first_name: event.target.value,
+                                })
+                            }
+                        />
+                        <FieldError>{createErrors.first_name}</FieldError>
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label>Segundo nombre</Label>
+                        <Input
+                            value={newBeneficiary.middle_name}
+                            onChange={(event) =>
+                                setNewBeneficiary({
+                                    ...newBeneficiary,
+                                    middle_name: event.target.value,
+                                })
+                            }
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label>Apellido paterno</Label>
+                        <Input
+                            value={newBeneficiary.last_name}
+                            onChange={(event) =>
+                                setNewBeneficiary({
+                                    ...newBeneficiary,
+                                    last_name: event.target.value,
+                                })
+                            }
+                        />
+                        <FieldError>{createErrors.last_name}</FieldError>
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label>Apellido materno</Label>
+                        <Input
+                            value={newBeneficiary.second_last_name}
+                            onChange={(event) =>
+                                setNewBeneficiary({
+                                    ...newBeneficiary,
+                                    second_last_name: event.target.value,
+                                })
+                            }
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label>RFC</Label>
+                        <Input
+                            value={newBeneficiary.rfc}
+                            onChange={(event) =>
+                                setNewBeneficiary({
+                                    ...newBeneficiary,
+                                    rfc: event.target.value,
+                                })
+                            }
+                        />
+                        <FieldError>{createErrors.rfc}</FieldError>
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label>Teléfono</Label>
+                        <Input
+                            value={newBeneficiary.phone}
+                            onChange={(event) =>
+                                setNewBeneficiary({
+                                    ...newBeneficiary,
+                                    phone: event.target.value,
+                                })
+                            }
+                        />
+                        <FieldError>{createErrors.phone}</FieldError>
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label>Email</Label>
+                        <Input
+                            value={newBeneficiary.email}
+                            onChange={(event) =>
+                                setNewBeneficiary({
+                                    ...newBeneficiary,
+                                    email: event.target.value,
+                                })
+                            }
+                        />
+                        <FieldError>{createErrors.email}</FieldError>
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label>Parentesco</Label>
+                        <Combobox
+                            itemToStringLabel={(value) =>
+                                !value
+                                    ? 'Selecciona parentesco'
+                                    : (relationships.find(
+                                          (item) =>
+                                              String(item.id) === String(value),
+                                      )?.name ?? '')
+                            }
+                            value={newBeneficiary.relationship_id}
+                            onValueChange={(value) =>
+                                setNewBeneficiary({
+                                    ...newBeneficiary,
+                                    relationship_id: value ?? '',
+                                })
+                            }
+                        >
+                            <ComboboxInput
+                                className="w-full"
+                                placeholder="Parentesco"
+                            />
+                            <ComboboxContent>
+                                <ComboboxList>
+                                    <ComboboxEmpty>
+                                        No se encontraron parentescos.
+                                    </ComboboxEmpty>
+                                    {relationships.map((item) => (
+                                        <ComboboxItem
+                                            key={item.id}
+                                            value={item.id}
+                                        >
+                                            {item.name}
+                                        </ComboboxItem>
+                                    ))}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
+                        <FieldError>{createErrors.relationship_id}</FieldError>
+                    </div>
                 </div>
-
-                {mode === 'existing' ? (
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <div className="space-y-1.5 md:col-span-2">
-                            <Label>Beneficiario</Label>
-                            <Combobox
-                                itemToStringLabel={(value) => {
-                                    const found = beneficiaryCatalog.find(
-                                        (item) =>
-                                            String(item.id) === String(value),
-                                    );
-
-                                    if (!found) {
-                                        return 'Selecciona beneficiario';
-                                    }
-
-                                    const name = formatFullName(found);
-                                    return found.rfc
-                                        ? `${name} · ${found.rfc}`
-                                        : name;
-                                }}
-                                value={selectedBeneficiaryId}
-                                onValueChange={(value) =>
-                                    setSelectedBeneficiaryId(value ?? '')
-                                }
-                            >
-                                <ComboboxInput
-                                    className="w-full"
-                                    placeholder="Nombre completo o RFC"
-                                />
-                                <ComboboxContent>
-                                    <ComboboxList>
-                                        <ComboboxEmpty>
-                                            No se encontraron beneficiarios.
-                                        </ComboboxEmpty>
-                                        {beneficiaryCatalog.map((item) => (
-                                            <ComboboxItem
-                                                key={item.id}
-                                                value={item.id}
-                                            >
-                                                {formatFullName(item)}
-                                                {item.rfc
-                                                    ? ` · ${item.rfc}`
-                                                    : ''}
-                                            </ComboboxItem>
-                                        ))}
-                                    </ComboboxList>
-                                </ComboboxContent>
-                            </Combobox>
-                        </div>
-                        <div className="space-y-1.5 md:col-span-2">
-                            <Label>Porcentaje</Label>
-                            <Input
-                                type="number"
-                                step="0.01"
-                                min={0.01}
-                                max={100}
-                                value={percentage}
-                                onChange={(event) =>
-                                    setPercentage(event.target.value)
-                                }
-                            />
-                        </div>
-                    </div>
-                ) : (
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <div className="space-y-1.5">
-                            <Label>Nombre(s)</Label>
-                            <Input
-                                value={newBeneficiary.first_name}
-                                onChange={(event) =>
-                                    setNewBeneficiary({
-                                        ...newBeneficiary,
-                                        first_name: event.target.value,
-                                    })
-                                }
-                            />
-                            <FieldError>{createErrors.first_name}</FieldError>
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label>Segundo nombre</Label>
-                            <Input
-                                value={newBeneficiary.middle_name}
-                                onChange={(event) =>
-                                    setNewBeneficiary({
-                                        ...newBeneficiary,
-                                        middle_name: event.target.value,
-                                    })
-                                }
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label>Apellido paterno</Label>
-                            <Input
-                                value={newBeneficiary.last_name}
-                                onChange={(event) =>
-                                    setNewBeneficiary({
-                                        ...newBeneficiary,
-                                        last_name: event.target.value,
-                                    })
-                                }
-                            />
-                            <FieldError>{createErrors.last_name}</FieldError>
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label>Apellido materno</Label>
-                            <Input
-                                value={newBeneficiary.second_last_name}
-                                onChange={(event) =>
-                                    setNewBeneficiary({
-                                        ...newBeneficiary,
-                                        second_last_name: event.target.value,
-                                    })
-                                }
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label>RFC</Label>
-                            <Input
-                                value={newBeneficiary.rfc}
-                                onChange={(event) =>
-                                    setNewBeneficiary({
-                                        ...newBeneficiary,
-                                        rfc: event.target.value,
-                                    })
-                                }
-                            />
-                            <FieldError>{createErrors.rfc}</FieldError>
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label>Teléfono</Label>
-                            <Input
-                                value={newBeneficiary.phone}
-                                onChange={(event) =>
-                                    setNewBeneficiary({
-                                        ...newBeneficiary,
-                                        phone: event.target.value,
-                                    })
-                                }
-                            />
-                            <FieldError>{createErrors.phone}</FieldError>
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label>Email</Label>
-                            <Input
-                                value={newBeneficiary.email}
-                                onChange={(event) =>
-                                    setNewBeneficiary({
-                                        ...newBeneficiary,
-                                        email: event.target.value,
-                                    })
-                                }
-                            />
-                            <FieldError>{createErrors.email}</FieldError>
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label>Parentesco</Label>
-                            <Combobox
-                                itemToStringLabel={(value) =>
-                                    !value
-                                        ? 'Selecciona parentesco'
-                                        : (relationships.find(
-                                              (item) =>
-                                                  String(item.id) ===
-                                                  String(value),
-                                          )?.name ?? '')
-                                }
-                                value={newBeneficiary.relationship_id}
-                                onValueChange={(value) =>
-                                    setNewBeneficiary({
-                                        ...newBeneficiary,
-                                        relationship_id: value ?? '',
-                                    })
-                                }
-                            >
-                                <ComboboxInput
-                                    className="w-full"
-                                    placeholder="Parentesco"
-                                />
-                                <ComboboxContent>
-                                    <ComboboxList>
-                                        <ComboboxEmpty>
-                                            No se encontraron parentescos.
-                                        </ComboboxEmpty>
-                                        {relationships.map((item) => (
-                                            <ComboboxItem
-                                                key={item.id}
-                                                value={item.id}
-                                            >
-                                                {item.name}
-                                            </ComboboxItem>
-                                        ))}
-                                    </ComboboxList>
-                                </ComboboxContent>
-                            </Combobox>
-                            <FieldError>
-                                {createErrors.relationship_id}
-                            </FieldError>
-                        </div>
-                        <div className="space-y-1.5 md:col-span-2">
-                            <Label>Porcentaje</Label>
-                            <Input
-                                type="number"
-                                step="0.01"
-                                min={0.01}
-                                max={100}
-                                value={percentage}
-                                onChange={(event) =>
-                                    setPercentage(event.target.value)
-                                }
-                            />
-                        </div>
-                    </div>
-                )}
             </CrudFormDialog>
         </div>
     );
