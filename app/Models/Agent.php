@@ -94,6 +94,16 @@ class Agent extends Model
         return $this->hasMany(Policy::class);
     }
 
+    public function policyAiImports(): HasMany
+    {
+        return $this->hasMany(PolicyAiImport::class);
+    }
+
+    public function policyWizardDrafts(): HasMany
+    {
+        return $this->hasMany(PolicyWizardDraft::class);
+    }
+
     public function beneficiaries(): HasMany
     {
         return $this->hasMany(Beneficiary::class);

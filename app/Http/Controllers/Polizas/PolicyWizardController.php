@@ -16,6 +16,7 @@ use App\Models\Client;
 use App\Models\Insured;
 use App\Models\CatPeriodicity;
 use App\Models\Policy;
+use App\Models\PolicyWizardDraft;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -401,8 +402,11 @@ class PolicyWizardController extends Controller
             $selectedClient = $policy->client;
         }
 
+        $wizardDraft = PolicyWizardDraft::query()->where('agent_id', (string) auth()->user()->agent_id)->first();
+
         return [
             'policy' => $policy,
+            'wizardDraft' => $wizardDraft?->data,
             'initialStep' => (int) ($policy?->current_step ?? 1),
             'preselectedClient' => $this->serializeClient($selectedClient),
             'insureds' => Insured::query()
