@@ -288,41 +288,14 @@ class PolicyWizardController extends Controller
         $data = $request->validated();
 
         $policy = $this->ownedPolicy($data['policy_id']);
-        $agentId = (string) auth()->user()->agent_id;
 
-        DB::transaction(function () use ($data, $policy, $agentId) {
-            $keepIds = [];
+        $syncPayload = collect($data['beneficiaries'])
+            ->mapWithKeys(fn (array $item) => [
+                $item['beneficiary_id'] => ['percentage' => round((float) $item['percentage'], 2)],
+            ])
+            ->all();
 
-            foreach ($data['beneficiaries'] ?? [] as $item) {
-                $beneficiary = Beneficiary::query()
-                    ->where('policy_id', $policy->id)
-                    ->when(! empty($item['id']), fn (Builder $q) => $q->whereKey($item['id']))
-                    ->first();
-
-                if (! $beneficiary) {
-                    $beneficiary = new Beneficiary();
-                    $beneficiary->policy_id = $policy->id;
-                    $beneficiary->agent_id = $agentId;
-                }
-
-                $beneficiary->fill([
-                    'first_name' => $item['first_name'],
-                    'middle_name' => $item['middle_name'] ?? null,
-                    'last_name' => $item['last_name'],
-                    'second_last_name' => $item['second_last_name'] ?? null,
-                    'relationship_id' => $item['relationship_id'] ?? null,
-                    'benefit_percentage' => $item['benefit_percentage'],
-                ]);
-
-                $beneficiary->save();
-                $keepIds[] = $beneficiary->id;
-            }
-
-            Beneficiary::query()
-                ->where('policy_id', $policy->id)
-                ->whereNotIn('id', $keepIds)
-                ->delete();
-        });
+        $policy->beneficiaries()->sync($syncPayload);
 
         $policy->update([
             'status' => Policy::STATUS_DRAFT,
@@ -349,11 +322,9 @@ class PolicyWizardController extends Controller
     {
         $policy = $this->ownedPolicy($policyId);
 
-        $total = (float) Beneficiary::query()
-            ->where('policy_id', $policy->id)
-            ->sum('benefit_percentage');
+        $total = (float) $policy->beneficiaries()->sum('beneficiary_policy.percentage');
 
-        if (round($total, 2) !== 100.0) {
+        if (abs(round($total, 2) - 100.0) > 0.01) {
             return back()->withErrors(['beneficiaries' => 'Los beneficiarios deben sumar 100%.']);
         }
 
@@ -422,7 +393,7 @@ class PolicyWizardController extends Controller
 
     private function wizardProps(?Policy $policy = null, ?Client $preselectedClient = null): array
     {
-        $policy?->load(['beneficiaries:id,policy_id,first_name,middle_name,last_name,second_last_name,relationship_id,benefit_percentage', 'client:id,first_name,middle_name,last_name,second_last_name,email,phone,rfc,street', 'insured:id,client_id,first_name,middle_name,last_name,second_last_name,email,phone,rfc,birthday,age_current,address,occupation,company_name,approx_income,medical_history,main_savings_goal,personal_interests,personal_likes,smokes,drinks,personality,children_count']);
+        $policy?->load(['beneficiaries:id,first_name,middle_name,last_name,second_last_name,relationship_id,rfc,phone,email', 'client:id,first_name,middle_name,last_name,second_last_name,email,phone,rfc,street', 'insured:id,client_id,first_name,middle_name,last_name,second_last_name,email,phone,rfc,birthday,age_current,address,occupation,company_name,approx_income,medical_history,main_savings_goal,personal_interests,personal_likes,smokes,drinks,personality,children_count']);
 
         $selectedClient = $preselectedClient;
 
@@ -440,6 +411,12 @@ class PolicyWizardController extends Controller
                 ->latest()
                 ->get(),
             'relationships' => CatRelationship::query()->select(['id', 'name'])->orderBy('name')->get(),
+            'beneficiariesCatalog' => Beneficiary::query()
+                ->where('agent_id', (string) auth()->user()->agent_id)
+                ->select(['id', 'first_name', 'middle_name', 'last_name', 'second_last_name', 'rfc', 'phone', 'email', 'relationship_id'])
+                ->orderBy('first_name')
+                ->limit(200)
+                ->get(),
             'paymentChannels' => CatPaymentChannel::query()->select(['id', 'name'])->orderBy('name')->get(),
             'currencies' => CatCurrency::query()->select(['id', 'name'])->orderBy('name')->get(),
             'periodicities' => CatPeriodicity::query()->where('is_active', true)->orderBy('sort_order')->get(['id', 'name', 'code']),

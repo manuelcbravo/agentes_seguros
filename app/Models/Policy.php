@@ -7,6 +7,7 @@ use App\Models\Concerns\AssignsAgentOwnership;
 use App\Models\Concerns\HasUuid;
 use App\Models\Traits\HasTrackingActivities;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Scout\Searchable;
 
@@ -27,6 +28,7 @@ class Policy extends Model
         'product',
         'insurance_company_id',
         'product_id',
+        'policy_number',
         'coverage_start',
         'risk_premium',
         'fractional_premium',
@@ -81,9 +83,11 @@ class Policy extends Model
         return $this->belongsTo(CatCurrency::class, 'currency_id');
     }
 
-    public function beneficiaries()
+    public function beneficiaries(): BelongsToMany
     {
-        return $this->hasMany(Beneficiary::class);
+        return $this->belongsToMany(Beneficiary::class)
+            ->withPivot(['percentage'])
+            ->withTimestamps();
     }
 
     public function periodicityCatalog(): BelongsTo

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Polizas;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class SaveStep4PolicyWizardRequest extends FormRequest
 {
@@ -13,16 +14,17 @@ class SaveStep4PolicyWizardRequest extends FormRequest
 
     public function rules(): array
     {
+        $agentId = (string) ($this->user()?->agent_id ?? '');
+
         return [
             'policy_id' => ['required', 'uuid'],
             'beneficiaries' => ['required', 'array', 'min:1'],
-            'beneficiaries.*.id' => ['nullable', 'uuid'],
-            'beneficiaries.*.first_name' => ['required', 'string', 'max:150'],
-            'beneficiaries.*.middle_name' => ['nullable', 'string', 'max:150'],
-            'beneficiaries.*.last_name' => ['required', 'string', 'max:150'],
-            'beneficiaries.*.second_last_name' => ['nullable', 'string', 'max:150'],
-            'beneficiaries.*.relationship_id' => ['required', 'uuid', 'exists:cat_relationships,id'],
-            'beneficiaries.*.benefit_percentage' => ['required', 'numeric', 'gt:0', 'max:100'],
+            'beneficiaries.*.beneficiary_id' => [
+                'required',
+                'uuid',
+                Rule::exists('beneficiaries', 'id')->where('agent_id', $agentId),
+            ],
+            'beneficiaries.*.percentage' => ['required', 'numeric', 'min:0.01', 'max:100'],
         ];
     }
 
@@ -30,9 +32,9 @@ class SaveStep4PolicyWizardRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             $total = collect($this->input('beneficiaries', []))
-                ->sum(fn (array $beneficiary) => (float) ($beneficiary['benefit_percentage'] ?? 0));
+                ->sum(fn (array $beneficiary) => (float) ($beneficiary['percentage'] ?? 0));
 
-            if (round($total, 2) !== 100.0) {
+            if (abs(round($total, 2) - 100.0) > 0.01) {
                 $validator->errors()->add('beneficiaries', 'Los beneficiarios deben sumar 100%.');
             }
         });
