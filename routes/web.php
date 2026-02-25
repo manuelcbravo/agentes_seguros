@@ -101,8 +101,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('polizas/ia', [PolicyAiImportController::class, 'index'])->name('polizas.ai.index');
     Route::post('polizas/ia', [PolicyAiImportController::class, 'store'])->name('polizas.ai.store');
     Route::get('polizas/ia/{id}', [PolicyAiImportController::class, 'show'])->name('polizas.ai.show');
+    Route::post('polizas/ia/{id}/files', [PolicyAiImportController::class, 'addFiles'])->name('polizas.ai.files.store');
     Route::post('polizas/ia/{id}/convert', [PolicyAiImportController::class, 'convert'])->name('polizas.ai.convert');
     Route::post('polizas/ia/{id}/retry', [PolicyAiImportController::class, 'retry'])->name('polizas.ai.retry');
+
+    Route::get('policies/ai', [PolicyAiImportController::class, 'index']);
+    Route::post('policies/ai', [PolicyAiImportController::class, 'store']);
+    Route::get('policies/ai/{id}', [PolicyAiImportController::class, 'show']);
+    Route::post('policies/ai/{id}/files', [PolicyAiImportController::class, 'addFiles']);
+    Route::post('policies/ai/{id}/convert', [PolicyAiImportController::class, 'convert']);
+    Route::post('policies/ai/{id}/retry', [PolicyAiImportController::class, 'retry']);
 
     Route::get('asegurados', [AseguradoController::class, 'index'])->name('asegurados.index');
     Route::post('asegurados', [AseguradoController::class, 'store'])->name('asegurados.store');

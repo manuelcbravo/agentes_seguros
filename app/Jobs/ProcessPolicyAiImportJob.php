@@ -2,19 +2,20 @@
 
 namespace App\Jobs;
 
-use Throwable;
 use App\Models\PolicyAiImport;
-use Illuminate\Bus\Queueable;
+use App\Models\PolicyAiImportFile;
 use App\Services\PolicyAi\PolicyAiAnalyzer;
-use App\Services\PolicyAi\TextExtraction\PdfTextExtractor;
 use App\Services\PolicyAi\PolicyAiMapper;
-use RuntimeException;
 use App\Services\PolicyAi\TextExtraction\OcrTextExtractor;
+use App\Services\PolicyAi\TextExtraction\PdfTextExtractor;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
+use Throwable;
 
 class ProcessPolicyAiImportJob implements ShouldQueue
 {
@@ -24,7 +25,7 @@ class ProcessPolicyAiImportJob implements ShouldQueue
 
     public function handle(PolicyAiAnalyzer $analyzer, PolicyAiMapper $mapper): void
     {
-        $import = PolicyAiImport::query()->find($this->importId);
+        $import = PolicyAiImport::query()->with('files')->find($this->importId);
 
         if (! $import) {
             return;
@@ -38,18 +39,25 @@ class ProcessPolicyAiImportJob implements ShouldQueue
         $import->update(['status' => PolicyAiImport::STATUS_PROCESSING, 'error_message' => null]);
 
         try {
-            $fullPath = Storage::disk($import->disk)->path($import->path);
-            $pdfExtractor = new PdfTextExtractor();
-            $ocrExtractor = new OcrTextExtractor();
-
-            $text = $pdfExtractor->extract($fullPath, $import->mime_type);
-
-            if (! $text || mb_strlen($text) < 80) {
-                $text = $ocrExtractor->extract($fullPath, $import->mime_type);
+            if ($import->files->isEmpty()) {
+                throw new RuntimeException('No se encontraron archivos para analizar.');
             }
 
-            if (! $text) {
-                throw new RuntimeException('No se pudo extraer texto del archivo.');
+            $pdfExtractor = new PdfTextExtractor();
+            $ocrExtractor = new OcrTextExtractor();
+            $chunks = [];
+
+            foreach ($import->files as $file) {
+                $fileText = $this->extractForFile($file, $pdfExtractor, $ocrExtractor);
+                if ($fileText !== null && trim($fileText) !== '') {
+                    $chunks[] = "--- FILE: {$file->original_filename} ---\n\n".trim($fileText);
+                }
+            }
+
+            $text = trim(implode("\n\n", $chunks));
+
+            if ($text === '') {
+                throw new RuntimeException('No se pudo extraer texto de los archivos.');
             }
 
             $aiData = $analyzer->analyze($text);
@@ -79,7 +87,7 @@ class ProcessPolicyAiImportJob implements ShouldQueue
             ]);
         } catch (Throwable $e) {
             $message = str_contains(mb_strtolower($e->getMessage()), 'ocr')
-                ? 'OCR no configurado'
+                ? 'OCR no configurado para analizar imágenes o PDFs escaneados.'
                 : $e->getMessage();
 
             $import->update([
@@ -88,6 +96,18 @@ class ProcessPolicyAiImportJob implements ShouldQueue
                 'took_ms' => (int) round((microtime(true) - $startedAt) * 1000),
             ]);
         }
+    }
+
+    private function extractForFile(PolicyAiImportFile $file, PdfTextExtractor $pdfExtractor, OcrTextExtractor $ocrExtractor): ?string
+    {
+        $fullPath = Storage::disk($file->disk)->path($file->path);
+        $text = $pdfExtractor->extract($fullPath, $file->mime_type);
+
+        if (! $text || mb_strlen($text) < 80) {
+            $text = $ocrExtractor->extract($fullPath, $file->mime_type);
+        }
+
+        return $text;
     }
 
     private function criticalMissingFields(array $data): array
