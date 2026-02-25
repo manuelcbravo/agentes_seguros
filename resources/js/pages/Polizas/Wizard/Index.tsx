@@ -39,7 +39,12 @@ export default function PolicyWizardPage({
     insuranceCompanies,
     products,
     beneficiariesCatalog,
+    wizardDraft,
 }: any) {
+    const draftClient = wizardDraft?.client ?? {};
+    const draftInsured = wizardDraft?.insured ?? {};
+    const draftPolicy = wizardDraft?.policy ?? {};
+
     const [step, setStep] = useState(initialStep);
     const [sameAsClient, setSameAsClient] = useState(true);
     const [isNewClient, setIsNewClient] = useState(
@@ -66,14 +71,14 @@ export default function PolicyWizardPage({
         preselectedClient ?? policy?.client ?? null,
     );
     const [clientForm, setClientForm] = useState({
-        first_name: preselectedClient?.first_name ?? '',
-        middle_name: preselectedClient?.middle_name ?? '',
-        last_name: preselectedClient?.last_name ?? '',
-        second_last_name: preselectedClient?.second_last_name ?? '',
-        email: preselectedClient?.email ?? '',
-        phone: preselectedClient?.phone ?? '',
-        rfc: preselectedClient?.rfc ?? '',
-        address: preselectedClient?.address ?? '',
+        first_name: preselectedClient?.first_name ?? draftClient.first_name ?? '',
+        middle_name: preselectedClient?.middle_name ?? draftClient.middle_name ?? '',
+        last_name: preselectedClient?.last_name ?? draftClient.last_name ?? '',
+        second_last_name: preselectedClient?.second_last_name ?? draftClient.second_last_name ?? '',
+        email: preselectedClient?.email ?? draftClient.email ?? '',
+        phone: preselectedClient?.phone ?? draftClient.phone ?? '',
+        rfc: preselectedClient?.rfc ?? draftClient.rfc ?? '',
+        address: preselectedClient?.address ?? draftClient.address ?? '',
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [activeAction, setActiveAction] = useState<
@@ -88,23 +93,23 @@ export default function PolicyWizardPage({
         payment_channel: policy?.payment_channel ?? '',
         insurance_company_id: policy?.insurance_company_id ?? '',
         product_id: policy?.product_id ?? '',
-        policy_number: policy?.policy_number ?? '',
-        coverage_start: policy?.coverage_start ?? '',
-        risk_premium: policy?.risk_premium ?? '',
+        policy_number: policy?.policy_number ?? draftPolicy.policy_number ?? '',
+        coverage_start: policy?.coverage_start ?? draftPolicy.coverage_start ?? '',
+        risk_premium: policy?.risk_premium ?? draftPolicy.risk_premium ?? '',
         fractional_premium: policy?.fractional_premium ?? '',
         periodicity_id: policy?.periodicity_id ?? '',
         month: policy?.month ?? '',
-        currency: policy?.currency ?? '',
+        currency: policy?.currency ?? draftPolicy.currency ?? '',
         same_as_client: true,
         client: clientForm,
         insured: {
-            first_name: policy?.insured?.first_name ?? '',
-            middle_name: policy?.insured?.middle_name ?? '',
-            last_name: policy?.insured?.last_name ?? '',
-            second_last_name: policy?.insured?.second_last_name ?? '',
+            first_name: policy?.insured?.first_name ?? draftInsured.first_name ?? '',
+            middle_name: policy?.insured?.middle_name ?? draftInsured.middle_name ?? '',
+            last_name: policy?.insured?.last_name ?? draftInsured.last_name ?? '',
+            second_last_name: policy?.insured?.second_last_name ?? draftInsured.second_last_name ?? '',
             email: policy?.insured?.email ?? '',
             phone: policy?.insured?.phone ?? '',
-            rfc: policy?.insured?.rfc ?? '',
+            rfc: policy?.insured?.rfc ?? draftInsured.rfc ?? '',
             birthday: policy?.insured?.birthday ?? '',
             age_current: policy?.insured?.age_current ?? '',
             address: policy?.insured?.address ?? '',
@@ -259,6 +264,16 @@ export default function PolicyWizardPage({
                     description="Completa los 4 pasos para terminar la póliza"
                     status={policy?.status ?? 'borrador'}
                 />
+                {Array.isArray(wizardDraft?.missing_fields) && wizardDraft.missing_fields.length > 0 && (
+                    <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                        <p className="font-medium">Campos por revisar desde Pólizas IA</p>
+                        <ul className="mt-1 list-disc pl-5">
+                            {wizardDraft.missing_fields.map((item: string) => (
+                                <li key={item}>{item}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
                 <Card className="grid gap-0 md:grid-cols-[280px_1fr]">
                     <CardHeader className="border-r bg-muted/20">
                         <Stepper steps={steps} currentStep={step} />
