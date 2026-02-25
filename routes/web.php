@@ -25,6 +25,7 @@ use App\Http\Controllers\Polizas\AseguradoController;
 use App\Http\Controllers\Polizas\BeneficiarioController;
 use App\Http\Controllers\Polizas\PolizaController;
 use App\Http\Controllers\Polizas\PolicyWizardController;
+use App\Http\Controllers\Polizas\PolicyAiImportController;
 use App\Http\Controllers\Tracking\TrackingActivityController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -96,6 +97,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('polizas/wizard/guardar-salir', [PolicyWizardController::class, 'saveAndExit'])->name('polizas.wizard.save-exit');
     Route::post('polizas/{policy}/guardar-salir', [PolicyWizardController::class, 'saveAndExit'])->name('polizas.wizard.save-exit-policy');
     Route::delete('polizas/{id}', [PolizaController::class, 'destroy'])->name('polizas.destroy');
+
+    Route::get('polizas/ia', [PolicyAiImportController::class, 'index'])->name('polizas.ai.index');
+    Route::post('polizas/ia', [PolicyAiImportController::class, 'store'])->name('polizas.ai.store');
+    Route::get('polizas/ia/{id}', [PolicyAiImportController::class, 'show'])->name('polizas.ai.show');
+    Route::post('polizas/ia/{id}/convert', [PolicyAiImportController::class, 'convert'])->name('polizas.ai.convert');
+    Route::post('polizas/ia/{id}/retry', [PolicyAiImportController::class, 'retry'])->name('polizas.ai.retry');
 
     Route::get('asegurados', [AseguradoController::class, 'index'])->name('asegurados.index');
     Route::post('asegurados', [AseguradoController::class, 'store'])->name('asegurados.store');

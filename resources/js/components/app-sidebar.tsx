@@ -9,6 +9,7 @@ import {
     Users,
     Contact,
     ShieldCheck,
+    Sparkles,
     Wallet,
 } from 'lucide-react';
 import { route } from 'ziggy-js';
@@ -84,6 +85,11 @@ const mainNavItems: NavItem[] = [
             {
                 title: 'Pólizas',
                 href: route('polizas.index'),
+            },
+            {
+                title: 'Pólizas IA',
+                href: route('polizas.ai.index'),
+                icon: Sparkles,
             },
             {
                 title: 'Asegurados',
