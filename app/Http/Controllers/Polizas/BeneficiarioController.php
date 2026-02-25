@@ -57,7 +57,7 @@ class BeneficiarioController extends Controller
         ]);
     }
 
-    public function store(UpsertBeneficiarioRequest $request): RedirectResponse
+    public function store(UpsertBeneficiarioRequest $request): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $agentId = (string) auth()->user()->agent_id;
 
@@ -74,11 +74,19 @@ class BeneficiarioController extends Controller
 
             $beneficiario->update($data);
 
+            if ($request->expectsJson()) {
+                return response()->json($this->beneficiaryPayload($beneficiario));
+            }
+
             return back()->with('success', 'Beneficiario actualizado correctamente.');
         }
 
         unset($data['id']);
-        Beneficiary::query()->create($data);
+        $beneficiario = Beneficiary::query()->create($data);
+
+        if ($request->expectsJson()) {
+            return response()->json($this->beneficiaryPayload($beneficiario), 201);
+        }
 
         return back()->with('success', 'Beneficiario creado correctamente.');
     }
@@ -98,6 +106,23 @@ class BeneficiarioController extends Controller
         return back()->with('success', 'Beneficiario eliminado correctamente.');
     }
 
+
+
+    private function beneficiaryPayload(Beneficiary $beneficiary): array
+    {
+        return [
+            'id' => $beneficiary->id,
+            'first_name' => $beneficiary->first_name,
+            'middle_name' => $beneficiary->middle_name,
+            'last_name' => $beneficiary->last_name,
+            'second_last_name' => $beneficiary->second_last_name,
+            'rfc' => $beneficiary->rfc,
+            'phone' => $beneficiary->phone,
+            'email' => $beneficiary->email,
+            'relationship_id' => $beneficiary->relationship_id,
+            'full_name' => $beneficiary->full_name,
+        ];
+    }
 
     private function trackingCatalogs(): array
     {

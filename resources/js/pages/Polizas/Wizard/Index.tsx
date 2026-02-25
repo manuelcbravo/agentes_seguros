@@ -38,6 +38,7 @@ export default function PolicyWizardPage({
     periodicities,
     insuranceCompanies,
     products,
+    beneficiariesCatalog,
 }: any) {
     const [step, setStep] = useState(initialStep);
     const [sameAsClient, setSameAsClient] = useState(true);
@@ -45,7 +46,16 @@ export default function PolicyWizardPage({
         !(preselectedClient ?? policy?.client_id),
     );
     const [beneficiaries, setBeneficiaries] = useState(
-        policy?.beneficiaries ?? [],
+        (policy?.beneficiaries ?? []).map((item: any) => ({
+            beneficiary_id: item.id,
+            percentage: Number(item.pivot?.percentage ?? 0),
+            first_name: item.first_name,
+            middle_name: item.middle_name,
+            last_name: item.last_name,
+            second_last_name: item.second_last_name,
+            rfc: item.rfc,
+            relationship_id: item.relationship_id,
+        })),
     );
     const [selectedClient, setSelectedClient] = useState<any>(
         preselectedClient ?? policy?.client ?? null,
@@ -73,12 +83,13 @@ export default function PolicyWizardPage({
         payment_channel: policy?.payment_channel ?? '',
         insurance_company_id: policy?.insurance_company_id ?? '',
         product_id: policy?.product_id ?? '',
+        policy_number: policy?.policy_number ?? '',
         coverage_start: policy?.coverage_start ?? '',
         risk_premium: policy?.risk_premium ?? '',
         fractional_premium: policy?.fractional_premium ?? '',
         periodicity_id: policy?.periodicity_id ?? '',
         month: policy?.month ?? '',
-        currency_id: policy?.currency_id ?? '',
+        currency: policy?.currency ?? '',
         same_as_client: true,
         client: clientForm,
         insured: {
@@ -121,9 +132,10 @@ export default function PolicyWizardPage({
         }
     }, [form, policy?.id]);
 
-    const totalPercent = beneficiaries.reduce(
-        (sum: number, b: any) => sum + Number(b.benefit_percentage || 0),
-        0,
+    const totalPercent = Number(
+        beneficiaries
+            .reduce((sum: number, b: any) => sum + Number(b.percentage || 0), 0)
+            .toFixed(2),
     );
 
     const hasExistingInsured = insureds.some(
@@ -192,10 +204,23 @@ export default function PolicyWizardPage({
         setActiveAction('finish');
 
         router.post(
-            route('polizas.wizard.finish', form.data.policy_id),
-            {},
+            route('polizas.wizard.step4'),
+            { policy_id: form.data.policy_id, beneficiaries },
             {
-                onFinish: () => {
+                preserveScroll: true,
+                onSuccess: () => {
+                    router.post(
+                        route('polizas.wizard.finish', form.data.policy_id),
+                        {},
+                        {
+                            onFinish: () => {
+                                setIsSubmitting(false);
+                                setActiveAction(null);
+                            },
+                        },
+                    );
+                },
+                onError: () => {
                     setIsSubmitting(false);
                     setActiveAction(null);
                 },
@@ -276,6 +301,7 @@ export default function PolicyWizardPage({
                                 beneficiaries={beneficiaries}
                                 setBeneficiaries={setBeneficiaries}
                                 relationships={relationships}
+                                beneficiaryCatalog={beneficiariesCatalog}
                                 errors={form.errors}
                             />
                         )}
@@ -326,7 +352,7 @@ export default function PolicyWizardPage({
                             ) : (
                                 <Button
                                     disabled={
-                                        totalPercent !== 100 ||
+                                        Math.abs(totalPercent - 100) > 0.01 ||
                                         !form.data.policy_id ||
                                         isSubmitting
                                     }

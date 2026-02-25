@@ -13,10 +13,22 @@ class SaveStep3PolicyWizardRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $policyNumber = $this->input('policy_number');
+
+        $this->merge([
+            'policy_number' => is_string($policyNumber)
+                ? mb_strtoupper(trim($policyNumber))
+                : $policyNumber,
+        ]);
+    }
+
     public function rules(): array
     {
         return [
             'policy_id' => ['required', 'uuid'],
+            'policy_number' => ['nullable', 'string', 'max:64'],
             'payment_channel' => ['required', 'integer', Rule::exists('cat_payment_channels', 'id')],
             'coverage_start' => ['required', 'date'],
             'risk_premium' => ['required', 'numeric', 'min:0'],
