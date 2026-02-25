@@ -352,7 +352,7 @@ class PolicyWizardController extends Controller
         $total = (float) Beneficiary::query()
             ->where('policy_id', $policy->id)
             ->sum('benefit_percentage');
-dd($total);
+
         if (round($total, 2) !== 100.0) {
             return back()->withErrors(['beneficiaries' => 'Los beneficiarios deben sumar 100%.']);
         }
