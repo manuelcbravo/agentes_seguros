@@ -352,7 +352,7 @@ class PolicyWizardController extends Controller
         $total = (float) Beneficiary::query()
             ->where('policy_id', $policy->id)
             ->sum('benefit_percentage');
-
+dd($total);
         if (round($total, 2) !== 100.0) {
             return back()->withErrors(['beneficiaries' => 'Los beneficiarios deben sumar 100%.']);
         }
@@ -440,7 +440,7 @@ class PolicyWizardController extends Controller
                 ->latest()
                 ->get(),
             'relationships' => CatRelationship::query()->select(['id', 'name'])->orderBy('name')->get(),
-            'paymentChannels' => CatPaymentChannel::query()->select(['code', 'name'])->orderBy('name')->get(),
+            'paymentChannels' => CatPaymentChannel::query()->select(['id', 'name'])->orderBy('name')->get(),
             'currencies' => CatCurrency::query()->select(['id', 'name'])->orderBy('name')->get(),
             'periodicities' => CatPeriodicity::query()->where('is_active', true)->orderBy('sort_order')->get(['id', 'name', 'code']),
             'insuranceCompanies' => CatInsuranceCompany::query()->select(['id', 'name'])->orderBy('name')->get(),

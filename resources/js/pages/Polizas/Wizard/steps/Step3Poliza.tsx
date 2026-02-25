@@ -59,9 +59,9 @@ export default function Step3Poliza({
                             !value
                                 ? 'Seleccione marca'
                                 : (insuranceCompanies.find(
-                                      (p: any) =>
-                                          String(p.id) === String(value),
-                                  )?.name ?? '')
+                                    (p: any) =>
+                                        String(p.id) === String(value),
+                                )?.name ?? '')
                         }
                         value={data.insurance_company_id}
                         onValueChange={(value) => {
@@ -97,9 +97,9 @@ export default function Step3Poliza({
                             !value
                                 ? 'Seleccione producto'
                                 : (products.find(
-                                      (p: any) =>
-                                          String(p.id) === String(value),
-                                  )?.name ?? '')
+                                    (p: any) =>
+                                        String(p.id) === String(value),
+                                )?.name ?? '')
                         }
                         value={data.product_id}
                         onValueChange={(value) =>
@@ -167,14 +167,16 @@ export default function Step3Poliza({
                     </div>
                 </div>
                 <div className="grid gap-3 md:grid-cols-3">
+                    <div>
+                    <Label>Periodicidad</Label>
                     <Combobox
                         itemToStringLabel={(value) =>
                             !value
                                 ? 'Seleccione periodicidad'
                                 : (periodicities.find(
-                                      (p: any) =>
-                                          String(p.id) === String(value),
-                                  )?.name ?? '')
+                                    (p: any) =>
+                                        String(p.id) === String(value),
+                                )?.name ?? '')
                         }
                         value={data.periodicity_id}
                         onValueChange={(value) =>
@@ -203,13 +205,14 @@ export default function Step3Poliza({
                             </ComboboxList>
                         </ComboboxContent>
                     </Combobox>
+                    <Label>Mes (revisar que es)</Label>
                     <Combobox
                         itemToStringLabel={(value) =>
                             !value
                                 ? 'Seleccione mes'
                                 : (MONTHS.find(
-                                      (month) => month.value === String(value),
-                                  )?.label ?? '')
+                                    (month) => month.value === String(value),
+                                )?.label ?? '')
                         }
                         value={String(data.month).padStart(2, '0')}
                         onValueChange={(value) => setData('month', value ?? '')}
@@ -236,14 +239,18 @@ export default function Step3Poliza({
                             </ComboboxList>
                         </ComboboxContent>
                     </Combobox>
+                    </div>
+                        <div>
+                    <Label>Canal de pago</Label>
+
                     <Combobox
                         itemToStringLabel={(value) =>
                             !value
                                 ? 'Seleccione canal de pago'
                                 : (paymentChannels.find(
-                                      (p: any) =>
-                                          String(p.code) === String(value),
-                                  )?.name ?? '')
+                                    (p: any) =>
+                                        String(p.id) === String(value),
+                                )?.name ?? '')
                         }
                         value={data.payment_channel}
                         onValueChange={(value) =>
@@ -263,8 +270,8 @@ export default function Step3Poliza({
                                 </ComboboxEmpty>
                                 {paymentChannels.map((p: any) => (
                                     <ComboboxItem
-                                        key={p.code}
-                                        value={String(p.code)}
+                                        key={p.id}
+                                        value={String(p.id)}
                                     >
                                         {p.name}
                                     </ComboboxItem>
@@ -272,18 +279,20 @@ export default function Step3Poliza({
                             </ComboboxList>
                         </ComboboxContent>
                     </Combobox>
+                    </div>
                 </div>
+                <Label>Moneda</Label>
                 <Combobox
                     itemToStringLabel={(value) =>
                         !value
                             ? 'Seleccione moneda'
                             : (currencies.find(
-                                  (c: any) => String(c.id) === String(value),
-                              )?.name ?? '')
+                                (c: any) => String(c.id) === String(value),
+                            )?.name ?? '')
                     }
-                    value={data.currency_id}
+                    value={data.currency}
                     onValueChange={(value) =>
-                        setData('currency_id', value ?? '')
+                        setData('currency', value ?? '')
                     }
                 >
                     <ComboboxInput
@@ -291,7 +300,7 @@ export default function Step3Poliza({
                         placeholder="Moneda"
                         aria-label="Moneda catálogo"
                     />
-                    <FieldError>{errors?.currency_id}</FieldError>
+                    <FieldError>{errors?.currency}</FieldError>
                     <ComboboxContent>
                         <ComboboxList>
                             <ComboboxEmpty>

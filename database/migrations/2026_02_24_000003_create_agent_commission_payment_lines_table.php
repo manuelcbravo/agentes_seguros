@@ -20,7 +20,6 @@ return new class extends Migration
             $table->index('payment_id');
             $table->index('commission_id');
             $table->unique(['payment_id', 'commission_id']);
-            $table->check('amount_applied > 0');
         });
     }
 

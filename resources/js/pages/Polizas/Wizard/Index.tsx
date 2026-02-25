@@ -289,7 +289,7 @@ export default function PolicyWizardPage({
                             {isSubmitting && activeAction === 'save-exit' ? (
                                 <>
                                     <Loader2 className="size-4 animate-spin" />{' '}
-                                    Guardando...
+                                    Guardando
                                 </>
                             ) : (
                                 'Guardar y salir'
@@ -317,7 +317,7 @@ export default function PolicyWizardPage({
                                     {isSubmitting && activeAction === 'next' ? (
                                         <>
                                             <Loader2 className="size-4 animate-spin" />{' '}
-                                            Guardando...
+                                            Guardando
                                         </>
                                     ) : (
                                         'Siguiente'
@@ -336,7 +336,7 @@ export default function PolicyWizardPage({
                                     activeAction === 'finish' ? (
                                         <>
                                             <Loader2 className="size-4 animate-spin" />{' '}
-                                            Finalizando...
+                                            Finalizando
                                         </>
                                     ) : (
                                         'Terminar'
