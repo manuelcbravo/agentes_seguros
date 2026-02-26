@@ -165,27 +165,28 @@ export default function AgentProfileEdit({ profile, summary }: { profile: AgentP
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Perfil del agente" />
             <form onSubmit={onSubmit} className="space-y-4 rounded-xl p-4">
-                <Card className="border-sidebar-border/70 bg-sidebar-accent/20">
-                    <CardContent className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
-                        <div className="flex items-center gap-3">
-                            <UserCircle2 className="size-5 text-primary" />
-                            <div>
-                                <h1 className="text-xl font-semibold">Perfil público del agente</h1>
-                                <p className="text-sm text-muted-foreground">Configura tu presencia digital, canales de contacto y propuesta de valor.</p>
+                <div className="space-y-4 rounded-xl">
+                    <div className="rounded-xl border border-sidebar-border/70 bg-sidebar-accent/20 p-4">
+                        <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                                <UserCircle2 className="size-5 text-primary" />
+                                <div>
+                                    <h1 className="text-xl font-semibold">Perfil público del agente</h1>
+                                    <p className="text-sm text-muted-foreground">Configura tu presencia digital, canales de contacto y propuesta de valor.</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Badge variant={form.data.is_public_enabled ? 'default' : 'outline'}>
+                                    {form.data.is_public_enabled ? 'Publicado' : 'Borrador'}
+                                </Badge>
+                                <Button type="submit" disabled={form.processing}>
+                                    <Save className="mr-2 size-4" />
+                                    Guardar
+                                </Button>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <Badge variant={form.data.is_public_enabled ? 'default' : 'outline'}>
-                                {form.data.is_public_enabled ? 'Publicado' : 'Borrador'}
-                            </Badge>
-                            <Button type="submit" disabled={form.processing}>
-                                <Save className="mr-2 size-4" />
-                                Guardar
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-
+                    </div>
+                </div>
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-base">Resumen</CardTitle>

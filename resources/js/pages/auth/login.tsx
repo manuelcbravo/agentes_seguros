@@ -26,6 +26,20 @@ export default function Login({
         <AuthSplitLayout
             title="Inicia sesión en tu cuenta"
             description="Ingresa tu correo y contraseña para acceder al panel"
+            headerContent={
+                <>
+                    <img
+                        src="/assets/images/logos/logo_claro.png"
+                        alt="Logo"
+                        className="h-14 w-auto dark:hidden"
+                    />
+                    <img
+                        src="/assets/images/logos/logo_oscuro.png"
+                        alt="Logo"
+                        className="hidden h-14 w-auto dark:block"
+                    />
+                </>
+            }
         >
             <Head title="Log in" />
 

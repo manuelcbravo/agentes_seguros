@@ -107,7 +107,7 @@ class Client extends Model
     public function getAvatarUrlAttribute()
     {
         if (!$this->avatar_path) {
-            return asset('images/default_client.png');
+            return asset('assets/images/default_client.png');
         }
 
         // Si usas S3
