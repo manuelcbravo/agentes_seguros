@@ -13,19 +13,17 @@ return new class extends Migration {
             $table->json('metadata')->nullable()->after('status');
         });
 
-        $driver = DB::getDriverName();
-
-        if ($driver === 'mysql') {
-            DB::statement("ALTER TABLE leads MODIFY source ENUM('facebook','google','whatsapp','referral','landing','other','perfil_web') NOT NULL");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE leads DROP CONSTRAINT IF EXISTS leads_source_check');
+            DB::statement("ALTER TABLE leads ADD CONSTRAINT leads_source_check CHECK (source IN ('facebook','google','whatsapp','referral','landing','other','perfil_web'))");
         }
     }
 
     public function down(): void
     {
-        $driver = DB::getDriverName();
-
-        if ($driver === 'mysql') {
-            DB::statement("ALTER TABLE leads MODIFY source ENUM('facebook','google','whatsapp','referral','landing','other') NOT NULL");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE leads DROP CONSTRAINT IF EXISTS leads_source_check');
+            DB::statement("ALTER TABLE leads ADD CONSTRAINT leads_source_check CHECK (source IN ('facebook','google','whatsapp','referral','landing','other'))");
         }
 
         Schema::table('leads', function (Blueprint $table): void {
