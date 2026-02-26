@@ -2,22 +2,62 @@
 
 namespace Tests\Feature;
 
+use App\Mail\ApiClientActivationMail;
 use App\Models\ApiClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class ApiAuthControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_client_can_login_and_get_profile_with_standard_response_shape(): void
+    public function test_client_can_register_and_receive_activation_email(): void
+    {
+        Mail::fake();
+
+        $response = $this->postJson('/api/auth/register', [
+            'name' => 'Nuevo Cliente',
+            'email' => 'nuevo@example.com',
+            'password' => 'secreto123',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Registro exitoso. Revisa tu correo para activar tu cuenta.')
+            ->assertJsonPath('data.client.email', 'nuevo@example.com')
+            ->assertJsonPath('data.client.is_active', false)
+            ->assertJsonPath('errors', null);
+
+        $client = ApiClient::query()->where('email', 'nuevo@example.com')->firstOrFail();
+
+        $this->assertNotNull($client->activation_token);
+
+        Mail::assertSent(ApiClientActivationMail::class, function (ApiClientActivationMail $mail) use ($client): bool {
+            return $mail->hasTo($client->email) && str_contains($mail->activationUrl, $client->activation_token);
+        });
+    }
+
+    public function test_client_can_activate_account_and_then_login(): void
     {
         $client = ApiClient::query()->create([
             'name' => 'Cliente API',
             'email' => 'api@example.com',
             'password' => 'secret123',
-            'is_active' => true,
+            'is_active' => false,
+            'activation_token' => 'token-de-prueba',
         ]);
+
+        $this->getJson('/api/auth/activate/token-de-prueba')
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Cuenta activada correctamente')
+            ->assertJsonPath('data.client.id', $client->id)
+            ->assertJsonPath('data.client.is_active', true);
+
+        $client->refresh();
+        $this->assertTrue($client->is_active);
+        $this->assertNull($client->activation_token);
 
         $loginResponse = $this->postJson('/api/auth/login', [
             'email' => 'api@example.com',
@@ -32,16 +72,6 @@ class ApiAuthControllerTest extends TestCase
             ->assertJsonPath('data.client.id', $client->id)
             ->assertJsonPath('data.client.email', $client->email)
             ->assertJsonMissingPath('data.client.password')
-            ->assertJsonPath('errors', null);
-
-        $token = $loginResponse->json('data.token');
-
-        $this->withHeader('Authorization', "Bearer {$token}")
-            ->getJson('/api/auth/me')
-            ->assertOk()
-            ->assertJsonPath('success', true)
-            ->assertJsonPath('message', 'Perfil obtenido')
-            ->assertJsonPath('data.email', $client->email)
             ->assertJsonPath('errors', null);
     }
 

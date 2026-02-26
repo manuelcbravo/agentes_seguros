@@ -17,16 +17,20 @@ class ApiClient extends Authenticatable
         'email',
         'password',
         'is_active',
+        'activation_token',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        'activation_token',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'last_login_at' => 'datetime',
+        'activation_sent_at' => 'datetime',
+        'activated_at' => 'datetime',
     ];
 
     protected function password(): Attribute
