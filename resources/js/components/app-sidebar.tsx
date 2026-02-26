@@ -139,6 +139,10 @@ const configNavItems: NavItem[] = [
         icon: IdCard,
         children: [
             {
+                title: 'Perfil',
+                href: route('agent-profile.edit'),
+            },
+            {
                 title: 'Licencias',
                 href: route('agent-licenses.index'),
             },

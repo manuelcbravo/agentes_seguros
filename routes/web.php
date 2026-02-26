@@ -13,6 +13,7 @@ use App\Http\Controllers\Catalog\RelationshipController;
 use App\Http\Controllers\Catalog\SexController;
 use App\Http\Controllers\AgentController;
 use App\Http\Controllers\AgentLicenseController;
+use App\Http\Controllers\AgentProfileController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\Clients\ClientSearchController;
 use App\Http\Controllers\FileController;
@@ -68,6 +69,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('agent-licenses', AgentLicenseController::class)
         ->only(['index', 'store', 'destroy'])
         ->parameters(['agent-licenses' => 'agentLicense']);
+
+    Route::get('agent-profile', [AgentProfileController::class, 'edit'])->name('agent-profile.edit');
+    Route::put('agent-profile', [AgentProfileController::class, 'update'])->name('agent-profile.update');
 
 
     Route::get('leads/kanban', [LeadController::class, 'kanban'])->name('leads.kanban');
