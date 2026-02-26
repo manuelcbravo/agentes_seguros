@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateAgentProfileRequest;
 use App\Models\AgentProfile;
+use App\Models\AgentProfileViewStat;
+use App\Models\Lead;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -32,7 +34,61 @@ class AgentProfileController extends Controller
             ]);
         }
 
+        $today = now()->toDateString();
+        $lastThirtyDaysStart = now()->subDays(29)->toDateString();
+        $lastSevenDaysStart = now()->subDays(6)->startOfDay();
+        $lastThirtyDaysStartDateTime = now()->subDays(29)->startOfDay();
+
+        $viewsToday = AgentProfileViewStat::query()
+            ->where('agent_id', $agent->id)
+            ->where('date', $today)
+            ->sum('views_total');
+
+        $viewsLastThirtyDays = AgentProfileViewStat::query()
+            ->where('agent_id', $agent->id)
+            ->whereBetween('date', [$lastThirtyDaysStart, $today])
+            ->sum('views_total');
+
+        $leadsBaseQuery = Lead::query()
+            ->where('agent_id', $agent->id)
+            ->where('source', 'perfil_web');
+
+        $leadsLastSevenDays = (clone $leadsBaseQuery)
+            ->where('created_at', '>=', $lastSevenDaysStart)
+            ->count();
+
+        $leadsLastThirtyDays = (clone $leadsBaseQuery)
+            ->where('created_at', '>=', $lastThirtyDaysStartDateTime)
+            ->count();
+
+        $leadsTotal = (clone $leadsBaseQuery)->count();
+
+        $recentProfileLeads = (clone $leadsBaseQuery)
+            ->latest('created_at')
+            ->limit(5)
+            ->get(['id', 'first_name', 'middle_name', 'last_name', 'second_last_name', 'source', 'created_at'])
+            ->map(fn (Lead $lead) => [
+                'id' => $lead->id,
+                'full_name' => $lead->full_name,
+                'source' => $lead->source,
+                'created_at' => $lead->created_at?->toIso8601String(),
+            ])
+            ->values();
+
+        $conversionRate = $viewsLastThirtyDays > 0
+            ? round(($leadsLastThirtyDays / $viewsLastThirtyDays) * 100, 2)
+            : 0;
+
         return Inertia::render('agent-profile/edit', [
+            'summary' => [
+                'views_today' => $viewsToday,
+                'views_last_30_days' => $viewsLastThirtyDays,
+                'leads_last_7_days' => $leadsLastSevenDays,
+                'leads_last_30_days' => $leadsLastThirtyDays,
+                'leads_total' => $leadsTotal,
+                'conversion_rate' => $conversionRate,
+                'recent_profile_leads' => $recentProfileLeads,
+            ],
             'profile' => [
                 ...$profile->only([
                     'display_name', 'headline', 'bio', 'profile_photo_path', 'cover_image_path', 'brand_color', 'logo_path',
