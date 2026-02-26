@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Polizas;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpsertPolizaRequest;
 use App\Models\CatPaymentChannel;
+use App\Models\File;
 use App\Models\Policy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -70,6 +71,7 @@ class PolizaController extends Controller
             'polizas' => $polizas->map(fn (Policy $policy) => [
                 'id' => $policy->id,
                 'status' => $policy->status,
+                'policy_number' => $policy->policy_number,
                 'payment_channel' => $policy->payment_channel,
                 'risk_premium' => $policy->risk_premium,
                 'client_name' => $policy->client?->full_name,
@@ -121,6 +123,76 @@ class PolizaController extends Controller
 
         return back()->with('success', 'Póliza eliminada correctamente.');
     }
+
+
+    public function sheet(Request $request, string $policy): Response
+    {
+        $agentId = (string) $request->user()->agent_id;
+
+        $policyModel = Policy::query()
+            ->with([
+                'client:id,first_name,middle_name,last_name,second_last_name,rfc,phone,email,street,ext_number,int_number,neighborhood,city,state,country,postal_code',
+                'insured:id,first_name,middle_name,last_name,second_last_name,rfc,birthday,phone,email,address',
+                'insuranceCompany:id,name',
+                'productCatalog:id,name',
+                'periodicityCatalog:id,name',
+                'currencyCatalog:id,code,name',
+                'beneficiaries:id,first_name,middle_name,last_name,second_last_name,rfc,relationship,relationship_id',
+                'beneficiaries.relationshipCatalog:id,name',
+            ])
+            ->findOrFail($policy);
+
+        if ((string) $policyModel->agent_id !== $agentId) {
+            abort(403);
+        }
+
+        $files = File::query()
+            ->where('related_uuid', $policyModel->id)
+            ->whereIn('related_table', ['policies', 'polizas'])
+            ->latest()
+            ->get(['id', 'uuid', 'original_name', 'size', 'created_at']);
+
+        $beneficiaries = $policyModel->beneficiaries->map(function ($beneficiary) {
+            return [
+                'id' => $beneficiary->id,
+                'full_name' => $beneficiary->full_name,
+                'rfc' => $beneficiary->rfc,
+                'relationship' => $beneficiary->relationshipCatalog?->name ?? $beneficiary->relationship,
+                'percentage' => round((float) ($beneficiary->pivot?->percentage ?? 0), 2),
+            ];
+        })->values();
+
+        return Inertia::render('Polizas/Sheet', [
+            'policy' => [
+                'id' => $policyModel->id,
+                'policy_number' => $policyModel->policy_number,
+                'status' => $policyModel->status,
+                'coverage_start' => optional($policyModel->coverage_start)?->toDateString(),
+                'product' => $policyModel->product,
+                'payment_channel' => $policyModel->payment_channel,
+                'periodicity' => $policyModel->periodicityCatalog?->name ?? $policyModel->periodicity,
+                'month' => $policyModel->month,
+                'currency' => $policyModel->currencyCatalog?->code ?? $policyModel->currency,
+                'risk_premium' => $policyModel->risk_premium,
+                'fractional_premium' => $policyModel->fractional_premium,
+            ],
+            'contractor' => $policyModel->client,
+            'insured' => $policyModel->insured,
+            'insuranceCompany' => $policyModel->insuranceCompany,
+            'productCatalog' => $policyModel->productCatalog,
+            'beneficiaries' => $beneficiaries,
+            'beneficiariesTotal' => round((float) $beneficiaries->sum('percentage'), 2),
+            'files' => $files->map(fn (File $file) => [
+                'id' => $file->id,
+                'uuid' => $file->uuid,
+                'original_name' => $file->original_name,
+                'size' => $file->size,
+                'created_at' => $file->created_at?->toISOString(),
+                'url' => $file->url,
+            ])->values(),
+        ]);
+    }
+
 
 
     private function trackingCatalogs(): array
