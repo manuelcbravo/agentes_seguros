@@ -292,7 +292,10 @@ class PolicyWizardController extends Controller
 
         $syncPayload = collect($data['beneficiaries'])
             ->mapWithKeys(fn (array $item) => [
-                $item['beneficiary_id'] => ['percentage' => round((float) $item['percentage'], 2)],
+                $item['beneficiary_id'] => [
+                    'percentage' => round((float) $item['percentage'], 2),
+                    'relationship_id' => (int) $item['relationship_id'],
+                ],
             ])
             ->all();
 
@@ -394,7 +397,7 @@ class PolicyWizardController extends Controller
 
     private function wizardProps(?Policy $policy = null, ?Client $preselectedClient = null): array
     {
-        $policy?->load(['beneficiaries:id,first_name,middle_name,last_name,second_last_name,relationship_id,rfc,phone,email', 'client:id,first_name,middle_name,last_name,second_last_name,email,phone,rfc,street', 'insured:id,client_id,first_name,middle_name,last_name,second_last_name,email,phone,rfc,birthday,age_current,address,occupation,company_name,approx_income,medical_history,main_savings_goal,personal_interests,personal_likes,smokes,drinks,personality,children_count']);
+        $policy?->load(['beneficiaries:id,first_name,middle_name,last_name,second_last_name,rfc,phone,email', 'client:id,first_name,middle_name,last_name,second_last_name,email,phone,rfc,street', 'insured:id,client_id,first_name,middle_name,last_name,second_last_name,email,phone,rfc,birthday,age_current,address,occupation,company_name,approx_income,medical_history,main_savings_goal,personal_interests,personal_likes,smokes,drinks,personality,children_count']);
 
         $selectedClient = $preselectedClient;
 
@@ -417,7 +420,7 @@ class PolicyWizardController extends Controller
             'relationships' => CatRelationship::query()->select(['id', 'name'])->orderBy('name')->get(),
             'beneficiariesCatalog' => Beneficiary::query()
                 ->where('agent_id', (string) auth()->user()->agent_id)
-                ->select(['id', 'first_name', 'middle_name', 'last_name', 'second_last_name', 'rfc', 'phone', 'email', 'relationship_id'])
+                ->select(['id', 'first_name', 'middle_name', 'last_name', 'second_last_name', 'rfc', 'phone', 'email'])
                 ->orderBy('first_name')
                 ->limit(200)
                 ->get(),

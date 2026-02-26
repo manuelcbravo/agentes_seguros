@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Concerns\AssignsAgentOwnership;
 use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Scout\Searchable;
 
@@ -34,7 +35,6 @@ class Beneficiary extends Model
         'smokes',
         'drinks',
         'personality',
-        'relationship_id',
         'benefit_percentage',
     ];
 
@@ -69,9 +69,12 @@ class Beneficiary extends Model
         return $this->belongsTo(Policy::class);
     }
 
-    public function relationshipCatalog(): BelongsTo
+    public function policies(): BelongsToMany
     {
-        return $this->belongsTo(CatRelationship::class, 'relationship_id');
+        return $this->belongsToMany(Policy::class)
+            ->using(BeneficiaryPolicy::class)
+            ->withPivot(['id', 'percentage', 'relationship_id'])
+            ->withTimestamps();
     }
 
     public function toSearchableArray(): array

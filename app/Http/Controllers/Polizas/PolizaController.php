@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Polizas;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpsertPolizaRequest;
+use App\Models\CatRelationship;
 use App\Models\CatPaymentChannel;
 use App\Models\File;
 use App\Models\Policy;
@@ -137,8 +138,7 @@ class PolizaController extends Controller
                 'productCatalog:id,name',
                 'periodicityCatalog:id,name',
                 'currencyCatalog:id,code,name',
-                'beneficiaries:id,first_name,middle_name,last_name,second_last_name,rfc,relationship_id',
-                'beneficiaries.relationshipCatalog:id,name',
+                'beneficiaries:id,first_name,middle_name,last_name,second_last_name,rfc',
             ])
             ->findOrFail($policy);
 
@@ -152,12 +152,18 @@ class PolizaController extends Controller
             ->latest()
             ->get(['id', 'original_name', 'size', 'created_at']);
 
-        $beneficiaries = $policyModel->beneficiaries->map(function ($beneficiary) {
+        $relationshipsMap = CatRelationship::query()
+            ->whereIn('id', $policyModel->beneficiaries->pluck('pivot.relationship_id')->filter()->unique())
+            ->pluck('name', 'id');
+
+        $beneficiaries = $policyModel->beneficiaries->map(function ($beneficiary) use ($relationshipsMap) {
+            $relationshipId = $beneficiary->pivot?->relationship_id;
+
             return [
                 'id' => $beneficiary->id,
                 'full_name' => $beneficiary->full_name,
                 'rfc' => $beneficiary->rfc,
-                'relationship' => $beneficiary->relationshipCatalog?->name ?? $beneficiary->relationship,
+                'relationship' => $relationshipId ? $relationshipsMap->get((int) $relationshipId) : null,
                 'percentage' => round((float) ($beneficiary->pivot?->percentage ?? 0), 2),
             ];
         })->values();

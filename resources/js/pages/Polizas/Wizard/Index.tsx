@@ -64,7 +64,7 @@ export default function PolicyWizardPage({
                 .trim(),
             percentage: Number(item.pivot?.percentage ?? 0),
             rfc: item.rfc,
-            relationship_id: item.relationship_id,
+            relationship_id: item.pivot?.relationship_id ? String(item.pivot.relationship_id) : null,
         })),
     );
     const [selectedClient, setSelectedClient] = useState<any>(
@@ -190,6 +190,7 @@ export default function PolicyWizardPage({
                 beneficiaries: beneficiaries.map((item: any) => ({
                     beneficiary_id: item.beneficiary_id,
                     percentage: Number(item.percentage ?? 0),
+                    relationship_id: item.relationship_id ? Number(item.relationship_id) : null,
                 })),
             },
             visitOptions,
@@ -226,6 +227,7 @@ export default function PolicyWizardPage({
                 beneficiaries: beneficiaries.map((item: any) => ({
                     beneficiary_id: item.beneficiary_id,
                     percentage: Number(item.percentage ?? 0),
+                    relationship_id: item.relationship_id ? Number(item.relationship_id) : null,
                 })),
             },
             {

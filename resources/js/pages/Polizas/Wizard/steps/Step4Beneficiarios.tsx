@@ -17,7 +17,7 @@ import { FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-type Relationship = { id: string; name: string };
+type Relationship = { id: number; name: string };
 type BeneficiaryCatalog = {
     id: string;
     first_name: string;
@@ -25,7 +25,6 @@ type BeneficiaryCatalog = {
     last_name: string;
     second_last_name?: string | null;
     rfc?: string | null;
-    relationship_id?: string | null;
 };
 
 type SelectedBeneficiary = {
@@ -33,7 +32,7 @@ type SelectedBeneficiary = {
     full_name: string;
     rfc?: string | null;
     percentage: number | null;
-    relationship_id?: string | null;
+    relationship_id: string | null;
 };
 
 type SearchBeneficiary = {
@@ -69,7 +68,6 @@ export default function Step4Beneficiarios({
         rfc: '',
         phone: '',
         email: '',
-        relationship_id: '',
     });
 
     const [query, setQuery] = useState('');
@@ -163,10 +161,6 @@ export default function Step4Beneficiarios({
                     className: 'bg-amber-100 text-amber-700',
                 };
 
-    const relationshipName = (relationshipId?: string | null) =>
-        relationships.find((item) => String(item.id) === String(relationshipId))
-            ?.name ?? '—';
-
     const resetDialog = () => {
         setCreateErrors({});
         setNewBeneficiary({
@@ -177,7 +171,6 @@ export default function Step4Beneficiarios({
             rfc: '',
             phone: '',
             email: '',
-            relationship_id: '',
         });
     };
 
@@ -185,7 +178,6 @@ export default function Step4Beneficiarios({
         id: string;
         full_name: string;
         rfc?: string | null;
-        relationship_id?: string | null;
     }) => {
         const alreadyAdded = beneficiaries.some(
             (item) => String(item.beneficiary_id) === String(beneficiary.id),
@@ -202,7 +194,7 @@ export default function Step4Beneficiarios({
                 beneficiary_id: beneficiary.id,
                 full_name: beneficiary.full_name,
                 rfc: beneficiary.rfc ?? null,
-                relationship_id: beneficiary.relationship_id ?? null,
+                relationship_id: null,
                 percentage: null,
             },
         ]);
@@ -262,7 +254,6 @@ export default function Step4Beneficiarios({
             id: created.id,
             full_name: created.full_name,
             rfc: created.rfc,
-            relationship_id: created.relationship_id,
         });
 
         toast.success('Beneficiario creado y agregado');
@@ -402,7 +393,54 @@ export default function Step4Beneficiarios({
                                 <td className="p-2">{item.full_name}</td>
                                 <td className="p-2">{item.rfc || '—'}</td>
                                 <td className="p-2">
-                                    {relationshipName(item.relationship_id)}
+                                    <Combobox
+                                        itemToStringLabel={(value) =>
+                                            !value
+                                                ? 'Selecciona parentesco'
+                                                : (relationships.find(
+                                                      (relationship) =>
+                                                          String(
+                                                              relationship.id,
+                                                          ) === String(value),
+                                                  )?.name ?? '')
+                                        }
+                                        value={item.relationship_id ?? ''}
+                                        onValueChange={(value) =>
+                                            setBeneficiaries(
+                                                beneficiaries.map((row) =>
+                                                    row.beneficiary_id ===
+                                                    item.beneficiary_id
+                                                        ? {
+                                                              ...row,
+                                                              relationship_id:
+                                                                  value ??
+                                                                  null,
+                                                          }
+                                                        : row,
+                                                ),
+                                            )
+                                        }
+                                    >
+                                        <ComboboxInput
+                                            className="w-full"
+                                            placeholder="Parentesco"
+                                        />
+                                        <ComboboxContent>
+                                            <ComboboxList>
+                                                <ComboboxEmpty>
+                                                    No se encontraron parentescos.
+                                                </ComboboxEmpty>
+                                                {relationships.map((relationship) => (
+                                                    <ComboboxItem
+                                                        key={relationship.id}
+                                                        value={String(relationship.id)}
+                                                    >
+                                                        {relationship.name}
+                                                    </ComboboxItem>
+                                                ))}
+                                            </ComboboxList>
+                                        </ComboboxContent>
+                                    </Combobox>
                                 </td>
                                 <td className="p-2">
                                     <Input
@@ -572,47 +610,6 @@ export default function Step4Beneficiarios({
                             }
                         />
                         <FieldError>{createErrors.email}</FieldError>
-                    </div>
-                    <div className="space-y-1.5">
-                        <Label>Parentesco</Label>
-                        <Combobox
-                            itemToStringLabel={(value) =>
-                                !value
-                                    ? 'Selecciona parentesco'
-                                    : (relationships.find(
-                                          (item) =>
-                                              String(item.id) === String(value),
-                                      )?.name ?? '')
-                            }
-                            value={newBeneficiary.relationship_id}
-                            onValueChange={(value) =>
-                                setNewBeneficiary({
-                                    ...newBeneficiary,
-                                    relationship_id: value ?? '',
-                                })
-                            }
-                        >
-                            <ComboboxInput
-                                className="w-full"
-                                placeholder="Parentesco"
-                            />
-                            <ComboboxContent>
-                                <ComboboxList>
-                                    <ComboboxEmpty>
-                                        No se encontraron parentescos.
-                                    </ComboboxEmpty>
-                                    {relationships.map((item) => (
-                                        <ComboboxItem
-                                            key={item.id}
-                                            value={item.id}
-                                        >
-                                            {item.name}
-                                        </ComboboxItem>
-                                    ))}
-                                </ComboboxList>
-                            </ComboboxContent>
-                        </Combobox>
-                        <FieldError>{createErrors.relationship_id}</FieldError>
                     </div>
                 </div>
             </CrudFormDialog>
