@@ -25,9 +25,8 @@ class PublicAgentProfileController extends Controller
             ->where('is_public_enabled', true)
             ->firstOrFail();
 
-        return $this->renderProfile($profile, $request);
+        return $this->renderProfile($profile, $request, false);
     }
-
 
     public function preview(Request $request, string $slug): Response
     {
@@ -38,10 +37,10 @@ class PublicAgentProfileController extends Controller
 
         abort_unless($request->user()?->agent?->id === $profile->agent_id, 403);
 
-        return $this->renderProfile($profile, $request);
+        return $this->renderProfile($profile, $request, true);
     }
 
-    private function renderProfile(AgentProfile $profile, Request $request): Response
+    private function renderProfile(AgentProfile $profile, Request $request, bool $isPreview): Response
     {
         $licenses = collect();
 
@@ -64,7 +63,7 @@ class PublicAgentProfileController extends Controller
                 ...$profile->only([
                     'display_name', 'headline', 'bio', 'brand_color', 'email_public', 'phone_public', 'whatsapp_public',
                     'website_url', 'address_public', 'city', 'state', 'service_areas', 'languages', 'working_hours',
-                    'specialties', 'insurers', 'cta_title', 'cta_description', 'public_slug', 'contact_form_enabled',
+                    'specialties', 'insurers', 'cta_title', 'cta_description', 'public_slug', 'contact_form_enabled', 'show_licenses',
                 ]),
                 'profile_photo_url' => $profile->profile_photo_path ? Storage::disk('public')->url($profile->profile_photo_path) : null,
                 'cover_image_url' => $profile->cover_image_path ? Storage::disk('public')->url($profile->cover_image_path) : null,
@@ -72,6 +71,8 @@ class PublicAgentProfileController extends Controller
             ],
             'licenses' => $licenses,
             'csrfToken' => csrf_token(),
+            'isPreview' => $isPreview,
+            'webSettingsUrl' => $isPreview ? route('agents.web.edit') : null,
         ]);
     }
 
