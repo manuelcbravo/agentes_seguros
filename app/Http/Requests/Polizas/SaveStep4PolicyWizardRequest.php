@@ -25,6 +25,7 @@ class SaveStep4PolicyWizardRequest extends FormRequest
                 Rule::exists('beneficiaries', 'id')->where('agent_id', $agentId),
             ],
             'beneficiaries.*.percentage' => ['required', 'numeric', 'min:0.01', 'max:100'],
+            'beneficiaries.*.relationship_id' => ['required', 'integer', 'exists:cat_relationships,id'],
         ];
     }
 

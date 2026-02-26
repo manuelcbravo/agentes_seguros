@@ -27,7 +27,6 @@ class UpsertBeneficiarioRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:255'],
             'relationship' => ['nullable', 'integer'],
-            'relationship_id' => ['nullable', 'uuid', 'exists:cat_relationships,id'],
             'benefit_percentage' => ['nullable', 'numeric', 'between:0,100'],
             'occupation' => ['nullable', 'string', 'max:160'],
             'company_name' => ['nullable', 'string', 'max:160'],

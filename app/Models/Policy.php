@@ -87,7 +87,7 @@ class Policy extends Model
     {
         return $this->belongsToMany(Beneficiary::class)
             ->using(BeneficiaryPolicy::class)
-            ->withPivot(['id', 'percentage'])
+            ->withPivot(['id', 'percentage', 'relationship_id'])
             ->withTimestamps();
     }
 

@@ -152,7 +152,6 @@ class BeneficiarioController extends Controller
             'rfc' => $beneficiary->rfc,
             'phone' => $beneficiary->phone,
             'email' => $beneficiary->email,
-            'relationship_id' => $beneficiary->relationship_id,
             'full_name' => $beneficiary->full_name,
         ];
     }
