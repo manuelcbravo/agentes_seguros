@@ -140,7 +140,11 @@ const configNavItems: NavItem[] = [
         children: [
             {
                 title: 'Perfil',
-                href: route('agent-profile.edit'),
+                href: route('agents.profile.edit'),
+            },
+            {
+                title: 'Web',
+                href: route('agents.web.edit'),
             },
             {
                 title: 'Licencias',

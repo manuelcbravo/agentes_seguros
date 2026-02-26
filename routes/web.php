@@ -14,6 +14,7 @@ use App\Http\Controllers\Catalog\SexController;
 use App\Http\Controllers\AgentController;
 use App\Http\Controllers\AgentLicenseController;
 use App\Http\Controllers\AgentProfileController;
+use App\Http\Controllers\AgentWebController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\Clients\ClientSearchController;
 use App\Http\Controllers\FileController;
@@ -42,6 +43,7 @@ Route::get('/', function () {
 
 
 Route::get('/a/{slug}', [PublicAgentProfileController::class, 'show'])->name('public-agent-profile.show');
+Route::get('/a/{slug}/preview', [PublicAgentProfileController::class, 'preview'])->middleware(['auth', 'verified'])->name('public-agent-profile.preview');
 Route::post('/a/{slug}/contact', [PublicAgentProfileController::class, 'contact'])->name('public-agent-profile.contact');
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -74,6 +76,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('agent-licenses', AgentLicenseController::class)
         ->only(['index', 'store', 'destroy'])
         ->parameters(['agent-licenses' => 'agentLicense']);
+
+    Route::get('agents/profile', [AgentProfileController::class, 'edit'])->name('agents.profile.edit');
+    Route::put('agents/profile', [AgentProfileController::class, 'update'])->name('agents.profile.update');
+    Route::get('agents/web', [AgentWebController::class, 'edit'])->name('agents.web.edit');
+    Route::put('agents/web', [AgentWebController::class, 'update'])->name('agents.web.update');
 
     Route::get('agent-profile', [AgentProfileController::class, 'edit'])->name('agent-profile.edit');
     Route::put('agent-profile', [AgentProfileController::class, 'update'])->name('agent-profile.update');
