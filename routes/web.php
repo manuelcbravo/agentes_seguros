@@ -27,6 +27,7 @@ use App\Http\Controllers\Polizas\BeneficiarioController;
 use App\Http\Controllers\Polizas\PolizaController;
 use App\Http\Controllers\Polizas\PolicyWizardController;
 use App\Http\Controllers\Polizas\PolicyAiImportController;
+use App\Http\Controllers\PublicAgentProfileController;
 use App\Http\Controllers\Tracking\TrackingActivityController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +39,10 @@ Route::get('/', function () {
         ? redirect()->route('dashboard')
         : redirect()->route('login');
 })->name('home');
+
+
+Route::get('/a/{slug}', [PublicAgentProfileController::class, 'show'])->name('public-agent-profile.show');
+Route::post('/a/{slug}/contact', [PublicAgentProfileController::class, 'contact'])->name('public-agent-profile.contact');
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
