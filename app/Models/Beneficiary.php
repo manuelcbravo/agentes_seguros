@@ -83,7 +83,7 @@ class Beneficiary extends Model
 
     public function relationshipCatalog(): BelongsTo
     {
-        return $this->belongsTo(CatRelationship::class, 'relationship_id');
+        return $this->belongsTo(CatRelationship::class, 'relationship');
     }
 
     public function toSearchableArray(): array

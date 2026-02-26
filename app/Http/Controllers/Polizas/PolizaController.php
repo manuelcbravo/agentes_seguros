@@ -137,7 +137,7 @@ class PolizaController extends Controller
                 'productCatalog:id,name',
                 'periodicityCatalog:id,name',
                 'currencyCatalog:id,code,name',
-                'beneficiaries:id,first_name,middle_name,last_name,second_last_name,rfc,relationship,relationship_id',
+                'beneficiaries:id,first_name,middle_name,last_name,second_last_name,rfc,relationship',
                 'beneficiaries.relationshipCatalog:id,name',
             ])
             ->findOrFail($policy);
