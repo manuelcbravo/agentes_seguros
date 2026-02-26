@@ -106,6 +106,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('polizas/wizard/guardar-salir', [PolicyWizardController::class, 'saveAndExit'])->name('polizas.wizard.save-exit');
     Route::post('polizas/{policy}/guardar-salir', [PolicyWizardController::class, 'saveAndExit'])->name('polizas.wizard.save-exit-policy');
     Route::delete('polizas/{id}', [PolizaController::class, 'destroy'])->name('polizas.destroy');
+    Route::get('polizas/{policy}/ficha-tecnica', [PolizaController::class, 'sheet'])->name('polizas.sheet.show');
 
     Route::get('polizas/ia', [PolicyAiImportController::class, 'index'])->name('polizas.ai.index');
     Route::post('polizas/ia', [PolicyAiImportController::class, 'store'])->name('polizas.ai.store');

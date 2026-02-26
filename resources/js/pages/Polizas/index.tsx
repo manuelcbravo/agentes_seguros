@@ -7,6 +7,7 @@ import {
     ShieldCheck,
     Trash2,
     Pencil,
+    FileText,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -46,6 +47,7 @@ import type { BreadcrumbItem, SharedData } from '@/types';
 type PolizaRow = {
     id: string;
     status: string;
+    policy_number: string | null;
     payment_channel: string | null;
     risk_premium: string | null;
     client_name: string | null;
@@ -117,7 +119,7 @@ export default function PolizasIndex({
             header: 'Núm. póliza',
             cell: (row) => (
                 <span className="font-mono text-xs text-muted-foreground">
-                    {row.id.slice(0, 8).toUpperCase()}
+                    {(row.policy_number ?? row.id.slice(0, 8)).toUpperCase()}
                 </span>
             ),
         },
@@ -171,6 +173,13 @@ export default function PolizasIndex({
                             }
                         >
                             <Pencil className="mr-2 size-4" /> Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={() =>
+                                router.visit(route('polizas.sheet.show', row.id))
+                            }
+                        >
+                            <FileText className="mr-2 size-4" /> Ver ficha técnica
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setTrackingRow(row)}>
                             <Activity className="mr-2 size-4" /> Seguimiento
