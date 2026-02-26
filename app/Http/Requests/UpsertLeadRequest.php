@@ -41,7 +41,7 @@ class UpsertLeadRequest extends FormRequest
             'second_last_name' => ['nullable', 'string', 'max:150'],
             'phone' => [ 'nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:255'],
-            'source' => ['required', 'in:facebook,google,whatsapp,referral,landing,other'],
+            'source' => ['required', 'in:facebook,google,whatsapp,referral,landing,other,perfil_web'],
             'status' => ['sometimes', 'in:nuevo,contactado,perfilado,en_pausa,seguimiento,en_tramite,ganado,no_interesado'],
         ];
     }

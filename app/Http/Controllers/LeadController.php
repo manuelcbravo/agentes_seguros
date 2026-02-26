@@ -479,6 +479,7 @@ class LeadController extends Controller
             ['value' => 'referral', 'label' => 'Referido'],
             ['value' => 'landing', 'label' => 'Landing'],
             ['value' => 'other', 'label' => 'Otro'],
+            ['value' => 'perfil_web', 'label' => 'Perfil web'],
         ];
     }
 }

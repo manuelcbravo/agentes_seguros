@@ -65,6 +65,7 @@ const sourceLabel: Record<string, string> = {
     referral: 'Referido',
     landing: 'Landing',
     other: 'Otro',
+    perfil_web: 'Perfil web',
 };
 
 export function LeadsTable({

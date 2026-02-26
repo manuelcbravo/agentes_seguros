@@ -24,6 +24,7 @@ class Lead extends Model
         'second_last_name',
         'phone',
         'email',
+        'message',
         'source',
         'status',
         'converted_at',
@@ -32,6 +33,7 @@ class Lead extends Model
     protected $casts = [
         'converted_at' => 'datetime',
         'archived_at' => 'datetime',
+        'metadata' => 'array',
     ];
 
     protected $appends = ['full_name'];
