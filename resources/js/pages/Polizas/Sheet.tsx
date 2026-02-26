@@ -101,12 +101,15 @@ export default function PolicySheet({
         value ? new Date(value).toLocaleDateString('es-MX') : '—';
 
     const formatCurrency = (value?: string | number | null) =>
-        value == null
-            ? '—'
-            : new Intl.NumberFormat('es-MX', {
-                  style: 'currency',
-                  currency: policy.currency ?? 'MXN',
-              }).format(Number(value));
+    value == null
+        ? '—'
+        : new Intl.NumberFormat('es-MX', {
+              style: 'currency',
+              currency:
+                  typeof policy.currency === 'string'
+                      ? policy.currency
+                      : 'MXN',
+          }).format(Number(value));
 
     const personName = (person?: Person | null) => {
         if (!person) return '—';

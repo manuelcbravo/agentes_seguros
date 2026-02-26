@@ -137,7 +137,7 @@ class PolizaController extends Controller
                 'productCatalog:id,name',
                 'periodicityCatalog:id,name',
                 'currencyCatalog:id,code,name',
-                'beneficiaries:id,first_name,middle_name,last_name,second_last_name,rfc,relationship',
+                'beneficiaries:id,first_name,middle_name,last_name,second_last_name,rfc,relationship_id',
                 'beneficiaries.relationshipCatalog:id,name',
             ])
             ->findOrFail($policy);
@@ -150,7 +150,7 @@ class PolizaController extends Controller
             ->where('related_uuid', $policyModel->id)
             ->whereIn('related_table', ['policies', 'polizas'])
             ->latest()
-            ->get(['id', 'uuid', 'original_name', 'size', 'created_at']);
+            ->get(['id', 'original_name', 'size', 'created_at']);
 
         $beneficiaries = $policyModel->beneficiaries->map(function ($beneficiary) {
             return [
@@ -184,7 +184,6 @@ class PolizaController extends Controller
             'beneficiariesTotal' => round((float) $beneficiaries->sum('percentage'), 2),
             'files' => $files->map(fn (File $file) => [
                 'id' => $file->id,
-                'uuid' => $file->uuid,
                 'original_name' => $file->original_name,
                 'size' => $file->size,
                 'created_at' => $file->created_at?->toISOString(),
