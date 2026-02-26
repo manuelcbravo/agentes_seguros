@@ -6,6 +6,7 @@ use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Crypt;
@@ -112,5 +113,10 @@ class Agent extends Model
     public function licenses(): HasMany
     {
         return $this->hasMany(AgentLicense::class);
+    }
+
+    public function profile(): HasOne
+    {
+        return $this->hasOne(AgentProfile::class);
     }
 }
