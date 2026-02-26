@@ -31,6 +31,36 @@ class PublicAgentProfileTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_public_profile_view_tracking_updates_total_and_unique_counts(): void
+    {
+        [, $profile] = $this->createProfile(true);
+
+        $this->withHeaders(['User-Agent' => 'AgentBot/1.0'])
+            ->get(route('public-agent-profile.show', $profile->public_slug), ['REMOTE_ADDR' => '10.0.0.1'])
+            ->assertOk();
+
+        $this->withHeaders(['User-Agent' => 'AgentBot/1.0'])
+            ->get(route('public-agent-profile.show', $profile->public_slug), ['REMOTE_ADDR' => '10.0.0.1'])
+            ->assertOk();
+
+        $this->withHeaders(['User-Agent' => 'OtroBot/2.0'])
+            ->get(route('public-agent-profile.show', $profile->public_slug), ['REMOTE_ADDR' => '10.0.0.2'])
+            ->assertOk();
+
+        $this->assertDatabaseHas('agent_profile_view_stats', [
+            'agent_id' => $profile->agent_id,
+            'date' => now()->toDateString(),
+            'views_total' => 3,
+            'views_unique' => 2,
+        ]);
+
+        $this->assertDatabaseCount('agent_profile_view_uniques', 2);
+        $this->assertDatabaseMissing('agent_profile_view_uniques', [
+            'ip_hash' => '10.0.0.1',
+            'user_agent_hash' => 'AgentBot/1.0',
+        ]);
+    }
+
     public function test_contact_form_creates_lead_with_perfil_web_source(): void
     {
         [, $profile] = $this->createProfile(true);

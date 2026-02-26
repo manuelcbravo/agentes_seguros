@@ -1,5 +1,5 @@
-import { Head, useForm, usePage } from '@inertiajs/react';
-import { Globe, ImagePlus, MapPin, Save, Sparkles, UserCircle2 } from 'lucide-react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Eye, Globe, ImagePlus, MapPin, Save, Sparkles, UserCircle2, Users } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
@@ -14,6 +14,23 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, SharedData } from '@/types';
+
+type RecentProfileLead = {
+    id: string;
+    full_name: string;
+    source: string;
+    created_at: string | null;
+};
+
+type AgentProfileSummary = {
+    views_today: number;
+    views_last_30_days: number;
+    leads_last_7_days: number;
+    leads_last_30_days: number;
+    leads_total: number;
+    conversion_rate: number;
+    recent_profile_leads: RecentProfileLead[];
+};
 
 type AgentProfile = {
     display_name: string;
@@ -76,8 +93,9 @@ type FormData = {
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Perfil', href: route('agent-profile.edit') }];
 const toCsv = (values?: string[] | null) => (values ?? []).join(', ');
 const toArray = (value: string) => value.split(',').map((item) => item.trim()).filter(Boolean);
+const formatNumber = (value: number) => new Intl.NumberFormat('es-MX').format(value);
 
-export default function AgentProfileEdit({ profile }: { profile: AgentProfile }) {
+export default function AgentProfileEdit({ profile, summary }: { profile: AgentProfile; summary: AgentProfileSummary }) {
     const { flash } = usePage<SharedData>().props;
 
     const form = useForm<FormData>({
@@ -153,25 +171,103 @@ export default function AgentProfileEdit({ profile }: { profile: AgentProfile })
                             <UserCircle2 className="size-5 text-primary" />
                             <div>
                                 <h1 className="text-xl font-semibold">Perfil público del agente</h1>
-                                <p className="text-sm text-muted-foreground">Diseña cómo te ven tus clientes: identidad, contacto y visibilidad web.</p>
+                                <p className="text-sm text-muted-foreground">Configura tu presencia digital, canales de contacto y propuesta de valor.</p>
                             </div>
                         </div>
-                        <Button type="submit" disabled={form.processing}><Save className="mr-2 size-4" />Guardar cambios</Button>
+                        <div className="flex items-center gap-2">
+                            <Badge variant={form.data.is_public_enabled ? 'default' : 'outline'}>
+                                {form.data.is_public_enabled ? 'Publicado' : 'Borrador'}
+                            </Badge>
+                            <Button type="submit" disabled={form.processing}>
+                                <Save className="mr-2 size-4" />
+                                Guardar
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
 
-                <Card><CardHeader><CardTitle>Identidad</CardTitle></CardHeader><CardContent className="grid gap-4 md:grid-cols-2">
-                    <Field><Label>Nombre público</Label><Input value={form.data.display_name} onChange={(e) => form.setData('display_name', e.target.value)} />{form.errors.display_name && <FieldError>{form.errors.display_name}</FieldError>}</Field>
-                    <Field><Label>Headline</Label><Input value={form.data.headline} onChange={(e) => form.setData('headline', e.target.value)} /></Field>
-                    <Field className="md:col-span-2"><Label>Biografía</Label><Textarea rows={4} value={form.data.bio} onChange={(e) => form.setData('bio', e.target.value)} /></Field>
-                </CardContent></Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-base">Resumen</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                            <div className="rounded-lg border bg-card p-4">
+                                <p className="text-xs uppercase tracking-wide text-muted-foreground">Vistas hoy</p>
+                                <p className="mt-2 flex items-center gap-2 text-2xl font-semibold">
+                                    <Eye className="size-4 text-primary" />
+                                    {formatNumber(summary.views_today)}
+                                </p>
+                            </div>
+                            <div className="rounded-lg border bg-card p-4">
+                                <p className="text-xs uppercase tracking-wide text-muted-foreground">Vistas últimos 30 días</p>
+                                <p className="mt-2 text-2xl font-semibold">{formatNumber(summary.views_last_30_days)}</p>
+                            </div>
+                            <div className="rounded-lg border bg-card p-4">
+                                <p className="text-xs uppercase tracking-wide text-muted-foreground">Leads últimos 30 días</p>
+                                <p className="mt-2 flex items-center gap-2 text-2xl font-semibold">
+                                    <Users className="size-4 text-primary" />
+                                    {formatNumber(summary.leads_last_30_days)}
+                                </p>
+                            </div>
+                            <div className="rounded-lg border bg-card p-4">
+                                <p className="text-xs uppercase tracking-wide text-muted-foreground">Conversion rate</p>
+                                <p className="mt-2 text-2xl font-semibold">{summary.conversion_rate}%</p>
+                            </div>
+                        </div>
 
-                <Card><CardHeader><CardTitle>Branding</CardTitle></CardHeader><CardContent className="grid gap-4 md:grid-cols-3">
-                    <Field><Label>Foto de perfil</Label><div className="rounded-lg border border-dashed p-2">{profile.profile_photo_url ? <img src={profile.profile_photo_url} className="h-28 w-full rounded object-cover" /> : <div className="grid h-28 place-items-center rounded bg-muted"><ImagePlus className="size-5 text-muted-foreground" /></div>}</div><Input type="file" accept="image/*" onChange={(e) => form.setData('profile_photo', e.target.files?.[0] ?? null)} />{form.errors.profile_photo && <FieldError>{form.errors.profile_photo}</FieldError>}</Field>
-                    <Field><Label>Portada</Label><div className="rounded-lg border border-dashed p-2">{profile.cover_image_url ? <img src={profile.cover_image_url} className="h-28 w-full rounded object-cover" /> : <div className="grid h-28 place-items-center rounded bg-muted"><ImagePlus className="size-5 text-muted-foreground" /></div>}</div><Input type="file" accept="image/*" onChange={(e) => form.setData('cover_image', e.target.files?.[0] ?? null)} />{form.errors.cover_image && <FieldError>{form.errors.cover_image}</FieldError>}</Field>
-                    <Field><Label>Logo</Label><div className="rounded-lg border border-dashed p-2">{profile.logo_url ? <img src={profile.logo_url} className="h-28 w-full rounded object-cover" /> : <div className="grid h-28 place-items-center rounded bg-muted"><ImagePlus className="size-5 text-muted-foreground" /></div>}</div><Input type="file" accept="image/*" onChange={(e) => form.setData('logo_image', e.target.files?.[0] ?? null)} />{form.errors.logo_image && <FieldError>{form.errors.logo_image}</FieldError>}</Field>
-                    <Field><Label>Color de marca</Label><Input value={form.data.brand_color} onChange={(e) => form.setData('brand_color', e.target.value)} placeholder="#0F172A" />{form.errors.brand_color && <FieldError>{form.errors.brand_color}</FieldError>}</Field>
-                </CardContent></Card>
+                        <div className="grid gap-3 md:grid-cols-3">
+                            <div className="rounded-lg border bg-muted/20 p-3 text-sm">
+                                <p className="font-medium">Leads 7 días</p>
+                                <p className="text-muted-foreground">{formatNumber(summary.leads_last_7_days)} nuevos contactos recientes.</p>
+                            </div>
+                            <div className="rounded-lg border bg-muted/20 p-3 text-sm">
+                                <p className="font-medium">Leads acumulados</p>
+                                <p className="text-muted-foreground">{formatNumber(summary.leads_total)} leads totales desde perfil web.</p>
+                            </div>
+                            <div className="rounded-lg border bg-muted/20 p-3 text-sm">
+                                <p className="font-medium">Recomendación</p>
+                                <p className="text-muted-foreground">Refuerza CTA y WhatsApp si tienes muchas vistas con baja conversión.</p>
+                            </div>
+                        </div>
+
+                        <div className="rounded-lg border">
+                            <div className="border-b px-4 py-3 text-sm font-medium">Últimos leads del perfil</div>
+                            <div className="divide-y">
+                                {summary.recent_profile_leads.length === 0 ? (
+                                    <p className="px-4 py-3 text-sm text-muted-foreground">Aún no hay leads captados desde tu perfil público.</p>
+                                ) : (
+                                    summary.recent_profile_leads.map((lead) => (
+                                        <div key={lead.id} className="flex items-center justify-between gap-2 px-4 py-3 text-sm">
+                                            <div>
+                                                <p className="font-medium">{lead.full_name || 'Lead sin nombre'}</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {lead.created_at ? new Date(lead.created_at).toLocaleString('es-MX') : 'Sin fecha'} · Perfil web
+                                                </p>
+                                            </div>
+                                            <Button asChild variant="outline" size="sm">
+                                                <Link href={route('leads.show', lead.id)}>Ver lead</Link>
+                                            </Button>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader><CardTitle className="flex items-center gap-2"><Sparkles className="size-4" />Identidad visual y mensaje</CardTitle></CardHeader>
+                    <CardContent className="grid gap-4 md:grid-cols-2">
+                        <Field><Label>Nombre para mostrar</Label><Input value={form.data.display_name} onChange={(e) => form.setData('display_name', e.target.value)} />{form.errors.display_name && <FieldError>{form.errors.display_name}</FieldError>}</Field>
+                        <Field><Label>Titular</Label><Input value={form.data.headline} onChange={(e) => form.setData('headline', e.target.value)} />{form.errors.headline && <FieldError>{form.errors.headline}</FieldError>}</Field>
+                        <Field className="md:col-span-2"><Label>Bio</Label><Textarea rows={4} value={form.data.bio} onChange={(e) => form.setData('bio', e.target.value)} />{form.errors.bio && <FieldError>{form.errors.bio}</FieldError>}</Field>
+                        <Field><Label>Foto de perfil</Label><div className="rounded-lg border border-dashed p-2">{profile.profile_photo_url ? <img src={profile.profile_photo_url} className="h-28 w-full rounded object-cover" /> : <div className="grid h-28 place-items-center rounded bg-muted"><ImagePlus className="size-5 text-muted-foreground" /></div>}</div><Input type="file" accept="image/*" onChange={(e) => form.setData('profile_photo', e.target.files?.[0] ?? null)} />{form.errors.profile_photo && <FieldError>{form.errors.profile_photo}</FieldError>}</Field>
+                        <Field><Label>Portada</Label><div className="rounded-lg border border-dashed p-2">{profile.cover_image_url ? <img src={profile.cover_image_url} className="h-28 w-full rounded object-cover" /> : <div className="grid h-28 place-items-center rounded bg-muted"><ImagePlus className="size-5 text-muted-foreground" /></div>}</div><Input type="file" accept="image/*" onChange={(e) => form.setData('cover_image', e.target.files?.[0] ?? null)} />{form.errors.cover_image && <FieldError>{form.errors.cover_image}</FieldError>}</Field>
+                        <Field><Label>Logo</Label><div className="rounded-lg border border-dashed p-2">{profile.logo_url ? <img src={profile.logo_url} className="h-28 w-full rounded object-cover" /> : <div className="grid h-28 place-items-center rounded bg-muted"><ImagePlus className="size-5 text-muted-foreground" /></div>}</div><Input type="file" accept="image/*" onChange={(e) => form.setData('logo_image', e.target.files?.[0] ?? null)} />{form.errors.logo_image && <FieldError>{form.errors.logo_image}</FieldError>}</Field>
+                        <Field><Label>Color de marca</Label><Input value={form.data.brand_color} onChange={(e) => form.setData('brand_color', e.target.value)} placeholder="#0F172A" />{form.errors.brand_color && <FieldError>{form.errors.brand_color}</FieldError>}</Field>
+                    </CardContent>
+                </Card>
 
                 <Card><CardHeader><CardTitle>Contacto</CardTitle></CardHeader><CardContent className="grid gap-4 md:grid-cols-2">
                     <Field><Label>Email público</Label><Input type="email" value={form.data.email_public} onChange={(e) => form.setData('email_public', e.target.value)} /></Field>

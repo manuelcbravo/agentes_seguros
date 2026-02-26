@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\PublicProfileContactRequest;
 use App\Models\AgentProfile;
+use App\Models\AgentProfileViewStat;
+use App\Models\AgentProfileViewUnique;
 use App\Models\Lead;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,7 +17,7 @@ use Inertia\Response;
 
 class PublicAgentProfileController extends Controller
 {
-    public function show(string $slug): Response
+    public function show(Request $request, string $slug): Response
     {
         $profile = AgentProfile::query()
             ->with(['agent.licenses.insuranceCompany:id,nombre'])
@@ -24,6 +26,9 @@ class PublicAgentProfileController extends Controller
             ->firstOrFail();
 
         $licenses = collect();
+
+
+        $this->trackView($profile->agent_id, $request);
 
         if ($profile->show_licenses) {
             $licenses = $profile->agent->licenses
@@ -51,6 +56,33 @@ class PublicAgentProfileController extends Controller
             'licenses' => $licenses,
             'csrfToken' => csrf_token(),
         ]);
+    }
+
+    private function trackView(string $agentId, Request $request): void
+    {
+        $today = now()->toDateString();
+
+        $stat = AgentProfileViewStat::query()->firstOrCreate(
+            ['agent_id' => $agentId, 'date' => $today],
+            ['views_total' => 0, 'views_unique' => 0],
+        );
+
+        $stat->increment('views_total');
+
+        $salt = config('app.key', 'app');
+        $ipHash = hash('sha256', sprintf('%s|%s', (string) $request->ip(), $salt));
+        $userAgentHash = hash('sha256', sprintf('%s|%s', (string) $request->userAgent(), $salt));
+
+        $uniqueView = AgentProfileViewUnique::query()->firstOrCreate([
+            'agent_id' => $agentId,
+            'date' => $today,
+            'ip_hash' => $ipHash,
+            'user_agent_hash' => $userAgentHash,
+        ]);
+
+        if ($uniqueView->wasRecentlyCreated) {
+            $stat->increment('views_unique');
+        }
     }
 
     public function contact(PublicProfileContactRequest $request, string $slug): RedirectResponse
