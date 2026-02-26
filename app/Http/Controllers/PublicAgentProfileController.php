@@ -25,8 +25,25 @@ class PublicAgentProfileController extends Controller
             ->where('is_public_enabled', true)
             ->firstOrFail();
 
-        $licenses = collect();
+        return $this->renderProfile($profile, $request);
+    }
 
+
+    public function preview(Request $request, string $slug): Response
+    {
+        $profile = AgentProfile::query()
+            ->with(['agent.licenses.insuranceCompany:id,nombre'])
+            ->where('public_slug', $slug)
+            ->firstOrFail();
+
+        abort_unless($request->user()?->agent?->id === $profile->agent_id, 403);
+
+        return $this->renderProfile($profile, $request);
+    }
+
+    private function renderProfile(AgentProfile $profile, Request $request): Response
+    {
+        $licenses = collect();
 
         $this->trackView($profile->agent_id, $request);
 
