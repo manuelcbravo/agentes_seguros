@@ -7,6 +7,7 @@ use App\Models\PolicyAiImport;
 use App\Models\User;
 use App\Services\PolicyAI\PolicyAiOpenAiProcessor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -133,6 +134,63 @@ class PolicyAiImportProcessTest extends TestCase
             'processing_stage' => 'ai_request',
             'progress' => 60,
             'missing_fields' => ['policy.policy_number'],
+            'processing_heartbeat_at' => $import->processing_heartbeat_at?->toISOString(),
         ]);
+
+        $response->assertJsonPath('processing_started_at', null);
+        $response->assertJsonPath('updated_at', $import->updated_at?->toISOString());
+    }
+
+    public function test_user_can_force_sync_processing_in_local_environment(): void
+    {
+        Bus::fake();
+
+        config()->set('app.env', 'local');
+
+        $user = User::factory()->create();
+        $import = PolicyAiImport::query()->create([
+            'agent_id' => (string) $user->agent_id,
+            'client_id' => null,
+            'original_filename' => 'poliza.pdf',
+            'mime_type' => 'application/pdf',
+            'disk' => 'public',
+            'path' => 'policy-ai/example.pdf',
+            'status' => PolicyAiImport::STATUS_UPLOADED,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('polizas.ia.process', ['import' => $import->id, 'run' => 'sync']));
+
+        $response->assertRedirect();
+
+        Bus::assertDispatchedSync(ProcessPolicyAiImportJob::class, function (ProcessPolicyAiImportJob $job) use ($import): bool {
+            return $job->importId === $import->id;
+        });
+    }
+
+    public function test_local_sync_processing_uses_configuration_fallback(): void
+    {
+        Bus::fake();
+
+        config()->set('app.env', 'local');
+        config()->set('openai.policy_ai_process_sync', true);
+
+        $user = User::factory()->create();
+        $import = PolicyAiImport::query()->create([
+            'agent_id' => (string) $user->agent_id,
+            'client_id' => null,
+            'original_filename' => 'poliza.pdf',
+            'mime_type' => 'application/pdf',
+            'disk' => 'public',
+            'path' => 'policy-ai/example.pdf',
+            'status' => PolicyAiImport::STATUS_UPLOADED,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('polizas.ia.process', $import));
+
+        $response->assertRedirect();
+
+        Bus::assertDispatchedSync(ProcessPolicyAiImportJob::class, function (ProcessPolicyAiImportJob $job) use ($import): bool {
+            return $job->importId === $import->id;
+        });
     }
 }

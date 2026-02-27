@@ -9,4 +9,5 @@ return [
     'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
     'request_timeout' => env('OPENAI_REQUEST_TIMEOUT', 30),
     'connect_timeout' => env('OPENAI_CONNECT_TIMEOUT', 15),
+    'policy_ai_process_sync' => (bool) env('IA_PROCESS_SYNC', false),
 ];
