@@ -15,6 +15,7 @@ use App\Http\Controllers\AgentController;
 use App\Http\Controllers\AgentLicenseController;
 use App\Http\Controllers\AgentProfileController;
 use App\Http\Controllers\AgentWebController;
+use App\Http\Controllers\Agents\AgentWebController as AgentDashboardController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\Clients\ClientSearchController;
 use App\Http\Controllers\FileController;
@@ -48,8 +49,7 @@ Route::post('/a/{slug}/contact', [PublicAgentProfileController::class, 'contact'
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    Route::get('dashboard', fn () => Inertia::render('dashboard'))
-        ->name('dashboard');
+    Route::get('dashboard', [AgentDashboardController::class, 'index'])->name('dashboard');
 
 
     Route::get('/calendario/google-calendar', [GoogleCalendarController::class, 'index'])->name('google-calendar.index');
