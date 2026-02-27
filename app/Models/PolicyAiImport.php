@@ -25,6 +25,9 @@ class PolicyAiImport extends Model
         'disk',
         'path',
         'status',
+        'processing_stage',
+        'progress',
+        'processing_heartbeat_at',
         'extracted_text',
         'ai_data',
         'ai_confidence',
@@ -37,6 +40,7 @@ class PolicyAiImport extends Model
         'ai_data' => 'array',
         'ai_confidence' => 'array',
         'missing_fields' => 'array',
+        'processing_heartbeat_at' => 'datetime',
     ];
 
     public function agent(): BelongsTo

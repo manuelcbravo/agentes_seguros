@@ -4,7 +4,7 @@ namespace App\Jobs;
 
 use App\Models\PolicyAiImport;
 use App\Models\PolicyAiImportFile;
-use App\Services\PolicyAi\PolicyAiAnalyzer;
+use App\Services\PolicyAI\PolicyAiExtractorService;
 use App\Services\PolicyAi\PolicyAiMapper;
 use App\Services\PolicyAi\TextExtraction\OcrTextExtractor;
 use App\Services\PolicyAi\TextExtraction\PdfTextExtractor;
@@ -25,7 +25,7 @@ class ProcessPolicyAiImportJob implements ShouldQueue
 
     public function __construct(public string $importId, public bool $force = false) {}
 
-    public function handle(PolicyAiAnalyzer $analyzer, PolicyAiMapper $mapper): void
+    public function handle(PolicyAiExtractorService $extractorService, PolicyAiMapper $mapper): void
     {
         $import = PolicyAiImport::query()->with('files')->find($this->importId);
 
@@ -38,7 +38,11 @@ class ProcessPolicyAiImportJob implements ShouldQueue
         }
 
         $startedAt = microtime(true);
-        $import->update(['status' => PolicyAiImport::STATUS_PROCESSING, 'error_message' => null]);
+
+        $this->updateProcessingState($import, 'extracting_text', 20, [
+            'status' => PolicyAiImport::STATUS_PROCESSING,
+            'error_message' => null,
+        ]);
 
         try {
             if ($import->files->isEmpty()) {
@@ -62,38 +66,41 @@ class ProcessPolicyAiImportJob implements ShouldQueue
                 throw new RuntimeException('No se pudo extraer texto de los archivos.');
             }
 
-            $aiData = $analyzer->analyze($text);
+            $this->updateProcessingState($import, 'ai_request', 65);
+
+            $aiData = $extractorService->extract($text);
             $confidence = $this->buildConfidence($aiData);
-            $missing = $this->criticalMissingFields($aiData);
+            $missingFields = $this->criticalMissingFields($aiData);
+            $status = count($missingFields) >= 2
+                ? PolicyAiImport::STATUS_NEEDS_REVIEW
+                : PolicyAiImport::STATUS_READY;
 
-            $criticalConfidence = min(
-                data_get($confidence, 'sections.contractor', 0),
-                data_get($confidence, 'sections.insured', 0),
-                data_get($confidence, 'sections.policy', 0),
-            );
-
-            $status = empty($missing) && $criticalConfidence >= 0.60
-                ? PolicyAiImport::STATUS_READY
-                : PolicyAiImport::STATUS_NEEDS_REVIEW;
+            $this->updateProcessingState($import, 'saving', 90);
 
             $import->update([
                 'status' => $status,
+                'processing_stage' => 'completed',
+                'progress' => 100,
+                'processing_heartbeat_at' => now(),
                 'extracted_text' => $text,
                 'ai_data' => array_merge($aiData, [
                     'meta' => $mapper->toWizardDraft($aiData, (string) $import->agent_id)['meta'] ?? [],
                 ]),
                 'ai_confidence' => $confidence,
-                'missing_fields' => $missing,
+                'missing_fields' => $missingFields,
                 'error_message' => null,
                 'took_ms' => (int) round((microtime(true) - $startedAt) * 1000),
             ]);
-        } catch (Throwable $e) {
-            $message = str_contains(mb_strtolower($e->getMessage()), 'ocr')
+        } catch (Throwable $exception) {
+            $message = str_contains(mb_strtolower($exception->getMessage()), 'ocr')
                 ? 'OCR no configurado para analizar imágenes o PDFs escaneados.'
-                : $e->getMessage();
+                : $exception->getMessage();
 
             $import->update([
                 'status' => PolicyAiImport::STATUS_FAILED,
+                'processing_stage' => 'failed',
+                'progress' => 100,
+                'processing_heartbeat_at' => now(),
                 'error_message' => $message,
                 'took_ms' => (int) round((microtime(true) - $startedAt) * 1000),
             ]);
@@ -116,7 +123,7 @@ class ProcessPolicyAiImportJob implements ShouldQueue
             throw new RuntimeException('No se pudo acceder al archivo en S3. Verifica configuración del disk.');
         }
 
-        $temporaryRelativePath = 'temp/policy-ai/'.Str::uuid().'-'.basename($file->path);
+        $temporaryRelativePath = 'tmp/policy-ai/'.Str::uuid().'-'.basename($file->path);
         Storage::disk('local')->put($temporaryRelativePath, Storage::disk($disk)->get($file->path));
         $fullPath = Storage::disk('local')->path($temporaryRelativePath);
 
@@ -141,6 +148,10 @@ class ProcessPolicyAiImportJob implements ShouldQueue
             $missing[] = 'policy.policy_number';
         }
 
+        if (blank(data_get($data, 'policy.insurer_name'))) {
+            $missing[] = 'policy.insurer_name';
+        }
+
         if (blank(data_get($data, 'policy.valid_from'))) {
             $missing[] = 'policy.valid_from';
         }
@@ -149,22 +160,8 @@ class ProcessPolicyAiImportJob implements ShouldQueue
             $missing[] = 'policy.valid_to';
         }
 
-        if (blank(data_get($data, 'policy.insurer_name'))) {
-            $missing[] = 'policy.insurer_name';
-        }
-
         if (blank(data_get($data, 'contractor.first_name')) || blank(data_get($data, 'contractor.last_name'))) {
             $missing[] = 'contractor.full_name';
-        }
-
-        if (blank(data_get($data, 'insured.first_name')) || blank(data_get($data, 'insured.last_name'))) {
-            $missing[] = 'insured.full_name';
-        }
-
-        foreach (data_get($data, 'beneficiaries', []) as $index => $beneficiary) {
-            if (! blank($beneficiary['name'] ?? null) && blank($beneficiary['percentage'] ?? null)) {
-                $missing[] = "beneficiaries.{$index}.percentage";
-            }
         }
 
         return $missing;
@@ -191,8 +188,16 @@ class ProcessPolicyAiImportJob implements ShouldQueue
                 'policy.valid_to' => ! blank(data_get($data, 'policy.valid_to')) ? 1 : 0,
                 'policy.insurer_name' => ! blank(data_get($data, 'policy.insurer_name')) ? 1 : 0,
                 'contractor.full_name' => (! blank(data_get($data, 'contractor.first_name')) && ! blank(data_get($data, 'contractor.last_name'))) ? 1 : 0,
-                'insured.full_name' => (! blank(data_get($data, 'insured.first_name')) && ! blank(data_get($data, 'insured.last_name'))) ? 1 : 0,
             ],
         ];
+    }
+
+    private function updateProcessingState(PolicyAiImport $import, string $stage, int $progress, array $extra = []): void
+    {
+        $import->update(array_merge([
+            'processing_stage' => $stage,
+            'progress' => $progress,
+            'processing_heartbeat_at' => now(),
+        ], $extra));
     }
 }

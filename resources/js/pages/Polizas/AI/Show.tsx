@@ -1,12 +1,13 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { AlertCircle, CheckCircle2, CircleAlert, Clock3, Download, Loader2, RefreshCcw, ShieldAlert, Sparkles } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { route } from 'ziggy-js';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, SharedData } from '@/types';
 
@@ -29,10 +30,34 @@ type PolicyAiImport = {
     files?: ImportFile[];
     files_count?: number;
     primary_filename?: string | null;
+    processing_stage?: string | null;
+    progress?: number;
+};
+
+type ProcessingState = {
+    status: PolicyAiImport['status'];
+    processing_stage?: string | null;
+    progress: number;
+    error_message?: string | null;
 };
 
 export default function PolicyAiShow({ import: item }: { import: PolicyAiImport }) {
     const { flash } = usePage<SharedData>().props;
+    const [processingState, setProcessingState] = useState<ProcessingState>({
+        status: item.status,
+        processing_stage: item.processing_stage,
+        progress: item.progress ?? 0,
+        error_message: item.error_message,
+    });
+
+    useEffect(() => {
+        setProcessingState({
+            status: item.status,
+            processing_stage: item.processing_stage,
+            progress: item.progress ?? 0,
+            error_message: item.error_message,
+        });
+    }, [item.error_message, item.processing_stage, item.progress, item.status]);
 
     useEffect(() => {
         if (flash?.success) {
@@ -45,16 +70,36 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
     }, [flash?.error, flash?.success]);
 
     useEffect(() => {
-        if (item.status !== 'processing') {
+        if (processingState.status !== 'processing') {
             return;
         }
 
-        const timer = window.setInterval(() => {
-            router.reload({ only: ['import'], preserveScroll: true, preserveState: true });
-        }, 7000);
+        const timer = window.setInterval(async () => {
+            const response = await fetch(route('polizas.ia.status', item.id), {
+                headers: {
+                    Accept: 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const payload = (await response.json()) as ProcessingState;
+            setProcessingState({
+                status: payload.status,
+                processing_stage: payload.processing_stage,
+                progress: payload.progress ?? 0,
+                error_message: payload.error_message,
+            });
+
+            if (payload.status !== 'processing') {
+                router.reload({ only: ['import'], preserveScroll: true, preserveState: true });
+            }
+        }, 3000);
 
         return () => window.clearInterval(timer);
-    }, [item.status]);
+    }, [item.id, processingState.status]);
 
     const breadcrumbs: BreadcrumbItem[] = useMemo(
         () => [
@@ -94,17 +139,19 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
                                 <span className="text-sm font-medium">Análisis IA</span>
                             </div>
                             <h1 className="text-2xl font-semibold">Análisis IA — {item.primary_filename ?? 'Documento sin nombre'}</h1>
-                            <p className="text-sm text-muted-foreground">
-                                {new Date(item.created_at).toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' })} · {item.files_count ?? item.files?.length ?? 0} archivo(s)
-                            </p>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
                             <Button
-                                disabled={!canProcess || item.status === 'processing'}
-                                onClick={() => router.post(route('polizas.ia.process', item.id))}
+                                disabled={!canProcess || processingState.status === 'processing'}
+                                onClick={() => {
+                                    router.post(route('polizas.ia.process', item.id), {}, {
+                                        onSuccess: () => toast.success('Procesamiento de IA iniciado'),
+                                        onError: () => toast.error('No se pudo iniciar el procesamiento'),
+                                    });
+                                }}
                             >
-                                {item.status === 'processing' ? (
+                                {processingState.status === 'processing' ? (
                                     <>
                                         <Loader2 className="mr-2 size-4 animate-spin" /> Procesando...
                                     </>
@@ -124,21 +171,33 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
                     </CardContent>
                 </Card>
 
+                {processingState.status === 'processing' && (
+                    <Card className="rounded-2xl border-blue-200/70 bg-blue-50/40">
+                        <CardContent className="space-y-3 p-6">
+                            <div className="flex items-center justify-between text-sm font-medium text-blue-700">
+                                <span>Etapa: {processingState.processing_stage ?? 'iniciando'}</span>
+                                <span>{processingState.progress}%</span>
+                            </div>
+                            <Progress value={processingState.progress} className="h-2" />
+                        </CardContent>
+                    </Card>
+                )}
+
                 <Card className="rounded-2xl">
                     <CardHeader>
-                        <CardTitle className="text-base">Estado de procesamiento</CardTitle>
+                        <CardTitle className="text-base">Estado del procesamiento</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <Badge className={`inline-flex items-center gap-2 border px-4 py-2 text-sm ${statusMeta.classes}`}>
+                        <Badge variant="outline" className={`inline-flex items-center gap-2 ${statusMeta.classes}`}>
                             {statusMeta.icon}
                             {statusMeta.label}
                         </Badge>
 
-                        {item.status === 'failed' && item.error_message && (
+                        {item.status === 'failed' && (processingState.error_message || item.error_message) && (
                             <Alert variant="destructive">
                                 <AlertCircle className="size-4" />
                                 <AlertTitle>Error en el análisis</AlertTitle>
-                                <AlertDescription>{item.error_message}</AlertDescription>
+                                <AlertDescription>{processingState.error_message ?? item.error_message}</AlertDescription>
                             </Alert>
                         )}
 
@@ -159,43 +218,16 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
                 </Card>
 
                 <Card className="rounded-2xl">
-                    <CardHeader>
-                        <CardTitle className="text-base">Archivos</CardTitle>
-                    </CardHeader>
+                    <CardHeader><CardTitle className="text-base">Archivos</CardTitle></CardHeader>
                     <CardContent>
                         <div className="overflow-hidden rounded-lg border">
-                            <table className="w-full text-sm">
-                                <thead className="bg-muted/60 text-left">
-                                    <tr>
-                                        <th className="px-4 py-3">Nombre archivo</th>
-                                        <th className="px-4 py-3">Tamaño</th>
-                                        <th className="px-4 py-3">Fecha</th>
-                                        <th className="px-4 py-3">Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {(item.files ?? []).map((file) => (
-                                        <tr key={file.id} className="border-t">
-                                            <td className="px-4 py-3 font-medium">{file.original_filename}</td>
-                                            <td className="px-4 py-3 text-muted-foreground">{file.size ? `${Math.max(1, Math.round(file.size / 1024))} KB` : '—'}</td>
-                                            <td className="px-4 py-3 text-muted-foreground">{file.created_at ? new Date(file.created_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) : '—'}</td>
-                                            <td className="px-4 py-3">
-                                                <a href={file.url} target="_blank" rel="noreferrer" className="inline-flex items-center text-primary hover:underline">
-                                                    <Download className="mr-1 size-4" /> Descargar
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                            <table className="w-full text-sm"><tbody>{(item.files ?? []).map((file) => (<tr key={file.id} className="border-t"><td className="px-4 py-3 font-medium">{file.original_filename}</td><td className="px-4 py-3 text-muted-foreground">{file.size ? `${Math.max(1, Math.round(file.size / 1024))} KB` : '—'}</td><td className="px-4 py-3 text-muted-foreground">{file.created_at ? new Date(file.created_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) : '—'}</td><td className="px-4 py-3"><a href={file.url} target="_blank" rel="noreferrer" className="inline-flex items-center text-primary hover:underline"><Download className="mr-1 size-4" /> Descargar</a></td></tr>))}</tbody></table>
                         </div>
                     </CardContent>
                 </Card>
 
                 <Card className="rounded-2xl">
-                    <CardHeader>
-                        <CardTitle className="text-base">Resultado IA</CardTitle>
-                    </CardHeader>
+                    <CardHeader><CardTitle className="text-base">Resultado IA</CardTitle></CardHeader>
                     <CardContent>
                         {['ready', 'needs_review'].includes(item.status) ? (
                             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -205,16 +237,7 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
                                 <Card><CardHeader><CardTitle className="text-sm">Beneficiarios</CardTitle></CardHeader><CardContent className="text-sm text-muted-foreground">{beneficiaries.length > 0 ? beneficiaries.length : 'Sin beneficiarios detectados'}</CardContent></Card>
                             </div>
                         ) : (
-                            <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground">
-                                Este archivo aún no ha sido procesado con IA.
-                            </div>
-                        )}
-
-                        {item.ai_confidence && (
-                            <div className="mt-4 rounded-lg border bg-muted/30 p-4 text-sm">
-                                <p className="font-medium">Confianza IA</p>
-                                <pre className="mt-2 overflow-auto text-xs">{JSON.stringify(item.ai_confidence, null, 2)}</pre>
-                            </div>
+                            <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground">Este archivo aún no ha sido procesado con IA.</div>
                         )}
                     </CardContent>
                 </Card>

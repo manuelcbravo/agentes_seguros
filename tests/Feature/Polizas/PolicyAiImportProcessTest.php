@@ -5,7 +5,7 @@ namespace Tests\Feature\Polizas;
 use App\Jobs\ProcessPolicyAiImportJob;
 use App\Models\PolicyAiImport;
 use App\Models\User;
-use App\Services\PolicyAi\PolicyAiAnalyzer;
+use App\Services\PolicyAI\PolicyAiExtractorService;
 use App\Services\PolicyAi\PolicyAiMapper;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -40,6 +40,8 @@ class PolicyAiImportProcessTest extends TestCase
         $import->refresh();
 
         $this->assertSame(PolicyAiImport::STATUS_PROCESSING, $import->status);
+        $this->assertSame('queued', $import->processing_stage);
+        $this->assertSame(5, $import->progress);
         $this->assertNull($import->error_message);
 
         Queue::assertPushed(ProcessPolicyAiImportJob::class, function (ProcessPolicyAiImportJob $job) use ($import): bool {
@@ -94,13 +96,13 @@ class PolicyAiImportProcessTest extends TestCase
             'size' => 100,
         ]);
 
-        $analyzer = $this->createMock(PolicyAiAnalyzer::class);
-        $analyzer->expects($this->never())->method('analyze');
+        $extractor = $this->createMock(PolicyAiExtractorService::class);
+        $extractor->expects($this->never())->method('extract');
 
         $mapper = $this->createMock(PolicyAiMapper::class);
         $mapper->expects($this->never())->method('toWizardDraft');
 
-        (new ProcessPolicyAiImportJob($import->id))->handle($analyzer, $mapper);
+        (new ProcessPolicyAiImportJob($import->id))->handle($extractor, $mapper);
 
         $import->refresh();
 
@@ -108,4 +110,31 @@ class PolicyAiImportProcessTest extends TestCase
         $this->assertSame('No se pudo acceder al archivo en S3. Verifica configuración del disk.', $import->error_message);
         $this->assertNotNull($import->took_ms);
     }
+
+    public function test_user_can_poll_processing_status_for_owned_import(): void
+    {
+        $user = User::factory()->create();
+        $import = PolicyAiImport::query()->create([
+            'agent_id' => (string) $user->agent_id,
+            'client_id' => null,
+            'original_filename' => 'poliza.pdf',
+            'mime_type' => 'application/pdf',
+            'disk' => 'public',
+            'path' => 'policy-ai/example.pdf',
+            'status' => PolicyAiImport::STATUS_PROCESSING,
+            'processing_stage' => 'ai_request',
+            'progress' => 65,
+            'processing_heartbeat_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->get(route('polizas.ia.status', $import->id));
+
+        $response->assertOk()->assertJson([
+            'id' => $import->id,
+            'status' => PolicyAiImport::STATUS_PROCESSING,
+            'processing_stage' => 'ai_request',
+            'progress' => 65,
+        ]);
+    }
+
 }

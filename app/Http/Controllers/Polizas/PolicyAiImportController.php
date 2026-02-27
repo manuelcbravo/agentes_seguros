@@ -10,10 +10,12 @@ use App\Models\PolicyAiImportFile;
 use App\Models\PolicyWizardDraft;
 use App\Services\PolicyAi\PolicyAiMapper;
 use App\Support\Filesystem\MediaDisk;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules\File;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -154,6 +156,23 @@ class PolicyAiImportController extends Controller
         ]);
     }
 
+
+    public function status(Request $request, string $id): JsonResponse
+    {
+        $import = $this->ownedImport($request, $id);
+
+        return response()->json([
+            'id' => $import->id,
+            'status' => $import->status,
+            'processing_stage' => $import->processing_stage,
+            'progress' => $import->progress ?? 0,
+            'error_message' => $import->error_message,
+            'processing_heartbeat_at' => $import->processing_heartbeat_at?->toISOString(),
+            'missing_fields' => $import->missing_fields ?? [],
+            'updated_at' => $import->updated_at?->toISOString(),
+        ]);
+    }
+
     public function convert(Request $request, string $id, PolicyAiMapper $mapper): RedirectResponse
     {
         $import = $this->ownedImport($request, $id);
@@ -196,12 +215,21 @@ class PolicyAiImportController extends Controller
     {
         $this->authorizeImport($request, $import);
 
+        Log::info('[POLIZA_IA] process hit', [
+            'import_id' => $import->id,
+            'status' => $import->status,
+            'agent_id' => (string) $request->user()->agent_id,
+        ]);
+
         if ($import->status === PolicyAiImport::STATUS_PROCESSING) {
             return back()->with('error', 'Ya se encuentra en procesamiento');
         }
 
         $import->update([
             'status' => PolicyAiImport::STATUS_PROCESSING,
+            'processing_stage' => 'queued',
+            'progress' => 5,
+            'processing_heartbeat_at' => now(),
             'error_message' => null,
         ]);
 
@@ -265,6 +293,9 @@ class PolicyAiImportController extends Controller
             'status' => $import->status,
             'created_at' => $import->created_at?->toISOString(),
             'error_message' => $import->error_message,
+            'processing_stage' => $import->processing_stage,
+            'progress' => $import->progress ?? 0,
+            'processing_heartbeat_at' => $import->processing_heartbeat_at?->toISOString(),
             'missing_fields' => $import->missing_fields ?? [],
             'ai_data' => $import->ai_data,
             'ai_confidence' => $import->ai_confidence,
