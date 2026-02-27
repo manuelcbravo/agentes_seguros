@@ -15,7 +15,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules\File;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -157,19 +156,16 @@ class PolicyAiImportController extends Controller
     }
 
 
-    public function status(Request $request, string $id): JsonResponse
+    public function status(Request $request, PolicyAiImport $import): JsonResponse
     {
-        $import = $this->ownedImport($request, $id);
+        $this->authorizeImport($request, $import);
 
         return response()->json([
-            'id' => $import->id,
             'status' => $import->status,
             'processing_stage' => $import->processing_stage,
             'progress' => $import->progress ?? 0,
             'error_message' => $import->error_message,
-            'processing_heartbeat_at' => $import->processing_heartbeat_at?->toISOString(),
             'missing_fields' => $import->missing_fields ?? [],
-            'updated_at' => $import->updated_at?->toISOString(),
         ]);
     }
 
@@ -215,12 +211,6 @@ class PolicyAiImportController extends Controller
     {
         $this->authorizeImport($request, $import);
 
-        Log::info('[POLIZA_IA] process hit', [
-            'import_id' => $import->id,
-            'status' => $import->status,
-            'agent_id' => (string) $request->user()->agent_id,
-        ]);
-
         if ($import->status === PolicyAiImport::STATUS_PROCESSING) {
             return back()->with('error', 'Ya se encuentra en procesamiento');
         }
@@ -228,8 +218,10 @@ class PolicyAiImportController extends Controller
         $import->update([
             'status' => PolicyAiImport::STATUS_PROCESSING,
             'processing_stage' => 'queued',
-            'progress' => 5,
+            'progress' => 1,
+            'processing_started_at' => now(),
             'processing_heartbeat_at' => now(),
+            'processing_ended_at' => null,
             'error_message' => null,
         ]);
 

@@ -120,7 +120,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('polizas/ia/{id}', [PolicyAiImportController::class, 'show'])->name('polizas.ai.show');
     Route::post('polizas/ia/{id}/files', [PolicyAiImportController::class, 'addFiles'])->name('polizas.ai.files.store');
     Route::post('polizas/ia/{import}/process', [PolicyAiImportController::class, 'process'])->name('polizas.ia.process');
-    Route::get('polizas/ia/{id}/status', [PolicyAiImportController::class, 'status'])->name('polizas.ia.status');
+    Route::get('polizas/ia/{import}/status', [PolicyAiImportController::class, 'status'])->name('polizas.ia.status');
     Route::post('polizas/ia/{id}/convert', [PolicyAiImportController::class, 'convert'])->name('polizas.ai.convert');
     Route::post('polizas/ia/{id}/retry', [PolicyAiImportController::class, 'retry'])->name('polizas.ai.retry');
 
@@ -128,7 +128,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('policies/ai', [PolicyAiImportController::class, 'store']);
     Route::get('policies/ai/{id}', [PolicyAiImportController::class, 'show']);
     Route::post('policies/ai/{id}/files', [PolicyAiImportController::class, 'addFiles']);
-    Route::get('policies/ai/{id}/status', [PolicyAiImportController::class, 'status']);
+    Route::get('policies/ai/{import}/status', [PolicyAiImportController::class, 'status']);
     Route::post('policies/ai/{id}/convert', [PolicyAiImportController::class, 'convert']);
     Route::post('policies/ai/{id}/retry', [PolicyAiImportController::class, 'retry']);
 

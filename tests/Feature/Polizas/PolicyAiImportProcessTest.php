@@ -5,8 +5,7 @@ namespace Tests\Feature\Polizas;
 use App\Jobs\ProcessPolicyAiImportJob;
 use App\Models\PolicyAiImport;
 use App\Models\User;
-use App\Services\PolicyAI\PolicyAiExtractorService;
-use App\Services\PolicyAi\PolicyAiMapper;
+use App\Services\PolicyAI\PolicyAiOpenAiProcessor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -41,7 +40,8 @@ class PolicyAiImportProcessTest extends TestCase
 
         $this->assertSame(PolicyAiImport::STATUS_PROCESSING, $import->status);
         $this->assertSame('queued', $import->processing_stage);
-        $this->assertSame(5, $import->progress);
+        $this->assertSame(1, $import->progress);
+        $this->assertNotNull($import->processing_started_at);
         $this->assertNull($import->error_message);
 
         Queue::assertPushed(ProcessPolicyAiImportJob::class, function (ProcessPolicyAiImportJob $job) use ($import): bool {
@@ -96,18 +96,16 @@ class PolicyAiImportProcessTest extends TestCase
             'size' => 100,
         ]);
 
-        $extractor = $this->createMock(PolicyAiExtractorService::class);
-        $extractor->expects($this->never())->method('extract');
+        $processor = $this->app->make(PolicyAiOpenAiProcessor::class);
 
-        $mapper = $this->createMock(PolicyAiMapper::class);
-        $mapper->expects($this->never())->method('toWizardDraft');
-
-        (new ProcessPolicyAiImportJob($import->id))->handle($extractor, $mapper);
+        (new ProcessPolicyAiImportJob($import->id))->handle($processor);
 
         $import->refresh();
 
         $this->assertSame(PolicyAiImport::STATUS_FAILED, $import->status);
+        $this->assertSame('failed', $import->processing_stage);
         $this->assertSame('No se pudo acceder al archivo en S3. Verifica configuración del disk.', $import->error_message);
+        $this->assertNotNull($import->processing_ended_at);
         $this->assertNotNull($import->took_ms);
     }
 
@@ -123,18 +121,18 @@ class PolicyAiImportProcessTest extends TestCase
             'path' => 'policy-ai/example.pdf',
             'status' => PolicyAiImport::STATUS_PROCESSING,
             'processing_stage' => 'ai_request',
-            'progress' => 65,
+            'progress' => 60,
             'processing_heartbeat_at' => now(),
+            'missing_fields' => ['policy.policy_number'],
         ]);
 
         $response = $this->actingAs($user)->get(route('polizas.ia.status', $import->id));
 
         $response->assertOk()->assertJson([
-            'id' => $import->id,
             'status' => PolicyAiImport::STATUS_PROCESSING,
             'processing_stage' => 'ai_request',
-            'progress' => 65,
+            'progress' => 60,
+            'missing_fields' => ['policy.policy_number'],
         ]);
     }
-
 }
