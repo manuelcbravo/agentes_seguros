@@ -14,7 +14,7 @@ use App\Http\Controllers\Catalog\SexController;
 use App\Http\Controllers\AgentController;
 use App\Http\Controllers\AgentLicenseController;
 use App\Http\Controllers\AgentProfileController;
-use App\Http\Controllers\AgentWebController;
+use App\Http\Controllers\Agents\AgentWebController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\Clients\ClientSearchController;
 use App\Http\Controllers\FileController;
@@ -79,7 +79,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('agents/profile', [AgentProfileController::class, 'edit'])->name('agents.profile.edit');
     Route::put('agents/profile', [AgentProfileController::class, 'update'])->name('agents.profile.update');
-    Route::get('agents/web', [AgentWebController::class, 'edit'])->name('agents.web.edit');
+    Route::get('agents/web', [AgentWebController::class, 'index'])->name('agents.web.edit');
     Route::put('agents/web', [AgentWebController::class, 'update'])->name('agents.web.update');
 
     Route::get('agent-profile', [AgentProfileController::class, 'edit'])->name('agent-profile.edit');
