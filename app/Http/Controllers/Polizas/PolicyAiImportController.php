@@ -192,15 +192,37 @@ class PolicyAiImportController extends Controller
         return back()->with('success', 'Reprocesando archivo con IA…');
     }
 
+    public function process(Request $request, PolicyAiImport $import): RedirectResponse
+    {
+        $this->authorizeImport($request, $import);
+
+        if ($import->status === PolicyAiImport::STATUS_PROCESSING) {
+            return back()->with('error', 'Ya se encuentra en procesamiento');
+        }
+
+        $import->update([
+            'status' => PolicyAiImport::STATUS_PROCESSING,
+            'error_message' => null,
+        ]);
+
+        ProcessPolicyAiImportJob::dispatch($import->id, true);
+
+        return back()->with('success', 'Procesamiento iniciado correctamente');
+    }
+
     private function ownedImport(Request $request, string $id): PolicyAiImport
     {
         $import = PolicyAiImport::query()->findOrFail($id);
+        $this->authorizeImport($request, $import);
 
+        return $import;
+    }
+
+    private function authorizeImport(Request $request, PolicyAiImport $import): void
+    {
         if ((string) $import->agent_id !== (string) $request->user()->agent_id) {
             abort(403);
         }
-
-        return $import;
     }
 
     /** @param UploadedFile[] $files */
@@ -252,6 +274,7 @@ class PolicyAiImportController extends Controller
                 'original_filename' => $file->original_filename,
                 'mime_type' => $file->mime_type,
                 'size' => $file->size,
+                'created_at' => $file->created_at?->toISOString(),
                 'url' => MediaDisk::temporaryUrl($file->path),
             ])->values(),
             'files_count' => $files->count(),

@@ -9,6 +9,8 @@ import {
     Sparkles,
     Upload,
     UploadCloud,
+    NotebookPen,
+    FolderSearch
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -388,7 +390,7 @@ export default function PolicyAiIndex({
                                 router.visit(route('polizas.ai.show', row.id))
                             }
                         >
-                            Ver
+                            <FolderSearch className="mr-2 size-4" /> Ver
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             onClick={() => {
@@ -409,7 +411,7 @@ export default function PolicyAiIndex({
                                 router.post(route('polizas.ai.convert', row.id))
                             }
                         >
-                            Convertir a póliza
+                            <NotebookPen className="mr-2 size-4" /> Convertir a póliza
                         </DropdownMenuItem>
                         {['failed', 'needs_review'].includes(row.status) && (
                             <DropdownMenuItem

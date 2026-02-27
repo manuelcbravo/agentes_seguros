@@ -119,6 +119,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('polizas/ia', [PolicyAiImportController::class, 'store'])->name('polizas.ai.store');
     Route::get('polizas/ia/{id}', [PolicyAiImportController::class, 'show'])->name('polizas.ai.show');
     Route::post('polizas/ia/{id}/files', [PolicyAiImportController::class, 'addFiles'])->name('polizas.ai.files.store');
+    Route::post('polizas/ia/{import}/process', [PolicyAiImportController::class, 'process'])->name('polizas.ia.process');
     Route::post('polizas/ia/{id}/convert', [PolicyAiImportController::class, 'convert'])->name('polizas.ai.convert');
     Route::post('polizas/ia/{id}/retry', [PolicyAiImportController::class, 'retry'])->name('polizas.ai.retry');
 
