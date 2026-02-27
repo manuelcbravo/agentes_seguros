@@ -39,6 +39,7 @@ type ProcessingState = {
     processing_stage?: string | null;
     progress: number;
     error_message?: string | null;
+    missing_fields?: string[];
 };
 
 export default function PolicyAiShow({ import: item }: { import: PolicyAiImport }) {
@@ -48,6 +49,7 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
         processing_stage: item.processing_stage,
         progress: item.progress ?? 0,
         error_message: item.error_message,
+        missing_fields: item.missing_fields ?? [],
     });
 
     useEffect(() => {
@@ -56,6 +58,7 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
             processing_stage: item.processing_stage,
             progress: item.progress ?? 0,
             error_message: item.error_message,
+            missing_fields: item.missing_fields ?? [],
         });
     }, [item.error_message, item.processing_stage, item.progress, item.status]);
 
@@ -91,6 +94,7 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
                 processing_stage: payload.processing_stage,
                 progress: payload.progress ?? 0,
                 error_message: payload.error_message,
+                missing_fields: payload.missing_fields ?? [],
             });
 
             if (payload.status !== 'processing') {
@@ -109,8 +113,19 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
         [],
     );
 
-    const canProcess = ['uploaded', 'failed', 'needs_review'].includes(item.status);
-    const canConvert = ['ready', 'needs_review'].includes(item.status);
+    const currentStatus = processingState.status;
+    const canProcess = ['uploaded', 'failed', 'needs_review'].includes(currentStatus);
+    const canConvert = ['ready', 'needs_review'].includes(currentStatus);
+
+    const stageLabels: Record<string, string> = {
+        queued: 'En cola',
+        uploading_files: 'Subiendo archivos',
+        ai_request: 'Consultando IA',
+        parsing: 'Interpretando respuesta',
+        saving: 'Guardando resultado',
+        done: 'Completado',
+        failed: 'Falló el proceso',
+    };
 
     const statusMeta = {
         uploaded: { label: 'Subido', classes: 'bg-slate-500/10 text-slate-700 border-slate-200', icon: <Clock3 className="size-4" /> },
@@ -118,7 +133,7 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
         ready: { label: 'Listo', classes: 'bg-emerald-500/10 text-emerald-700 border-emerald-200', icon: <CheckCircle2 className="size-4" /> },
         needs_review: { label: 'Revisión requerida', classes: 'bg-amber-500/10 text-amber-700 border-amber-200', icon: <CircleAlert className="size-4" /> },
         failed: { label: 'Error', classes: 'bg-red-500/10 text-red-700 border-red-200', icon: <ShieldAlert className="size-4" /> },
-    }[item.status];
+    }[currentStatus];
 
     const aiData = item.ai_data ?? {};
     const contractor = aiData.contractor ?? {};
@@ -175,7 +190,7 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
                     <Card className="rounded-2xl border-blue-200/70 bg-blue-50/40">
                         <CardContent className="space-y-3 p-6">
                             <div className="flex items-center justify-between text-sm font-medium text-blue-700">
-                                <span>Etapa: {processingState.processing_stage ?? 'iniciando'}</span>
+                                <span>Etapa: {stageLabels[processingState.processing_stage ?? ''] ?? processingState.processing_stage ?? 'Iniciando'}</span>
                                 <span>{processingState.progress}%</span>
                             </div>
                             <Progress value={processingState.progress} className="h-2" />
@@ -193,7 +208,7 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
                             {statusMeta.label}
                         </Badge>
 
-                        {item.status === 'failed' && (processingState.error_message || item.error_message) && (
+                        {currentStatus === 'failed' && (processingState.error_message || item.error_message) && (
                             <Alert variant="destructive">
                                 <AlertCircle className="size-4" />
                                 <AlertTitle>Error en el análisis</AlertTitle>
@@ -201,13 +216,13 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
                             </Alert>
                         )}
 
-                        {item.status === 'needs_review' && (item.missing_fields ?? []).length > 0 && (
+                        {currentStatus === 'needs_review' && (processingState.missing_fields ?? item.missing_fields ?? []).length > 0 && (
                             <Alert>
                                 <CircleAlert className="size-4" />
                                 <AlertTitle>Campos críticos faltantes</AlertTitle>
                                 <AlertDescription>
                                     <ul className="list-inside list-disc text-sm">
-                                        {item.missing_fields?.map((field) => (
+                                        {(processingState.missing_fields ?? item.missing_fields ?? []).map((field) => (
                                             <li key={field}>{field}</li>
                                         ))}
                                     </ul>
@@ -229,7 +244,7 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
                 <Card className="rounded-2xl">
                     <CardHeader><CardTitle className="text-base">Resultado IA</CardTitle></CardHeader>
                     <CardContent>
-                        {['ready', 'needs_review'].includes(item.status) ? (
+                        {['ready', 'needs_review'].includes(currentStatus) ? (
                             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                                 <Card><CardHeader><CardTitle className="text-sm">Datos de póliza</CardTitle></CardHeader><CardContent className="text-sm text-muted-foreground">No. póliza: {policy.policy_number ?? '—'}<br />Aseguradora: {policy.insurer_name ?? '—'}</CardContent></Card>
                                 <Card><CardHeader><CardTitle className="text-sm">Contratante</CardTitle></CardHeader><CardContent className="text-sm text-muted-foreground">{[contractor.first_name, contractor.last_name].filter(Boolean).join(' ') || '—'}</CardContent></Card>
