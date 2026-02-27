@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class ProcessPolicyAiImportJob implements ShouldQueue
@@ -22,12 +23,26 @@ class ProcessPolicyAiImportJob implements ShouldQueue
         $import = PolicyAiImport::query()->with('files')->find($this->importId);
 
         if (! $import) {
+            Log::warning('Policy AI import job skipped because import was not found', [
+                'import_id' => $this->importId,
+            ]);
+
             return;
         }
 
         if (! $this->force && in_array($import->status, [PolicyAiImport::STATUS_PROCESSING, PolicyAiImport::STATUS_READY], true)) {
+            Log::info('Policy AI import job skipped because status is already in progress or completed', [
+                'import_id' => $import->id,
+                'status' => $import->status,
+            ]);
+
             return;
         }
+
+        Log::info('Policy AI import job started', [
+            'import_id' => $import->id,
+            'force' => $this->force,
+        ]);
 
         $startedAt = microtime(true);
 
@@ -58,7 +73,16 @@ class ProcessPolicyAiImportJob implements ShouldQueue
             ]);
 
             $this->markStage($import, 'done', 100);
+
+            Log::info('Policy AI import job finished', [
+                'import_id' => $import->id,
+                'status' => $result['status'],
+            ]);
         } catch (Throwable $exception) {
+            Log::error('Policy AI import job failed', [
+                'import_id' => $import->id,
+                'message' => $exception->getMessage(),
+            ]);
             $import->update([
                 'status' => PolicyAiImport::STATUS_FAILED,
                 'processing_stage' => 'failed',

@@ -79,7 +79,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('agents/profile', [AgentProfileController::class, 'edit'])->name('agents.profile.edit');
     Route::put('agents/profile', [AgentProfileController::class, 'update'])->name('agents.profile.update');
-    Route::get('agents/web', [AgentWebController::class, 'edit'])->name('agents.web.edit');
+    Route::get('agents/web', [AgentWebController::class, 'index'])->name('agents.web.edit');
     Route::put('agents/web', [AgentWebController::class, 'update'])->name('agents.web.update');
 
     Route::get('agent-profile', [AgentProfileController::class, 'edit'])->name('agent-profile.edit');

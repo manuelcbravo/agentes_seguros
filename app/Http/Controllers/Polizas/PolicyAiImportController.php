@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\File;
 use Illuminate\Validation\Rule;
@@ -159,12 +160,16 @@ class PolicyAiImportController extends Controller
     public function status(Request $request, PolicyAiImport $import): JsonResponse
     {
         $this->authorizeImport($request, $import);
+        $import->refresh();
 
         return response()->json([
             'status' => $import->status,
             'processing_stage' => $import->processing_stage,
             'progress' => $import->progress ?? 0,
             'error_message' => $import->error_message,
+            'processing_started_at' => $import->processing_started_at?->toISOString(),
+            'processing_heartbeat_at' => $import->processing_heartbeat_at?->toISOString(),
+            'updated_at' => $import->updated_at?->toISOString(),
             'missing_fields' => $import->missing_fields ?? [],
         ]);
     }
@@ -211,6 +216,12 @@ class PolicyAiImportController extends Controller
     {
         $this->authorizeImport($request, $import);
 
+        Log::info('Policy AI import process endpoint hit', [
+            'import_id' => $import->id,
+            'agent_id' => $request->user()->agent_id,
+            'status' => $import->status,
+        ]);
+
         if ($import->status === PolicyAiImport::STATUS_PROCESSING) {
             return back()->with('error', 'Ya se encuentra en procesamiento');
         }
@@ -225,7 +236,15 @@ class PolicyAiImportController extends Controller
             'error_message' => null,
         ]);
 
-        ProcessPolicyAiImportJob::dispatch($import->id, true);
+        // Database queue requires an active worker (queue:work or Supervisor/Horizon) in production.
+        $shouldRunSync = app()->environment('local')
+            && ($request->query('run') === 'sync' || config('openai.policy_ai_process_sync'));
+
+        if ($shouldRunSync) {
+            ProcessPolicyAiImportJob::dispatchSync($import->id, true);
+        } else {
+            ProcessPolicyAiImportJob::dispatch($import->id, true);
+        }
 
         return back()->with('success', 'Procesamiento iniciado correctamente');
     }
@@ -287,7 +306,9 @@ class PolicyAiImportController extends Controller
             'error_message' => $import->error_message,
             'processing_stage' => $import->processing_stage,
             'progress' => $import->progress ?? 0,
+            'processing_started_at' => $import->processing_started_at?->toISOString(),
             'processing_heartbeat_at' => $import->processing_heartbeat_at?->toISOString(),
+            'updated_at' => $import->updated_at?->toISOString(),
             'missing_fields' => $import->missing_fields ?? [],
             'ai_data' => $import->ai_data,
             'ai_confidence' => $import->ai_confidence,
