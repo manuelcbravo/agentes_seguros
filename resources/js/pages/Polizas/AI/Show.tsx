@@ -32,6 +32,9 @@ type PolicyAiImport = {
     primary_filename?: string | null;
     processing_stage?: string | null;
     progress?: number;
+    processing_started_at?: string | null;
+    processing_heartbeat_at?: string | null;
+    updated_at?: string | null;
 };
 
 type ProcessingState = {
@@ -40,6 +43,23 @@ type ProcessingState = {
     progress: number;
     error_message?: string | null;
     missing_fields?: string[];
+    processing_started_at?: string | null;
+    processing_heartbeat_at?: string | null;
+    updated_at?: string | null;
+};
+
+const toElapsedSeconds = (date?: string | null): number | null => {
+    if (!date) {
+        return null;
+    }
+
+    const value = Date.parse(date);
+
+    if (Number.isNaN(value)) {
+        return null;
+    }
+
+    return Math.max(0, Math.round((Date.now() - value) / 1000));
 };
 
 export default function PolicyAiShow({ import: item }: { import: PolicyAiImport }) {
@@ -50,7 +70,11 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
         progress: item.progress ?? 0,
         error_message: item.error_message,
         missing_fields: item.missing_fields ?? [],
+        processing_started_at: item.processing_started_at,
+        processing_heartbeat_at: item.processing_heartbeat_at,
+        updated_at: item.updated_at,
     });
+    const [secondsSinceHeartbeat, setSecondsSinceHeartbeat] = useState<number | null>(toElapsedSeconds(item.processing_heartbeat_at));
 
     useEffect(() => {
         setProcessingState({
@@ -59,8 +83,12 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
             progress: item.progress ?? 0,
             error_message: item.error_message,
             missing_fields: item.missing_fields ?? [],
+            processing_started_at: item.processing_started_at,
+            processing_heartbeat_at: item.processing_heartbeat_at,
+            updated_at: item.updated_at,
         });
-    }, [item.error_message, item.processing_stage, item.progress, item.status]);
+        setSecondsSinceHeartbeat(toElapsedSeconds(item.processing_heartbeat_at));
+    }, [item]);
 
     useEffect(() => {
         if (flash?.success) {
@@ -71,6 +99,14 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
             toast.error(flash.error);
         }
     }, [flash?.error, flash?.success]);
+
+    useEffect(() => {
+        const timer = window.setInterval(() => {
+            setSecondsSinceHeartbeat(toElapsedSeconds(processingState.processing_heartbeat_at));
+        }, 1000);
+
+        return () => window.clearInterval(timer);
+    }, [processingState.processing_heartbeat_at]);
 
     useEffect(() => {
         if (processingState.status !== 'processing') {
@@ -95,6 +131,9 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
                 progress: payload.progress ?? 0,
                 error_message: payload.error_message,
                 missing_fields: payload.missing_fields ?? [],
+                processing_started_at: payload.processing_started_at,
+                processing_heartbeat_at: payload.processing_heartbeat_at,
+                updated_at: payload.updated_at,
             });
 
             if (payload.status !== 'processing') {
@@ -174,6 +213,11 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
                                     'Procesar con IA'
                                 )}
                             </Button>
+                            {currentStatus === 'failed' && (
+                                <Button variant="secondary" onClick={() => router.post(route('polizas.ai.retry', item.id))}>
+                                    Reintentar
+                                </Button>
+                            )}
                             {canConvert && (
                                 <Button variant="outline" onClick={() => router.post(route('polizas.ai.convert', item.id))}>
                                     Convertir a póliza
@@ -194,6 +238,9 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
                                 <span>{processingState.progress}%</span>
                             </div>
                             <Progress value={processingState.progress} className="h-2" />
+                            <p className="text-xs text-blue-700">
+                                Última actualización hace {secondsSinceHeartbeat ?? 0} segundo{secondsSinceHeartbeat === 1 ? '' : 's'}.
+                            </p>
                         </CardContent>
                     </Card>
                 )}
@@ -233,23 +280,70 @@ export default function PolicyAiShow({ import: item }: { import: PolicyAiImport 
                 </Card>
 
                 <Card className="rounded-2xl">
-                    <CardHeader><CardTitle className="text-base">Archivos</CardTitle></CardHeader>
+                    <CardHeader>
+                        <CardTitle className="text-base">Archivos</CardTitle>
+                    </CardHeader>
                     <CardContent>
                         <div className="overflow-hidden rounded-lg border">
-                            <table className="w-full text-sm"><tbody>{(item.files ?? []).map((file) => (<tr key={file.id} className="border-t"><td className="px-4 py-3 font-medium">{file.original_filename}</td><td className="px-4 py-3 text-muted-foreground">{file.size ? `${Math.max(1, Math.round(file.size / 1024))} KB` : '—'}</td><td className="px-4 py-3 text-muted-foreground">{file.created_at ? new Date(file.created_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) : '—'}</td><td className="px-4 py-3"><a href={file.url} target="_blank" rel="noreferrer" className="inline-flex items-center text-primary hover:underline"><Download className="mr-1 size-4" /> Descargar</a></td></tr>))}</tbody></table>
+                            <table className="w-full text-sm">
+                                <tbody>
+                                    {(item.files ?? []).map((file) => (
+                                        <tr key={file.id} className="border-t">
+                                            <td className="px-4 py-3 font-medium">{file.original_filename}</td>
+                                            <td className="px-4 py-3 text-muted-foreground">{file.size ? `${Math.max(1, Math.round(file.size / 1024))} KB` : '—'}</td>
+                                            <td className="px-4 py-3 text-muted-foreground">
+                                                {file.created_at ? new Date(file.created_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) : '—'}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <a href={file.url} target="_blank" rel="noreferrer" className="inline-flex items-center text-primary hover:underline">
+                                                    <Download className="mr-1 size-4" /> Descargar
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     </CardContent>
                 </Card>
 
                 <Card className="rounded-2xl">
-                    <CardHeader><CardTitle className="text-base">Resultado IA</CardTitle></CardHeader>
+                    <CardHeader>
+                        <CardTitle className="text-base">Resultado IA</CardTitle>
+                    </CardHeader>
                     <CardContent>
                         {['ready', 'needs_review'].includes(currentStatus) ? (
                             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                                <Card><CardHeader><CardTitle className="text-sm">Datos de póliza</CardTitle></CardHeader><CardContent className="text-sm text-muted-foreground">No. póliza: {policy.policy_number ?? '—'}<br />Aseguradora: {policy.insurer_name ?? '—'}</CardContent></Card>
-                                <Card><CardHeader><CardTitle className="text-sm">Contratante</CardTitle></CardHeader><CardContent className="text-sm text-muted-foreground">{[contractor.first_name, contractor.last_name].filter(Boolean).join(' ') || '—'}</CardContent></Card>
-                                <Card><CardHeader><CardTitle className="text-sm">Asegurado</CardTitle></CardHeader><CardContent className="text-sm text-muted-foreground">{[insured.first_name, insured.last_name].filter(Boolean).join(' ') || '—'}</CardContent></Card>
-                                <Card><CardHeader><CardTitle className="text-sm">Beneficiarios</CardTitle></CardHeader><CardContent className="text-sm text-muted-foreground">{beneficiaries.length > 0 ? beneficiaries.length : 'Sin beneficiarios detectados'}</CardContent></Card>
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-sm">Datos de póliza</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="text-sm text-muted-foreground">
+                                        No. póliza: {policy.policy_number ?? '—'}
+                                        <br />
+                                        Aseguradora: {policy.insurer_name ?? '—'}
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-sm">Contratante</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="text-sm text-muted-foreground">{[contractor.first_name, contractor.last_name].filter(Boolean).join(' ') || '—'}</CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-sm">Asegurado</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="text-sm text-muted-foreground">{[insured.first_name, insured.last_name].filter(Boolean).join(' ') || '—'}</CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-sm">Beneficiarios</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="text-sm text-muted-foreground">
+                                        {beneficiaries.length > 0 ? beneficiaries.length : 'Sin beneficiarios detectados'}
+                                    </CardContent>
+                                </Card>
                             </div>
                         ) : (
                             <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground">Este archivo aún no ha sido procesado con IA.</div>
