@@ -141,7 +141,7 @@ class AgentWebController extends Controller
     private function buildBarCharts(string $agentId): array
     {
         $months = $this->buildMonthlyRange(6);
-        $categories = $months->map(fn (Carbon $month) => $month->translatedFormat('M Y'))->values()->all();
+        $categories = $months->map(fn ($month) => $month->translatedFormat('M Y'))->values()->all();
 
         $leadMonthlyTotals = Lead::query()
             ->where('agent_id', $agentId)
@@ -188,8 +188,9 @@ class AgentWebController extends Controller
     private function buildLineCharts(string $agentId): array
     {
         $months = $this->buildMonthlyRange(12);
-        $monthKeys = $months->map(fn (Carbon $month) => $month->format('Y-m'));
-        $monthLabels = $months->map(fn (Carbon $month) => $month->translatedFormat('M Y'))->all();
+        $monthKeys = $months->map(fn ($month) => $month->format('Y-m'));
+
+        $monthLabels = $months->map(fn ($month) => $month->translatedFormat('M Y'))->all();
 
         $newPoliciesByMonth = Policy::query()
             ->where('agent_id', $agentId)
