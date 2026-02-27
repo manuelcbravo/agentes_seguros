@@ -175,9 +175,9 @@ class AgentWebDashboardTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('agents.web.edit'))
+            ->get(route('dashboard'))
             ->assertInertia(fn ($page) => $page
-                ->component('agents/web/index')
+                ->component('dashboard')
                 ->where('kpis.polizas_total', 2)
                 ->where('kpis.contratantes_total', 1)
                 ->where('kpis.asegurados_total', 1)

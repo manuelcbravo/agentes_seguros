@@ -28,8 +28,6 @@ class AgentWebController extends Controller
         abort_unless($agentId, 403);
 
         $agent = Agent::query()->findOrFail($agentId);
-        $profile = $this->findOrCreateProfile($agent);
-
         $today = now()->toDateString();
         $lastThirtyDaysStart = now()->subDays(29)->toDateString();
         $lastThirtyDaysStartDateTime = now()->subDays(29)->startOfDay();
@@ -45,8 +43,7 @@ class AgentWebController extends Controller
             ->where('created_at', '>=', $lastThirtyDaysStartDateTime)
             ->count();
 
-        return Inertia::render('agents/web/index', [
-            'profile' => $profile->only(['public_slug', 'is_public_enabled', 'contact_form_enabled', 'show_licenses']),
+        return Inertia::render('dashboard', [
             'pies' => $this->buildPieCharts($agentId),
             'barras' => $this->buildBarCharts($agentId),
             'lineas' => $this->buildLineCharts($agentId),
