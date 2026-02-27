@@ -2,8 +2,8 @@
 
 namespace App\Services\PolicyAi\TextExtraction;
 
-use RuntimeException;
 use Illuminate\Support\Facades\Process;
+use RuntimeException;
 
 class OcrTextExtractor implements TextExtractor
 {
@@ -18,9 +18,13 @@ class OcrTextExtractor implements TextExtractor
                 throw new RuntimeException('OCR no configurado');
             }
 
-            $base = storage_path('app/tmp/policy-ai-'.uniqid());
-            @mkdir($base, 0777, true);
-            $prefix = $base.'/page';
+            $prefix = tempnam(sys_get_temp_dir(), 'policy-ai-ocr-');
+
+            if ($prefix === false) {
+                throw new RuntimeException('No se pudo preparar carpeta temporal para OCR');
+            }
+
+            @unlink($prefix);
             Process::run(sprintf('pdftoppm -jpeg %s %s', escapeshellarg($absolutePath), escapeshellarg($prefix)));
 
             $images = glob($prefix.'-*.jpg') ?: [];
@@ -34,7 +38,6 @@ class OcrTextExtractor implements TextExtractor
             }
 
             collect($images)->each(fn ($file) => @unlink($file));
-            @rmdir($base);
 
             $text = trim(implode("\n\n", array_filter($chunks)));
 

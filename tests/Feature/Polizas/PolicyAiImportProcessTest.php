@@ -5,8 +5,11 @@ namespace Tests\Feature\Polizas;
 use App\Jobs\ProcessPolicyAiImportJob;
 use App\Models\PolicyAiImport;
 use App\Models\User;
+use App\Services\PolicyAi\PolicyAiAnalyzer;
+use App\Services\PolicyAi\PolicyAiMapper;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class PolicyAiImportProcessTest extends TestCase
@@ -66,5 +69,43 @@ class PolicyAiImportProcessTest extends TestCase
         $response->assertForbidden();
 
         Queue::assertNothingPushed();
+    }
+
+    public function test_job_fails_when_s3_file_does_not_exist(): void
+    {
+        Storage::fake('s3');
+
+        $import = PolicyAiImport::query()->create([
+            'agent_id' => (string) User::factory()->create()->agent_id,
+            'client_id' => null,
+            'original_filename' => 'poliza.pdf',
+            'mime_type' => 'application/pdf',
+            'disk' => 's3',
+            'path' => 'policy-ai/missing.pdf',
+            'status' => PolicyAiImport::STATUS_UPLOADED,
+        ]);
+
+        $import->files()->create([
+            'agent_id' => (string) $import->agent_id,
+            'original_filename' => 'poliza.pdf',
+            'mime_type' => 'application/pdf',
+            'disk' => 's3',
+            'path' => 'policy-ai/missing.pdf',
+            'size' => 100,
+        ]);
+
+        $analyzer = $this->createMock(PolicyAiAnalyzer::class);
+        $analyzer->expects($this->never())->method('analyze');
+
+        $mapper = $this->createMock(PolicyAiMapper::class);
+        $mapper->expects($this->never())->method('toWizardDraft');
+
+        (new ProcessPolicyAiImportJob($import->id))->handle($analyzer, $mapper);
+
+        $import->refresh();
+
+        $this->assertSame(PolicyAiImport::STATUS_FAILED, $import->status);
+        $this->assertSame('No se pudo acceder al archivo en S3. Verifica configuración del disk.', $import->error_message);
+        $this->assertNotNull($import->took_ms);
     }
 }

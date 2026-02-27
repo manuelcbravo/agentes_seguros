@@ -81,7 +81,7 @@ type ClientForm = {
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Clientes', href: route('clients.index') },
+    { title: 'Contratantes', href: route('clients.index') },
 ];
 
 const FILES_TABLE_ID = 'clients';
@@ -191,7 +191,7 @@ export default function ClientsIndex({
     const columns: DataTableColumn<ClientRow>[] = [
         {
             key: 'full_name',
-            header: 'Cliente',
+            header: 'Contratante',
             accessor: (row) => row.full_name,
             cell: (row) => (
                 <div className="flex items-center gap-3">
@@ -290,7 +290,7 @@ export default function ClientsIndex({
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Clientes" />
+            <Head title="Contratantes" />
 
             <div className="space-y-4 rounded-xl p-4">
                 <div className="rounded-xl border border-sidebar-border/70 bg-sidebar-accent/20 p-4">
@@ -299,16 +299,16 @@ export default function ClientsIndex({
                             <Users className="size-5 text-primary" />
                             <div>
                                 <h1 className="text-xl font-semibold">
-                                    Clientes
+                                    Contratantes
                                 </h1>
                                 <p className="text-sm text-muted-foreground">
-                                    Gestiona clientes y abre el gestor de
-                                    archivos desde las opciones de cada cliente.
+                                    Gestiona contratantes y abre el gestor de
+                                    archivos desde las opciones de cada contratante.
                                 </p>
                             </div>
                         </div>
                         <Button onClick={openCreateDialog}>
-                            <UserPlus className="mr-2 size-4" /> Nuevo cliente
+                            <UserPlus className="mr-2 size-4" /> Nuevo contratante
                         </Button>
                     </div>
                 </div>
@@ -317,7 +317,7 @@ export default function ClientsIndex({
                     columns={columns}
                     data={clients}
                     searchColumn="full_name"
-                    searchPlaceholder="Buscar cliente por nombre..."
+                    searchPlaceholder="Buscar contratante por nombre..."
                 />
             </div>
 
@@ -326,7 +326,7 @@ export default function ClientsIndex({
                 onOpenChange={(open) => !open && setTrackingClient(null)}
                 trackableType="Client"
                 trackableId={trackingClient?.id ?? ''}
-                trackableLabel={trackingClient?.full_name ?? 'Cliente'}
+                trackableLabel={trackingClient?.full_name ?? 'Contratante'}
                 catalogs={trackingCatalogs}
             />
 
@@ -339,9 +339,9 @@ export default function ClientsIndex({
                         form.clearErrors();
                     }
                 }}
-                title={formMode === "edit" ? "Editar cliente" : "Nuevo cliente"}
-                description="Captura datos esenciales y guarda el cliente directamente desde este modal."
-                submitLabel={formMode === "edit" ? "Guardar cambios" : "Guardar cliente"}
+                title={formMode === "edit" ? "Editar contratante" : "Nuevo contratante"}
+                description="Captura datos esenciales y guarda el contratante directamente desde este modal."
+                submitLabel={formMode === "edit" ? "Guardar cambios" : "Guardar contratante"}
                 processing={form.processing}
                 onSubmit={submitForm}
             >
@@ -361,7 +361,7 @@ export default function ClientsIndex({
                             <div className="space-y-1">
                                 <p className="text-sm font-medium">Imagen</p>
                                 <p className="text-xs text-muted-foreground">
-                                    Se guarda al guardar el cliente.
+                                    Se guarda al guardar el contratante.
                                 </p>
 
                                 {(form.errors.avatar || form.errors.avatar_path) && (
@@ -511,7 +511,7 @@ export default function ClientsIndex({
                         ? `Archivos · ${fileManagerClient.full_name}`
                         : 'Archivos'
                 }
-                description="Gestiona los archivos del cliente activo (subir, descargar, renombrar o eliminar) sin salir del flujo."
+                description="Gestiona los archivos del contratante activo (subir, descargar, renombrar o eliminar) sin salir del flujo."
                 storedFiles={contextualFiles}
                 tableId={FILES_TABLE_ID}
                 relatedUuid={fileManagerClient?.id ?? null}
@@ -538,7 +538,7 @@ export default function ClientsIndex({
             <ConfirmDeleteDialog
                 open={formMode === null && activeClient !== null}
                 onOpenChange={(open) => !open && setActiveClient(null)}
-                title="Eliminar cliente"
+                title="Eliminar"
                 entityLabel="el registro de"
                 itemName={activeClient?.full_name}
                 onConfirm={() => {
@@ -547,7 +547,7 @@ export default function ClientsIndex({
                     router.delete(route('clients.destroy', activeClient.id), {
                         onSuccess: () => setActiveClient(null),
                         onError: () =>
-                            toast.error('No se pudo eliminar el cliente.'),
+                            toast.error('No se pudo eliminar el contratante.'),
                     });
                 }}
             />

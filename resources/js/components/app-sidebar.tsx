@@ -36,11 +36,6 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
-        title: 'Clientes',
-        href: route('clients.index'),
-        icon: Users,
-    },
-    {
         title: 'Agentes',
         href: route('agents.index'),
         icon: BriefcaseBusiness,
@@ -76,6 +71,11 @@ const mainNavItems: NavItem[] = [
                 href: route('leads.archived.index'),
             },
         ],
+    },
+    {
+        title: 'Contratantes',
+        href: route('clients.index'),
+        icon: Users,
     },
     {
         title: 'Pólizas',

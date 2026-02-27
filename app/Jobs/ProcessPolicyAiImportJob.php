@@ -13,7 +13,9 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use RuntimeException;
 use Throwable;
 
@@ -100,14 +102,35 @@ class ProcessPolicyAiImportJob implements ShouldQueue
 
     private function extractForFile(PolicyAiImportFile $file, PdfTextExtractor $pdfExtractor, OcrTextExtractor $ocrExtractor): ?string
     {
-        $fullPath = Storage::disk($file->disk)->path($file->path);
-        $text = $pdfExtractor->extract($fullPath, $file->mime_type);
+        $disk = $file->disk ?: 's3';
+        $exists = Storage::disk($disk)->exists($file->path);
 
-        if (! $text || mb_strlen($text) < 80) {
-            $text = $ocrExtractor->extract($fullPath, $file->mime_type);
+        Log::info('Procesando archivo IA', [
+            'file_id' => $file->id,
+            'disk' => $disk,
+            'path' => $file->path,
+            'exists' => $exists,
+        ]);
+
+        if (! $exists) {
+            throw new RuntimeException('No se pudo acceder al archivo en S3. Verifica configuración del disk.');
         }
 
-        return $text;
+        $temporaryRelativePath = 'temp/policy-ai/'.Str::uuid().'-'.basename($file->path);
+        Storage::disk('local')->put($temporaryRelativePath, Storage::disk($disk)->get($file->path));
+        $fullPath = Storage::disk('local')->path($temporaryRelativePath);
+
+        try {
+            $text = $pdfExtractor->extract($fullPath, $file->mime_type);
+
+            if (! $text || mb_strlen($text) < 80) {
+                $text = $ocrExtractor->extract($fullPath, $file->mime_type);
+            }
+
+            return $text;
+        } finally {
+            Storage::disk('local')->delete($temporaryRelativePath);
+        }
     }
 
     private function criticalMissingFields(array $data): array
